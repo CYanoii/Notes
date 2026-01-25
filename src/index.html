@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多页签笔记应用</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="tab-bar" id="tabBar">
+                <!-- 固定搜索标签页 -->
+                <div class="tab active" data-tab-id="search">
+                    <div class="tab-icon-title">
+                        <i class="fas fa-search"></i>
+                        <span class="tab-title">搜索</span>
+                    </div>
+                </div>
+                <!-- 动态笔记标签页会在这里添加 -->
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn-new-note" id="newNoteBtn">
+                    <i class="fas fa-plus"></i> 新建笔记
+                </button>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="main-content">
+            <!-- 搜索页面（始终显示） -->
+            <div class="tab-content active" id="tab-search">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               id="searchInput" 
+                               placeholder="搜索笔记内容或标题...">
+                        <button class="btn-search">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="recent-notes">
+                        <h2><i class="fas fa-history"></i> 最近打开的笔记</h2>
+                        <div class="notes-grid" id="recentNotesGrid">
+                            <!-- 最近笔记会动态加载到这里 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 笔记编辑页面容器 -->
+            <div class="notes-container" id="notesContainer">
+                <!-- 笔记编辑器会动态添加到这里 -->
+            </div>
+        </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
