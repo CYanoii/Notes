@@ -55,7 +55,7 @@ class NoteApp {
 
     async loadRecentNotes() {
         try {
-            const notes = await window.electronAPI.getRecentNotes();
+            const notes = await window.electronAPI.getRecentNotes(10);
             this.renderRecentNotes(notes);
         } catch (error) {
             console.error('加载最近笔记失败:', error);
