@@ -56,3 +56,9 @@ npm run start
 - **原生 HTML/CSS/JS** - 前端技术
 - **文件系统 API** - 笔记存储
 
+# TODO
+
+1. 回收站功能
+2. 记录关闭前页面状态
+3. 搜索功能
+4. 支持 markdown

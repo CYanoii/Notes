@@ -7,8 +7,7 @@ class NoteApp {
 
     async init() {
         this.setupEventListeners();
-        await this.loadRecentNotes();
-        this.createNewNote(); // 初始创建一个新笔记
+        await this.loadAllNotes();
     }
 
     setupEventListeners() {
@@ -53,37 +52,54 @@ class NoteApp {
         });
     }
 
-    async loadRecentNotes() {
+    // 加载所有笔记
+    async loadAllNotes() {
         try {
-            const notes = await window.electronAPI.getRecentNotes(10);
-            this.renderRecentNotes(notes);
+            const notes = await window.electronAPI.getAllNotes();
+            console.log('加载的笔记:', notes);
+            this.renderAllNotes(notes);
         } catch (error) {
-            console.error('加载最近笔记失败:', error);
+            console.error('加载所有笔记失败:', error);
+            this.showToast('加载笔记失败', 'error');
         }
     }
 
-    renderRecentNotes(notes) {
-        const grid = document.getElementById('recentNotesGrid');
+    // 渲染笔记列表
+    renderAllNotes(notes) {
+        const grid = document.getElementById('notesGrid');
         grid.innerHTML = '';
 
         notes.forEach(note => {
             const noteCard = document.createElement('div');
             noteCard.className = 'note-card';
             noteCard.innerHTML = `
+                <button class="note-delete-btn" data-note-id="${note.id}">
+                    <i class="fas fa-trash"></i>
+                </button>
                 <h3>${this.escapeHtml(note.title)}</h3>
-                <p>${this.escapeHtml(note.content.substring(0, 100))}${note.content.length > 100 ? '...' : ''}</p>
+                <p>${this.escapeHtml(note.content?.substring(0, 100))}${note.content?.length > 100 ? '...' : ''}</p>
                 <div class="note-meta">
-                    <span>${note.lastOpened}</span>
-                    <span><i class="fas fa-clock"></i> 最近打开</span>
+                    <span>${new Date(note.updatedAt).toLocaleString('zh-CN')}</span>
+                    <span><i class="fas fa-calendar-alt"></i> 最后修改</span>
                 </div>
             `;
-            noteCard.addEventListener('click', () => {
-                this.openNote(note);
+            // 点击卡片打开笔记
+            noteCard.addEventListener('click', (e) => {
+                if (!e.target.closest('.note-delete-btn')) {
+                    this.openNote(note);
+                }
+            });
+            // 删除按钮事件
+            const deleteBtn = noteCard.querySelector('.note-delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteNote(note.id);
             });
             grid.appendChild(noteCard);
         });
     }
 
+    // 创建新笔记
     async createNewNote() {
         try {
             const noteData = await window.electronAPI.createNote();
@@ -93,23 +109,32 @@ class NoteApp {
         }
     }
 
-    openNote(noteData) {
+    // 打开笔记
+    async openNote(noteData) {
         // 如果笔记已经打开，直接切换到它
         if (this.notes.has(noteData.id)) {
             this.switchToNote(noteData.id);
             return;
         }
 
-        // 否则添加到应用中
-        this.addNoteToApp(noteData);
+        try {
+            // 加载完整的笔记内容（包含content）
+            const fullNote = await window.electronAPI.getNote(noteData.id);
+            // 添加到应用中
+            this.addNoteToApp(fullNote);
+        } catch (error) {
+            console.error('打开笔记失败:', error);
+            this.showToast('打开笔记失败', 'error');
+        }
     }
 
+    // 将笔记添加到应用中
     addNoteToApp(noteData) {
         this.notes.set(noteData.id, noteData);
         this.createNoteTab(noteData);
         this.createNoteEditor(noteData);
         this.switchToNote(noteData.id);
-        this.updateRecentNotes();
+        this.updateAllNotes();
     }
 
     createNoteTab(noteData) {
@@ -231,6 +256,8 @@ class NoteApp {
             if (tabTitle) {
                 tabTitle.textContent = newTitle || '无标题';
             }
+            // 保存到后端
+            this.debounceSave(noteId);
         }
     }
 
@@ -238,12 +265,57 @@ class NoteApp {
         const note = this.notes.get(noteId);
         if (note) {
             note.content = newContent;
+            // 保存到后端
+            this.debounceSave(noteId);
         }
     }
 
-    async updateRecentNotes() {
-        // 这里可以保存笔记状态到本地存储或数据库
-        await this.loadRecentNotes();
+    // 防抖保存，避免频繁写入
+    debounceSave(noteId) {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+
+        this.saveTimeout = setTimeout(async () => {
+            const note = this.notes.get(noteId);
+            if (note) {
+                try {
+                    await window.electronAPI.updateNote(note.id, note);
+                    // 刷新笔记列表以更新最后修改时间
+                    this.updateAllNotes();
+                } catch (error) {
+                    console.error('保存笔记失败:', error);
+                    this.showToast('保存失败', 'error');
+                }
+            }
+        }, 500);
+    }
+
+    async updateAllNotes() {
+        // 刷新笔记列表
+        await this.loadAllNotes();
+    }
+
+    async deleteNote(noteId) {
+        if (!confirm('确定要删除这篇笔记吗？此操作不可恢复。')) {
+            return;
+        }
+
+        try {
+            await window.electronAPI.deleteNote(noteId);
+
+            // 如果笔记当前打开，先关闭它
+            if (this.notes.has(noteId)) {
+                this.closeNote(noteId);
+            }
+
+            // 刷新笔记列表
+            await this.updateAllNotes();
+            this.showToast('笔记删除成功', 'success');
+        } catch (error) {
+            console.error('删除笔记失败:', error);
+            this.showToast('删除笔记失败', 'error');
+        }
     }
 
     performSearch(query) {
@@ -256,6 +328,28 @@ class NoteApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    showToast(message, type = 'info') {
+        // 创建toast元素
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+
+        // 添加到页面
+        document.body.appendChild(toast);
+
+        // 显示动画
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // 3秒后自动消失
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 }
 

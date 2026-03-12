@@ -11,6 +11,7 @@ class NotesManager {
     this.indexFile = path.join(this.notesDir, 'notes-index.json');
   }
 
+  // 初始化 - 确保笔记目录和索引文件存在
   async initialize() {
     await fs.mkdir(this.notesDir, { recursive: true });
     if (!await this.exists(this.indexFile)) {
@@ -18,38 +19,7 @@ class NotesManager {
     }
   }
 
-  async exists(filePath) {
-    try {
-      await fs.access(filePath);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async loadIndex() {
-    const data = await fs.readFile(this.indexFile, 'utf-8');
-    return JSON.parse(data);
-  }
-
-  async saveIndex(index) {
-    await fs.writeFile(this.indexFile, JSON.stringify(index, null, 2), 'utf-8');
-  }
-
-  async addToIndex(noteMetadata) {
-    const index = await this.loadIndex();
-    index.notes.push(noteMetadata);
-    index.lastUpdated = new Date().toISOString();
-    await this.saveIndex(index);
-  }
-
-  async removeFromIndex(noteId) {
-    const index = await this.loadIndex();
-    index.notes = index.notes.filter(n => n.id !== noteId);
-    index.lastUpdated = new Date().toISOString();
-    await this.saveIndex(index);
-  }
-
+  // 创建新笔记
   async createNote(title = '新笔记') {
     const noteId = Date.now().toString();
     const noteDir = path.join(this.notesDir, noteId);
@@ -66,12 +36,44 @@ class NotesManager {
     };
 
     await this.saveMetadata(noteId, metadata);
-    await this.saveContent(noteId, `# ${title}\n\n开始记录...`);
+    await this.saveContent(noteId, ``);
     await this.addToIndex(metadata);
 
     return metadata;
   }
 
+  // 删除笔记
+  async deleteNote(noteId) {
+    await this.removeFromIndex(noteId);
+    const noteDir = path.join(this.notesDir, noteId);
+    await fs.rm(noteDir, { recursive: true, force: true });
+  }
+
+  // 获取所有笔记
+  async getAllNotes() {
+    const index = await this.loadIndex();
+    return index.notes.sort((a, b) =>
+      new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
+  }
+
+  // 获取最近编辑的笔记
+  async getRecentNotes(limit = 10) {
+    const allNotes = await this.getAllNotes();
+    return allNotes.slice(0, limit);
+  }
+
+  // 搜索笔记
+  async searchNotes(query) {
+    const allNotes = await this.getAllNotes();
+    const lowerQuery = query.toLowerCase();
+
+    return allNotes.filter(note => {
+      return note.title.toLowerCase().includes(lowerQuery);
+    });
+  }
+
+  // 获取单个笔记
   async getNote(noteId) {
     const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
     const noteFile = path.join(this.notesDir, noteId, 'note.md');
@@ -86,6 +88,7 @@ class NotesManager {
     return { ...metadata, content };
   }
 
+  // 更新笔记
   async updateNote(noteId, updates) {
     const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
 
@@ -111,6 +114,47 @@ class NotesManager {
     return updatedMetadata;
   }
 
+
+  // 检查文件是否存在
+  async exists(filePath) {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // 保存笔记内容
+  async saveContent(noteId, content) {
+    const noteFile = path.join(this.notesDir, noteId, 'note.md');
+    await fs.writeFile(noteFile, content, 'utf-8');
+  }
+
+  // 保存元数据
+  async saveMetadata(noteId, metadata) {
+    const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
+    await fs.writeFile(metaFile, JSON.stringify(metadata, null, 2), 'utf-8');
+  }
+
+
+  // 加入索引
+  async addToIndex(noteMetadata) {
+    const index = await this.loadIndex();
+    index.notes.push(noteMetadata);
+    index.lastUpdated = new Date().toISOString();
+    await this.saveIndex(index);
+  }
+
+  // 从索引中移除
+  async removeFromIndex(noteId) {
+    const index = await this.loadIndex();
+    index.notes = index.notes.filter(n => n.id !== noteId);
+    index.lastUpdated = new Date().toISOString();
+    await this.saveIndex(index);
+  }
+
+  // 更新索引中的信息
   async updateIndex(noteId, metadata) {
     const index = await this.loadIndex();
     const noteIndex = index.notes.findIndex(n => n.id === noteId);
@@ -121,41 +165,15 @@ class NotesManager {
     }
   }
 
-  async saveContent(noteId, content) {
-    const noteFile = path.join(this.notesDir, noteId, 'note.md');
-    await fs.writeFile(noteFile, content, 'utf-8');
+  // 加载索引
+  async loadIndex() {
+    const data = await fs.readFile(this.indexFile, 'utf-8');
+    return JSON.parse(data);
   }
 
-  async saveMetadata(noteId, metadata) {
-    const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
-    await fs.writeFile(metaFile, JSON.stringify(metadata, null, 2), 'utf-8');
-  }
-
-  async deleteNote(noteId) {
-    await this.removeFromIndex(noteId);
-    const noteDir = path.join(this.notesDir, noteId);
-    await fs.rm(noteDir, { recursive: true, force: true });
-  }
-
-  async getAllNotes() {
-    const index = await this.loadIndex();
-    return index.notes.sort((a, b) =>
-      new Date(b.updatedAt) - new Date(a.updatedAt)
-    );
-  }
-
-  async getRecentNotes(limit = 10) {
-    const allNotes = await this.getAllNotes();
-    return allNotes.slice(0, limit);
-  }
-
-  async searchNotes(query) {
-    const allNotes = await this.getAllNotes();
-    const lowerQuery = query.toLowerCase();
-
-    return allNotes.filter(note => {
-      return note.title.toLowerCase().includes(lowerQuery);
-    });
+  // 保存索引
+  async saveIndex(index) {
+    await fs.writeFile(this.indexFile, JSON.stringify(index, null, 2), 'utf-8');
   }
 }
 
