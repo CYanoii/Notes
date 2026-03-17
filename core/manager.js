@@ -20,7 +20,7 @@ class NotesManager {
   }
 
   // 创建新笔记
-  async createNote(title = '新笔记') {
+  async createNote(title = '') {
     const noteId = Date.now().toString();
     const noteDir = path.join(this.notesDir, noteId);
 

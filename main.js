@@ -30,9 +30,9 @@ function createWindow() {
   // mainWindow.webContents.openDevTools();
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // 注册 IPC 处理器
-  setupIpcHandlers();
+  await setupIpcHandlers();
 
   // 创建窗口
   createWindow();
