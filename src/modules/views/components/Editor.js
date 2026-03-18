@@ -7,7 +7,7 @@ import { escapeHtml } from '../../utils/helpers.js';
 export class Editor {
     constructor() {
         this.container = document.getElementById('notesContainer');
-        this.searchPage = document.getElementById('tab-search');
+        this.homePage = document.getElementById('tab-home');
         this.onTitleChange = null;
         this.onContentChange = null;
     }
@@ -71,21 +71,21 @@ export class Editor {
             }
         });
 
-        // 隐藏搜索页面
-        this.searchPage.classList.remove('active');
+        // 隐藏首页
+        this.homePage.classList.remove('active');
     }
 
     /**
-     * 切换到搜索页面
+     * 切换到首页
      */
-    switchToSearchPage() {
+    switchToHomePage() {
         // 隐藏所有编辑器
         this.container.querySelectorAll('.note-editor').forEach(editor => {
             editor.classList.remove('active');
         });
 
-        // 显示搜索页面
-        this.searchPage.classList.add('active');
+        // 显示首页
+        this.homePage.classList.add('active');
     }
 
     /**

@@ -25,9 +25,9 @@ export class TabBar {
             <span class="tab-close"><i class="fas fa-times"></i></span>
         `;
 
-        // 插入到搜索标签页之后
-        const searchTab = this.tabBar.querySelector('.tab[data-tab-id="search"]');
-        searchTab.parentNode.insertBefore(tab, searchTab.nextSibling);
+        // 插入到主页标签页之后
+        const homeTab = this.tabBar.querySelector('.tab[data-tab-id="home"]');
+        homeTab.parentNode.insertBefore(tab, homeTab.nextSibling);
     }
 
     /**

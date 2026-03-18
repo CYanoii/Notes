@@ -225,8 +225,8 @@ body {
     display: block;
 }
 
-/* 搜索页面样式 */
-.search-container {
+/* 首页样式 */
+.home-container {
     max-width: 900px;
     margin: 0 auto;
     padding-top: 40px;

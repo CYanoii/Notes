@@ -52,12 +52,12 @@ export class UIManager {
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.eventBus.emit('app:search', searchInput.value.trim());
+                this.eventBus.emit('app:homeSearch', searchInput.value.trim());
             }
         });
 
         document.querySelector('.btn-search').addEventListener('click', () => {
-            this.eventBus.emit('app:search', searchInput.value.trim());
+            this.eventBus.emit('app:homeSearch', searchInput.value.trim());
         });
 
         // 标签栏事件委托（处理标签切换和关闭）
@@ -73,7 +73,7 @@ export class UIManager {
             if (closeBtn) {
                 const tab = closeBtn.closest('.tab');
                 const noteId = tab.dataset.tabId;
-                if (noteId !== 'search') {
+                if (noteId !== 'home') {
                     this.eventBus.emit('app:closeNote', noteId);
                 }
             }
@@ -122,10 +122,10 @@ export class UIManager {
     }
 
     /**
-     * 切换到搜索页面
+     * 切换到首页
      */
-    editor_switchToSearchPage() {
-        this.editor.switchToSearchPage();
+    editor_switchToHomePage() {
+        this.editor.switchToHomePage();
     }
 
     /**
@@ -160,7 +160,7 @@ export class UIManager {
 
     /**
      * 切换到指定标签页
-     * @param {string|number} tabId 标签页ID，可以是笔记ID或'search'
+     * @param {string|number} tabId 标签页ID，可以是笔记ID或'home'等特殊ID
      */
     tabBar_switchToTab(tabId) {
         this.tabBar.switchToTab(tabId);

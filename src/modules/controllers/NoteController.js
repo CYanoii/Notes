@@ -35,14 +35,14 @@ export class NoteController {
         // UI交互事件（来自App的DOM事件）
         this.eventBus.on('app:createNewNote', () => this.createNewNote());
         this.eventBus.on('app:switchTab', (tabId) => {
-            if (tabId === 'search') {
-                this.switchToSearch();
+            if (tabId === 'home') {
+                this.switchToHome();
             } else {
                 this.switchToNote(tabId);
             }
         });
         this.eventBus.on('app:closeNote', (noteId) => this.closeNote(noteId));
-        this.eventBus.on('app:search', (query) => {
+        this.eventBus.on('app:homeSearch', (query) => {
             // 搜索功能后续实现
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
@@ -200,11 +200,11 @@ export class NoteController {
     }
 
     /**
-     * 切换到搜索页面
+     * 切换到首页
      */
-    switchToSearch() {
-        this.uiManager.tabBar_switchToTab('search');
-        this.uiManager.editor_switchToSearchPage();
+    switchToHome() {
+        this.uiManager.tabBar_switchToTab('home');
+        this.uiManager.editor_switchToHomePage();
         this.currentNoteId = null;
     }
 
@@ -220,9 +220,9 @@ export class NoteController {
         this.uiManager.tabBar_closeNoteTab(noteId);
         this.uiManager.editor_closeNoteEditor(noteId);
 
-        // 如果关闭的是当前笔记，切换到搜索页面
+        // 如果关闭的是当前笔记，切换到首页
         if (this.currentNoteId === noteId) {
-            this.switchToSearch();
+            this.switchToHome();
         }
 
         this.eventBus.emit('note:closed', noteId);
