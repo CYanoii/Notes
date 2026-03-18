@@ -39,6 +39,10 @@ export class App {
         // 加载所有笔记
         await this.noteController.loadAllNotes();
 
+        // 渲染初始侧边栏面板（默认 search 面板）
+        const initialPanel = this.noteController.getInitialPanel();
+        await this.noteController.handlePanelChange(initialPanel);
+
         console.log('App started');
     }
 

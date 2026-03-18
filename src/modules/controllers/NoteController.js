@@ -47,6 +47,87 @@ export class NoteController {
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
         });
+
+        // 左侧边栏事件
+        this.eventBus.on('sidebar:navClick', (panelId) => this.handleNavClick(panelId));
+        this.eventBus.on('sidebar:panelChange', (panelId) => this.handlePanelChange(panelId));
+        this.eventBus.on('sidebar:collapseChange', (isCollapsed) => this.handleCollapseChange(isCollapsed));
+        this.eventBus.on('sidebar:widthChange', (width) => this.handleWidthChange(width));
+    }
+
+    /**
+     * 处理侧边栏导航项点击
+     * @param {string} panelId 点击的面板ID
+     */
+    handleNavClick(panelId) {
+        // 由控制器控制切换面板
+        this.uiManager.leftSidebar_switchPanel(panelId);
+    }
+
+    /**
+     * 处理侧边栏面板切换完成事件
+     * 从数据层获取数据，调用视图层渲染面板内容
+     * @param {string} panelId 面板ID
+     */
+    async handlePanelChange(panelId) {
+        switch (panelId) {
+            case 'search':
+                // 搜索面板不需要额外数据
+                this.uiManager.leftSidebar_renderPanelContent(panelId);
+                break;
+            case 'tags':
+                // TODO: 数据层未实现，等待后续开发
+                this.uiManager.leftSidebar_renderPanelContent(panelId);
+                break;
+            case 'folders':
+                // TODO: 数据层未实现，等待后续开发
+                this.uiManager.leftSidebar_renderPanelContent(panelId);
+                break;
+            case 'recent':
+                try {
+                    // 获取所有笔记并按更新时间排序取最近 10 条
+                    const allNotes = await this.noteService.getAllNotes();
+                    const recentNotes = allNotes
+                        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                        .slice(0, 10);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, recentNotes);
+
+                    // 绑定点击事件（事件委托到容器）
+                    const container = this.uiManager.leftSidebar_getContentContainer();
+                    container.querySelectorAll('.recent-note-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const noteId = item.dataset.noteId;
+                            this.noteService.getNote(noteId).then(note => this.openNote(note));
+                        });
+                    });
+                } catch (error) {
+                    console.error('加载最近笔记失败:', error);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, []);
+                }
+                break;
+            default:
+                this.uiManager.leftSidebar_renderPanelContent(panelId);
+        }
+    }
+
+    /**
+     * 处理侧边栏折叠状态变化
+     * @param {boolean} isCollapsed 是否折叠
+     * @description 布局调整已通过 CSS .collapsed/.expanded 类处理，无需额外逻辑
+     */
+    handleCollapseChange(isCollapsed) {
+        // CSS 已经自动处理布局变化，此处预留接口供后续扩展
+        // console.log('侧边栏折叠状态变化:', isCollapsed);
+    }
+
+    /**
+     * 处理侧边栏宽度变化
+     * @param {number} width 当前宽度
+     * @description 布局调整已通过 CSS flex 自动处理，LeftSidebar 已持久化宽度到 localStorage
+     */
+    handleWidthChange(width) {
+        // CSS flex 自动适配主容器宽度，此处预留接口供后续扩展
+        // console.log('侧边栏宽度变化:', width);
     }
 
     /**
@@ -215,5 +296,13 @@ export class NoteController {
             console.error('删除笔记失败:', error);
             this.uiManager.toast_show('删除笔记失败', 'error');
         }
+    }
+
+    /**
+     * 获取初始激活面板 ID
+     * 用于应用启动时渲染初始面板内容
+     */
+    getInitialPanel() {
+        return this.uiManager.leftSidebar_getActivePanelId();
     }
 }

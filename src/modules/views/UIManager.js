@@ -7,6 +7,7 @@ import { Toast } from './components/Toast.js';
 import { Editor } from './components/Editor.js';
 import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
+import { LeftSidebar } from './components/LeftSidebar.js';
 
 export class UIManager {
     constructor(eventBus) {
@@ -17,6 +18,7 @@ export class UIManager {
         this.editor = new Editor();
         this.noteList = new NoteList();
         this.tabBar = new TabBar();
+        this.leftSidebar = new LeftSidebar();
 
         this.bindEvents();
     }
@@ -75,6 +77,31 @@ export class UIManager {
                     this.eventBus.emit('app:closeNote', noteId);
                 }
             }
+        });
+
+        // 左侧边栏导航点击事件（DOM 事件在 UIManager 绑定，转发到 EventBus）
+        const navContainer = this.leftSidebar.getNavContainer();
+        navContainer.addEventListener('click', (e) => {
+            const navItem = e.target.closest('.sidebar-nav-item');
+            if (navItem) {
+                const panelId = navItem.dataset.panelId;
+                this.eventBus.emit('sidebar:navClick', panelId);
+            }
+        });
+
+        // 左侧边栏面板切换后回调，转发到 EventBus
+        this.leftSidebar.setPanelChangeCallback((panelId) => {
+            this.eventBus.emit('sidebar:panelChange', panelId);
+        });
+
+        // 左侧边栏折叠状态变化事件
+        this.leftSidebar.setCollapseChangeCallback((isCollapsed) => {
+            this.eventBus.emit('sidebar:collapseChange', isCollapsed);
+        });
+
+        // 左侧边栏宽度变化事件
+        this.leftSidebar.setWidthChangeCallback((width) => {
+            this.eventBus.emit('sidebar:widthChange', width);
         });
     }
 
@@ -194,5 +221,58 @@ export class UIManager {
      */
     showConfirm(message) {
         return Promise.resolve(confirm(message));
+    }
+
+    // ========== LeftSidebar 代理方法 ==========
+
+    /**
+     * 获取侧边栏内容容器
+     * 用于渲染具体面板内容
+     */
+    leftSidebar_getContentContainer() {
+        return this.leftSidebar.getContentContainer();
+    }
+
+    /**
+     * 获取当前激活的面板 ID
+     */
+    leftSidebar_getActivePanelId() {
+        return this.leftSidebar.getActivePanelId();
+    }
+
+    /**
+     * 获取当前折叠状态
+     */
+    leftSidebar_getIsCollapsed() {
+        return this.leftSidebar.getIsCollapsed();
+    }
+
+    /**
+     * 获取当前侧边栏宽度
+     */
+    leftSidebar_getCurrentWidth() {
+        return this.leftSidebar.getCurrentWidth();
+    }
+
+    /**
+     * 获取侧边栏导航容器
+     * 用于外部绑定事件
+     */
+    leftSidebar_getNavContainer() {
+        return this.leftSidebar.getNavContainer();
+    }
+
+    /**
+     * 切换到指定面板
+     */
+    leftSidebar_switchPanel(panelId) {
+        this.leftSidebar.switchPanel(panelId);
+    }
+
+    /**
+     * 渲染侧边栏面板内容
+     */
+    leftSidebar_renderPanelContent(panelId, data) {
+        this.leftSidebar.renderPanelContent(panelId, data);
     }
 }
