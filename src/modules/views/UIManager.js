@@ -8,6 +8,7 @@ import { Editor } from './components/Editor.js';
 import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
+import { Modal } from './components/Modal.js';
 
 export class UIManager {
     constructor(eventBus) {
@@ -19,6 +20,7 @@ export class UIManager {
         this.noteList = new NoteList();
         this.tabBar = new TabBar();
         this.leftSidebar = new LeftSidebar();
+        this.modal = new Modal();
 
         this.bindEvents();
     }
@@ -103,6 +105,27 @@ export class UIManager {
         this.leftSidebar.setWidthChangeCallback((width) => {
             this.eventBus.emit('sidebar:widthChange', width);
         });
+
+        // 笔记编辑器标签栏事件委托
+        document.getElementById('notesContainer').addEventListener('click', (e) => {
+            // 添加标签按钮
+            const addBtn = e.target.closest('.btn-add-tag');
+            if (addBtn) {
+                const tagsBar = addBtn.closest('.note-tags-bar');
+                const noteId = tagsBar.dataset.noteId;
+                this.eventBus.emit('note:addTag', noteId);
+                return;
+            }
+
+            // 已有标签点击 - 打开选择弹窗修改
+            const tagItem = e.target.closest('.note-tag-item');
+            if (tagItem) {
+                const tagsBar = e.target.closest('.note-tags-bar');
+                const noteId = tagsBar.dataset.noteId;
+                this.eventBus.emit('note:clickTag', noteId);
+                return;
+            }
+        });
     }
 
     // ========== Editor 代理方法 ==========
@@ -147,6 +170,13 @@ export class UIManager {
      */
     editor_updateEditorContent(noteId, newContent) {
         this.editor.updateEditorContent(noteId, newContent);
+    }
+
+    /**
+     * 更新笔记标签显示
+     */
+    editor_updateNoteTags(noteId, allTags, noteTagIds) {
+        this.editor.updateNoteTags(noteId, allTags, noteTagIds);
     }
 
     // ========== TabBar 代理方法 ==========
@@ -274,5 +304,28 @@ export class UIManager {
      */
     leftSidebar_renderPanelContent(panelId, data) {
         this.leftSidebar.renderPanelContent(panelId, data);
+    }
+
+    /**
+     * 切换标签展开状态
+     */
+    leftSidebar_toggleTagExpanded(tagId) {
+        this.leftSidebar.toggleTagExpanded(tagId);
+    }
+
+    // ========== Modal 代理方法 ==========
+
+    /**
+     * 显示输入提示模态框
+     */
+    modal_prompt(title, defaultValue = '') {
+        return this.modal.prompt(title, defaultValue);
+    }
+
+    /**
+     * 显示确认对话框
+     */
+    modal_confirm(message) {
+        return this.modal.confirm(message);
     }
 }

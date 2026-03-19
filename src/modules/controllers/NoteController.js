@@ -5,13 +5,15 @@
 import { debounce } from '../utils/helpers.js';
 
 export class NoteController {
-    constructor(noteService, uiManager, eventBus) {
+    constructor(noteService, tagService, uiManager, eventBus) {
         this.noteService = noteService;
+        this.tagService = tagService;
         this.uiManager = uiManager;
         this.eventBus = eventBus;
 
         this.notes = new Map(); // 存储打开的笔记
         this.currentNoteId = null;
+        this.currentSelectedTagId = null; // 当前选中的标签
 
         // 初始化事件监听
         this.initEventListeners();
@@ -53,6 +55,16 @@ export class NoteController {
         this.eventBus.on('sidebar:panelChange', (panelId) => this.handlePanelChange(panelId));
         this.eventBus.on('sidebar:collapseChange', (isCollapsed) => this.handleCollapseChange(isCollapsed));
         this.eventBus.on('sidebar:widthChange', (width) => this.handleWidthChange(width));
+
+        // 标签相关事件（来自侧边栏标签面板点击）
+        this.eventBus.on('tag:click', (tagId) => this.handleTagClick(tagId));
+        this.eventBus.on('tag:create', () => this.handleCreateTag());
+        this.eventBus.on('tag:edit', (tagId) => this.handleEditTag(tagId));
+        this.eventBus.on('tag:delete', (tagId) => this.handleDeleteTag(tagId));
+
+        // 笔记编辑器标签相关事件
+        this.eventBus.on('note:addTag', (noteId) => this.handleAddTagToNote(noteId));
+        this.eventBus.on('note:clickTag', (noteId) => this.handleAddTagToNote(noteId));
     }
 
     /**
@@ -76,8 +88,17 @@ export class NoteController {
                 this.uiManager.leftSidebar_renderPanelContent(panelId);
                 break;
             case 'tags':
-                // TODO: 数据层未实现，等待后续开发
-                this.uiManager.leftSidebar_renderPanelContent(panelId);
+                try {
+                    await this.refreshTagsList();
+
+                    // 绑定标签面板事件
+                    const container = this.uiManager.leftSidebar_getContentContainer();
+                    this.bindTagsPanelEvents(container);
+                } catch (error) {
+                    console.error('加载标签列表失败:', error);
+                    this.uiManager.toast_show('加载标签列表失败', 'error');
+                    this.uiManager.leftSidebar_renderPanelContent(panelId);
+                }
                 break;
             case 'folders':
                 // TODO: 数据层未实现，等待后续开发
@@ -187,6 +208,8 @@ export class NoteController {
         this.uiManager.editor_createNoteEditor(noteData);
         this.switchToNote(noteData.id);
         this.loadAllNotes(); // 刷新列表
+        // 刷新标签显示
+        setTimeout(() => this.refreshNoteTags(noteData.id), 0);
     }
 
     /**
@@ -304,5 +327,353 @@ export class NoteController {
      */
     getInitialPanel() {
         return this.uiManager.leftSidebar_getActivePanelId();
+    }
+
+    // ===== 标签相关方法 =====
+
+    /**
+     * 刷新标签列表
+     */
+    async refreshTagsList() {
+        const tags = await this.tagService.getAllTags();
+        const tagCounts = await this.tagService.getTagNoteCounts();
+        // 获取每个标签对应的笔记列表
+        const tagNotes = {};
+        for (const tag of tags) {
+            tagNotes[tag.id] = await this.tagService.getNotesByTag(tag.id);
+        }
+        this.uiManager.leftSidebar_renderPanelContent('tags', { tags, tagCounts, tagNotes });
+    }
+
+    /**
+     * 绑定标签面板事件
+     */
+    bindTagsPanelEvents(container) {
+        // 新建标签按钮
+        const addBtn = container.querySelector('.tag-add-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.eventBus.emit('tag:create');
+            });
+        }
+
+        // 标签主项点击（展开/折叠）、编辑、删除
+        container.querySelectorAll('.tag-main-item').forEach(item => {
+            const tagId = item.dataset.tagId;
+
+            // 点击标签项 - 切换展开/折叠
+            item.addEventListener('click', async (e) => {
+                // 如果点击的是操作按钮，不处理展开折叠
+                if (e.target.closest('.tag-actions button')) {
+                    return;
+                }
+                this.uiManager.leftSidebar_toggleTagExpanded(tagId);
+                await this.refreshTagsList();
+                this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
+            });
+
+            // 编辑按钮
+            const editBtn = item.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.eventBus.emit('tag:edit', tagId);
+                });
+            }
+
+            // 删除按钮
+            const deleteBtn = item.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.eventBus.emit('tag:delete', tagId);
+                });
+            }
+        });
+
+        // 标签下的笔记点击
+        container.querySelectorAll('.tag-note-item').forEach(item => {
+            const noteId = item.dataset.noteId;
+            item.addEventListener('click', async () => {
+                const note = await this.noteService.getNote(noteId);
+                this.openNote(note);
+            });
+        });
+    }
+
+    /**
+     * 处理标签点击 - 显示该标签下的笔记
+     */
+    async handleTagClick(tagId) {
+        this.currentSelectedTagId = tagId;
+        try {
+            const notes = await this.tagService.getNotesByTag(tagId);
+            this.uiManager.noteList_renderNotes(notes);
+            this.switchToHome(); // 切换到首页显示笔记列表
+        } catch (error) {
+            console.error('获取标签笔记失败:', error);
+            this.uiManager.toast_show('获取标签笔记失败', 'error');
+        }
+    }
+
+    /**
+     * 处理创建标签
+     */
+    async handleCreateTag() {
+        const name = await this.uiManager.modal_prompt('新建标签');
+        if (!name) return;
+
+        if (name.trim().length === 0) {
+            this.uiManager.toast_show('标签名称不能为空', 'warning');
+            return;
+        }
+
+        try {
+            await this.tagService.createTag(name.trim());
+            await this.refreshTagsList();
+            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
+            this.uiManager.toast_show('标签创建成功', 'success');
+        } catch (error) {
+            console.error('创建标签失败:', error);
+            this.uiManager.toast_show('创建标签失败', 'error');
+        }
+    }
+
+    /**
+     * 处理编辑标签
+     */
+    async handleEditTag(tagId) {
+        try {
+            const tag = await this.tagService.getTag(tagId);
+            if (!tag) {
+                this.uiManager.toast_show('标签不存在', 'error');
+                return;
+            }
+
+            const newName = await this.uiManager.modal_prompt('编辑标签', tag.name);
+            if (newName === null) return;
+
+            if (newName.trim().length === 0) {
+                this.uiManager.toast_show('标签名称不能为空', 'warning');
+                return;
+            }
+
+            await this.tagService.updateTag(tagId, { name: newName.trim() });
+            await this.refreshTagsList();
+            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
+            // 热更新所有已打开笔记的标签显示
+            for (const [noteId] of this.notes) {
+                this.refreshNoteTags(noteId);
+            }
+            this.uiManager.toast_show('标签更新成功', 'success');
+        } catch (error) {
+            console.error('编辑标签失败:', error);
+            this.uiManager.toast_show('编辑标签失败', 'error');
+        }
+    }
+
+    /**
+     * 处理删除标签
+     */
+    async handleDeleteTag(tagId) {
+        const confirmed = await this.uiManager.modal_confirm('确定要删除这个标签吗？删除后标签会从所有笔记中移除。');
+        if (!confirmed) return;
+
+        try {
+            await this.tagService.deleteTag(tagId);
+
+            // 如果当前选中的就是被删除的标签，清空列表
+            if (this.currentSelectedTagId === tagId) {
+                this.loadAllNotes();
+                this.currentSelectedTagId = null;
+            }
+
+            await this.refreshTagsList();
+            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
+
+            // 从所有已打开笔记的内存数据中移除被删除的标签ID，并更新显示
+            for (const [noteId, note] of this.notes) {
+                if (note.tags && note.tags.includes(tagId)) {
+                    note.tags = note.tags.filter(t => t !== tagId);
+                }
+                this.refreshNoteTags(noteId);
+            }
+
+            // 如果当前选中的就是被删除的标签，清空列表
+            if (this.currentSelectedTagId === tagId) {
+                this.loadAllNotes();
+                this.currentSelectedTagId = null;
+            }
+
+            this.uiManager.toast_show('标签删除成功', 'success');
+        } catch (error) {
+            console.error('删除标签失败:', error);
+            this.uiManager.toast_show('删除标签失败', 'error');
+        }
+    }
+
+    // ===== 笔记标签绑定相关方法 =====
+
+    /**
+     * 处理点击添加标签按钮 - 弹出标签选择弹窗
+     */
+    async handleAddTagToNote(noteId) {
+        try {
+            const allTags = await this.tagService.getAllTags();
+            if (allTags.length === 0) {
+                this.uiManager.toast_show('暂无标签，请先创建标签', 'warning');
+                return;
+            }
+
+            const note = this.notes.get(noteId);
+            if (!note) {
+                this.uiManager.toast_show('笔记不存在', 'error');
+                return;
+            }
+
+            // 创建标签选择模态框
+            const selectedTags = await this.showTagSelectionModal(allTags, note.tags || []);
+            if (selectedTags === null) return;
+
+            // 更新笔记标签
+            note.tags = selectedTags;
+            await this.saveNote(noteId);
+
+            // 更新UI显示
+            this.refreshNoteTags(noteId);
+
+            // 如果左侧边栏当前已经显示标签面板，刷新标签列表热更新计数
+            // 不会切换面板，只是更新已有面板内容
+            const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+            if (currentPanel === 'tags') {
+                await this.refreshTagsList();
+                this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
+            }
+
+            this.uiManager.toast_show('标签更新成功', 'success');
+        } catch (error) {
+            console.error('更新笔记标签失败:', error);
+            this.uiManager.toast_show('更新笔记标签失败', 'error');
+        }
+    }
+
+    /**
+     * 显示标签选择模态框
+     */
+    async showTagSelectionModal(allTags, currentTagIds) {
+        return new Promise(resolve => {
+            this.createTagSelectionOverlay(allTags, currentTagIds, resolve);
+        });
+    }
+
+    /**
+     * 创建标签选择弹窗
+     */
+    createTagSelectionOverlay(allTags, currentTagIds, resolve) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+
+        const selected = new Set(currentTagIds);
+
+        overlay.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 class="modal-title">选择标签</h3>
+                    <button class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="tag-select-list">
+                        ${allTags.map(tag => {
+                            const isSelected = selected.has(tag.id);
+                            return `
+                                <div class="tag-select-item ${isSelected ? 'selected' : ''}" data-tag-id="${tag.id}">
+                                    <div class="tag-select-check"></div>
+                                    <span class="tag-select-color" style="background-color: ${tag.color}"></span>
+                                    <span class="tag-select-name">${this.escapeHtml(tag.name)}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary modal-cancel">取消</button>
+                    <button class="btn btn-primary modal-confirm">确定</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // 绑定事件
+        const close = () => {
+            overlay.remove();
+            resolve(null);
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                close();
+            }
+        });
+
+        overlay.querySelector('.modal-close-btn').addEventListener('click', close);
+        overlay.querySelector('.modal-cancel').addEventListener('click', close);
+
+        // 点击标签项切换选择
+        overlay.querySelectorAll('.tag-select-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tagId = item.dataset.tagId;
+                item.classList.toggle('selected');
+                if (selected.has(tagId)) {
+                    selected.delete(tagId);
+                } else {
+                    selected.add(tagId);
+                }
+            });
+        });
+
+        // 确定按钮
+        overlay.querySelector('.modal-confirm').addEventListener('click', () => {
+            overlay.remove();
+            resolve(Array.from(selected));
+        });
+
+        // ESC 关闭
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                close();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * 刷新笔记标签显示
+     */
+    async refreshNoteTags(noteId) {
+        const allTags = await this.tagService.getAllTags();
+        const note = this.notes.get(noteId);
+        const noteTagIds = note ? (note.tags || []) : [];
+        this.uiManager.editor_updateNoteTags(noteId, allTags, noteTagIds);
+    }
+
+    /**
+     * 处理点击已有标签 - 打开选择弹窗修改
+     */
+    handleNoteTagClick(noteId) {
+        this.handleAddTagToNote(noteId);
+    }
+
+    /**
+     * HTML 转义
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }

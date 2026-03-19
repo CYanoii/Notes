@@ -27,14 +27,23 @@ export class Editor {
      * @param {Object} noteData 笔记数据
      */
     createNoteEditor(noteData) {
+        const noteTags = noteData.tags || [];
+
         const editor = document.createElement('div');
         editor.className = 'note-editor';
         editor.id = `note-${noteData.id}`;
+        const hasTags = noteTags && noteTags.length > 0;
         editor.innerHTML = `
             <input type="text"
                    class="note-title-input"
                    value="${escapeHtml(noteData.title)}"
                    placeholder="输入标题...">
+            <div class="note-tags-bar" data-note-id="${noteData.id}">
+                ${!hasTags ? `<button class="btn-add-tag"><i class="fas fa-plus"></i> 添加标签</button>` : ''}
+                <div class="note-tags-list">
+                    ${this.renderNoteTags(noteTags)}
+                </div>
+            </div>
             <textarea class="note-content-textarea"
                       placeholder="开始记录你的想法...">${escapeHtml(noteData.content)}</textarea>
         `;
@@ -55,8 +64,66 @@ export class Editor {
             }
         });
 
+        // 标签点击事件会在外部委托绑定
         this.container.appendChild(editor);
     }
+
+    /**
+     * 渲染笔记标签列表
+     */
+    renderNoteTags(tagIds) {
+        if (!tagIds || tagIds.length === 0) {
+            return '';
+        }
+        // 这里只渲染占位，实际标签信息由控制器填充
+        return tagIds.map(tagId => `
+            <span class="note-tag-item" data-tag-id="${tagId}">
+                <span class="note-tag-color" data-tag-id="${tagId}"></span>
+                <span class="note-tag-name" data-tag-id="${tagId}"></span>
+            </span>
+        `).join('');
+    }
+
+    /**
+     * 更新笔记标签显示
+     */
+    updateNoteTags(noteId, allTags, noteTagIds) {
+        const barContainer = document.querySelector(`#note-${noteId} .note-tags-bar`);
+        if (!barContainer) return;
+
+        // 检查是否真的没有标签
+        const hasNoTags = !noteTagIds || (Array.isArray(noteTagIds) && noteTagIds.length === 0);
+
+        if (hasNoTags) {
+            // 没有标签，只显示添加按钮
+            barContainer.innerHTML = `
+                <button class="btn-add-tag">
+                    <i class="fas fa-plus"></i> 添加标签
+                </button>
+                <div class="note-tags-list"></div>
+            `;
+        } else {
+            // 有标签，只显示标签列表（没有添加按钮）
+            barContainer.innerHTML = `
+                <div class="note-tags-list">
+                    ${noteTagIds
+                        .map(tagId => {
+                            const tag = allTags.find(t => t.id === tagId);
+                            if (!tag) return '';
+                            return `
+                                <span class="note-tag-item" data-tag-id="${tagId}">
+                                    <span class="note-tag-color" style="background-color: ${tag.color}" data-tag-id="${tagId}"></span>
+                                    <span class="note-tag-name" data-tag-id="${tagId}">${escapeHtml(tag.name)}</span>
+                                </span>
+                            `;
+                        })
+                        .filter(Boolean)
+                        .join('')}
+                </div>
+            `;
+        }
+    }
+
 
     /**
      * 切换到指定笔记编辑器

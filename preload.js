@@ -11,5 +11,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRecentNotes: (limit) => ipcRenderer.invoke('notes:getRecent', limit),
   updateNote: (noteId, updates) => ipcRenderer.invoke('notes:update', noteId, updates),
   deleteNote: (noteId) => ipcRenderer.invoke('notes:delete', noteId),
-  searchNotes: (query) => ipcRenderer.invoke('notes:search', query)
+  searchNotes: (query) => ipcRenderer.invoke('notes:search', query),
+
+  // 标签操作
+  getAllTags: () => ipcRenderer.invoke('tags:getAll'),
+  createTag: (name, color) => ipcRenderer.invoke('tags:create', name, color),
+  updateTag: (tagId, updates) => ipcRenderer.invoke('tags:update', tagId, updates),
+  deleteTag: (tagId) => ipcRenderer.invoke('tags:delete', tagId),
+  getNotesByTag: (tagId) => ipcRenderer.invoke('tags:getNotes', tagId),
+  getTagNoteCounts: () => ipcRenderer.invoke('tags:getTagCounts')
 });
