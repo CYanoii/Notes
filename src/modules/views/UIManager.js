@@ -30,9 +30,6 @@ export class UIManager {
      * 绑定所有事件监听 - 统一在此管理
      */
     bindEvents() {
-        // Toast 相关事件
-        this.eventBus.on('ui:toast', (message, type) => this.toast_show(message, type));
-
         // NoteList 组件事件回调 - 将组件回调转发到 eventBus
         this.noteList.setCallbacks(
             (note) => this.eventBus.emit(EventTypes.NOTE.OPEN, note),
@@ -230,13 +227,6 @@ export class UIManager {
     }
 
     /**
-     * 更新编辑器内容
-     */
-    editor_updateEditorContent(noteId, newContent) {
-        this.editor.updateEditorContent(noteId, newContent);
-    }
-
-    /**
      * 更新笔记标签显示
      */
     editor_updateNoteTags(noteId, allTags, noteTagIds) {
@@ -274,13 +264,6 @@ export class UIManager {
         this.tabBar.updateTabTitle(noteId, newTitle);
     }
 
-    /**
-     * 获取当前激活的标签页ID
-     */
-    tabBar_getActiveTabId() {
-        return this.tabBar.getActiveTabId();
-    }
-
     // ========== NoteList 代理方法 ==========
 
     /**
@@ -288,13 +271,6 @@ export class UIManager {
      */
     noteList_renderNotes(notes) {
         this.noteList.renderNotes(notes);
-    }
-
-    /**
-     * 清空笔记列表
-     */
-    noteList_clearNoteList() {
-        this.noteList.clear();
     }
 
     // ========== Toast 代理方法 ==========
@@ -320,40 +296,10 @@ export class UIManager {
     // ========== LeftSidebar 代理方法 ==========
 
     /**
-     * 获取侧边栏内容容器
-     * 用于渲染具体面板内容
-     */
-    leftSidebar_getContentContainer() {
-        return this.leftSidebar.getContentContainer();
-    }
-
-    /**
      * 获取当前激活的面板 ID
      */
     leftSidebar_getActivePanelId() {
         return this.leftSidebar.getActivePanelId();
-    }
-
-    /**
-     * 获取当前折叠状态
-     */
-    leftSidebar_getIsCollapsed() {
-        return this.leftSidebar.getIsCollapsed();
-    }
-
-    /**
-     * 获取当前侧边栏宽度
-     */
-    leftSidebar_getCurrentWidth() {
-        return this.leftSidebar.getCurrentWidth();
-    }
-
-    /**
-     * 获取侧边栏导航容器
-     * 用于外部绑定事件
-     */
-    leftSidebar_getNavContainer() {
-        return this.leftSidebar.getNavContainer();
     }
 
     /**
