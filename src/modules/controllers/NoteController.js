@@ -3,6 +3,7 @@
  * 处理笔记增删改查的业务流程，协调视图层和数据层
  */
 import { debounce } from '../utils/helpers.js';
+import { EventTypes } from '../core/EventTypes.js';
 
 export class NoteController {
     constructor(noteService, tagService, uiManager, eventBus) {
@@ -26,45 +27,54 @@ export class NoteController {
      * 初始化事件监听器（通过 EventBus 解耦）
      */
     initEventListeners() {
-        // 笔记列表事件
-        this.eventBus.on('note:click', (note) => this.openNote(note));
-        this.eventBus.on('note:delete', (noteId) => this.deleteNote(noteId));
+        // 应用生命周期事件
+        this.eventBus.on(EventTypes.APP.INIT, () => this.appInit());
 
-        // 编辑器事件
-        this.eventBus.on('editor:titleChange', (noteId, newTitle) => this.updateNoteTitle(noteId, newTitle));
-        this.eventBus.on('editor:contentChange', (noteId, newContent) => this.updateNoteContent(noteId, newContent));
+        // 笔记事件
+        this.eventBus.on(EventTypes.NOTE.OPEN, (note) => this.openNote(note));
+        this.eventBus.on(EventTypes.NOTE.CLOSE, (noteId) => this.closeNote(noteId));
+        this.eventBus.on(EventTypes.NOTE.CREATE, () => this.createNewNote());
+        this.eventBus.on(EventTypes.NOTE.DELETE, (noteId) => this.deleteNote(noteId));
+        this.eventBus.on(EventTypes.NOTE.UPDATE.TITLE, (noteId, newTitle) => this.updateNoteTitle(noteId, newTitle));
+        this.eventBus.on(EventTypes.NOTE.UPDATE.CONTENT, (noteId, newContent) => this.updateNoteContent(noteId, newContent));
+        this.eventBus.on(EventTypes.NOTE.UPDATE.TAG, (noteId) => this.updateNoteTag(noteId));
+        this.eventBus.on(EventTypes.NOTE.GET.TAG_NOTES, (tagId) => this.handleTagClick(tagId));
 
-        // UI交互事件（来自App的DOM事件）
-        this.eventBus.on('app:createNewNote', () => this.createNewNote());
-        this.eventBus.on('app:switchTab', (tabId) => {
+        // 标签事件
+        this.eventBus.on(EventTypes.TAG.CREATE, () => this.createTag());
+        this.eventBus.on(EventTypes.TAG.EDIT, (tagId) => this.editTag(tagId));
+        this.eventBus.on(EventTypes.TAG.DELETE, (tagId) => this.deleteTag(tagId));        
+
+        // 左侧边栏事件
+        this.eventBus.on(EventTypes.SIDEBAR.NAV_CLICK, (panelId) => this.handleNavClick(panelId));
+        this.eventBus.on(EventTypes.SIDEBAR.PANEL_CHANGE, (panelId) => this.handlePanelChange(panelId));
+        this.eventBus.on(EventTypes.SIDEBAR.COLLAPSE_CHANGE, (isCollapsed) => this.handleCollapseChange(isCollapsed));
+        this.eventBus.on(EventTypes.SIDEBAR.WIDTH_CHANGE, (width) => this.handleWidthChange(width));
+
+        // 编辑区事件
+        this.eventBus.on(EventTypes.EDITOR.TAB_SWITCH, (tabId) => {
             if (tabId === 'home') {
                 this.switchToHome();
             } else {
                 this.switchToNote(tabId);
             }
         });
-        this.eventBus.on('app:closeNote', (noteId) => this.closeNote(noteId));
-        this.eventBus.on('app:homeSearch', (query) => {
+
+        // 搜索事件
+        this.eventBus.on(EventTypes.SEARCH.HOME_SEARCH, (query) => {
             // 搜索功能后续实现
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
         });
+    }
 
-        // 左侧边栏事件
-        this.eventBus.on('sidebar:navClick', (panelId) => this.handleNavClick(panelId));
-        this.eventBus.on('sidebar:panelChange', (panelId) => this.handlePanelChange(panelId));
-        this.eventBus.on('sidebar:collapseChange', (isCollapsed) => this.handleCollapseChange(isCollapsed));
-        this.eventBus.on('sidebar:widthChange', (width) => this.handleWidthChange(width));
+    async appInit() {
+        // 加载所有笔记
+        await this.loadAllNotes();
 
-        // 标签相关事件（来自侧边栏标签面板点击）
-        this.eventBus.on('tag:click', (tagId) => this.handleTagClick(tagId));
-        this.eventBus.on('tag:create', () => this.handleCreateTag());
-        this.eventBus.on('tag:edit', (tagId) => this.handleEditTag(tagId));
-        this.eventBus.on('tag:delete', (tagId) => this.handleDeleteTag(tagId));
-
-        // 笔记编辑器标签相关事件
-        this.eventBus.on('note:addTag', (noteId) => this.handleAddTagToNote(noteId));
-        this.eventBus.on('note:clickTag', (noteId) => this.handleAddTagToNote(noteId));
+        // 渲染初始侧边栏面板（默认 search 面板）
+        const initialPanel = this.getInitialPanel();
+        await this.handlePanelChange(initialPanel);
     }
 
     /**
@@ -90,10 +100,6 @@ export class NoteController {
             case 'tags':
                 try {
                     await this.refreshTagsList();
-
-                    // 绑定标签面板事件
-                    const container = this.uiManager.leftSidebar_getContentContainer();
-                    this.bindTagsPanelEvents(container);
                 } catch (error) {
                     console.error('加载标签列表失败:', error);
                     this.uiManager.toast_show('加载标签列表失败', 'error');
@@ -112,15 +118,6 @@ export class NoteController {
                         .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
                         .slice(0, 10);
                     this.uiManager.leftSidebar_renderPanelContent(panelId, recentNotes);
-
-                    // 绑定点击事件（事件委托到容器）
-                    const container = this.uiManager.leftSidebar_getContentContainer();
-                    container.querySelectorAll('.recent-note-item').forEach(item => {
-                        item.addEventListener('click', () => {
-                            const noteId = item.dataset.noteId;
-                            this.noteService.getNote(noteId).then(note => this.openNote(note));
-                        });
-                    });
                 } catch (error) {
                     console.error('加载最近笔记失败:', error);
                     this.uiManager.leftSidebar_renderPanelContent(panelId, []);
@@ -346,81 +343,18 @@ export class NoteController {
     }
 
     /**
-     * 绑定标签面板事件
-     */
-    bindTagsPanelEvents(container) {
-        // 新建标签按钮
-        const addBtn = container.querySelector('.tag-add-btn');
-        if (addBtn) {
-            addBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.eventBus.emit('tag:create');
-            });
-        }
-
-        // 标签主项点击（展开/折叠）、编辑、删除
-        container.querySelectorAll('.tag-main-item').forEach(item => {
-            const tagId = item.dataset.tagId;
-
-            // 点击标签项 - 切换展开/折叠
-            item.addEventListener('click', async (e) => {
-                // 如果点击的是操作按钮，不处理展开折叠
-                if (e.target.closest('.tag-actions button')) {
-                    return;
-                }
-                this.uiManager.leftSidebar_toggleTagExpanded(tagId);
-                await this.refreshTagsList();
-                this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
-            });
-
-            // 编辑按钮
-            const editBtn = item.querySelector('.edit-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.eventBus.emit('tag:edit', tagId);
-                });
-            }
-
-            // 删除按钮
-            const deleteBtn = item.querySelector('.delete-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.eventBus.emit('tag:delete', tagId);
-                });
-            }
-        });
-
-        // 标签下的笔记点击
-        container.querySelectorAll('.tag-note-item').forEach(item => {
-            const noteId = item.dataset.noteId;
-            item.addEventListener('click', async () => {
-                const note = await this.noteService.getNote(noteId);
-                this.openNote(note);
-            });
-        });
-    }
-
-    /**
-     * 处理标签点击 - 显示该标签下的笔记
+     * 处理标签点击 - 仅展开/折叠标签
      */
     async handleTagClick(tagId) {
-        this.currentSelectedTagId = tagId;
-        try {
-            const notes = await this.tagService.getNotesByTag(tagId);
-            this.uiManager.noteList_renderNotes(notes);
-            this.switchToHome(); // 切换到首页显示笔记列表
-        } catch (error) {
-            console.error('获取标签笔记失败:', error);
-            this.uiManager.toast_show('获取标签笔记失败', 'error');
-        }
+        // 切换标签展开/折叠状态
+        this.uiManager.leftSidebar_toggleTagExpanded(tagId);
+        await this.refreshTagsList();
     }
 
     /**
      * 处理创建标签
      */
-    async handleCreateTag() {
+    async createTag() {
         const name = await this.uiManager.modal_prompt('新建标签');
         if (!name) return;
 
@@ -432,7 +366,6 @@ export class NoteController {
         try {
             await this.tagService.createTag(name.trim());
             await this.refreshTagsList();
-            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
             this.uiManager.toast_show('标签创建成功', 'success');
         } catch (error) {
             console.error('创建标签失败:', error);
@@ -443,7 +376,7 @@ export class NoteController {
     /**
      * 处理编辑标签
      */
-    async handleEditTag(tagId) {
+    async editTag(tagId) {
         try {
             const tag = await this.tagService.getTag(tagId);
             if (!tag) {
@@ -461,7 +394,6 @@ export class NoteController {
 
             await this.tagService.updateTag(tagId, { name: newName.trim() });
             await this.refreshTagsList();
-            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
             // 热更新所有已打开笔记的标签显示
             for (const [noteId] of this.notes) {
                 this.refreshNoteTags(noteId);
@@ -476,7 +408,7 @@ export class NoteController {
     /**
      * 处理删除标签
      */
-    async handleDeleteTag(tagId) {
+    async deleteTag(tagId) {
         const confirmed = await this.uiManager.modal_confirm('确定要删除这个标签吗？删除后标签会从所有笔记中移除。');
         if (!confirmed) return;
 
@@ -490,7 +422,6 @@ export class NoteController {
             }
 
             await this.refreshTagsList();
-            this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
 
             // 从所有已打开笔记的内存数据中移除被删除的标签ID，并更新显示
             for (const [noteId, note] of this.notes) {
@@ -518,7 +449,7 @@ export class NoteController {
     /**
      * 处理点击添加标签按钮 - 弹出标签选择弹窗
      */
-    async handleAddTagToNote(noteId) {
+    async updateNoteTag(noteId) {
         try {
             const allTags = await this.tagService.getAllTags();
             if (allTags.length === 0) {
@@ -548,7 +479,6 @@ export class NoteController {
             const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
             if (currentPanel === 'tags') {
                 await this.refreshTagsList();
-                this.bindTagsPanelEvents(this.uiManager.leftSidebar_getContentContainer());
             }
 
             this.uiManager.toast_show('标签更新成功', 'success');
@@ -665,7 +595,7 @@ export class NoteController {
      * 处理点击已有标签 - 打开选择弹窗修改
      */
     handleNoteTagClick(noteId) {
-        this.handleAddTagToNote(noteId);
+        this.updateNoteTag(noteId);
     }
 
     /**

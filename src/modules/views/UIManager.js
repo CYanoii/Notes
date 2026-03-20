@@ -9,6 +9,7 @@ import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
 import { Modal } from './components/Modal.js';
+import { EventTypes } from '../core/EventTypes.js';
 
 export class UIManager {
     constructor(eventBus) {
@@ -34,32 +35,32 @@ export class UIManager {
 
         // NoteList 组件事件回调 - 将组件回调转发到 eventBus
         this.noteList.setCallbacks(
-            (note) => this.eventBus.emit('note:click', note),
-            (noteId) => this.eventBus.emit('note:delete', noteId)
+            (note) => this.eventBus.emit(EventTypes.NOTE.OPEN, note),
+            (noteId) => this.eventBus.emit(EventTypes.NOTE.DELETE, noteId)
         );
 
         // Editor 组件事件回调 - 将编辑器输入事件转发到 eventBus
         this.editor.setCallbacks(
-            (noteId, title) => this.eventBus.emit('editor:titleChange', noteId, title),
-            (noteId, content) => this.eventBus.emit('editor:contentChange', noteId, content)
+            (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
+            (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
         );
 
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
         document.getElementById('newNoteBtn').addEventListener('click', () => {
-            this.eventBus.emit('app:createNewNote');
+            this.eventBus.emit(EventTypes.NOTE.CREATE);
         });
 
         // 搜索框事件
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.eventBus.emit('app:homeSearch', searchInput.value.trim());
+                this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
             }
         });
 
         document.querySelector('.btn-search').addEventListener('click', () => {
-            this.eventBus.emit('app:homeSearch', searchInput.value.trim());
+            this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
         });
 
         // 标签栏事件委托（处理标签切换和关闭）
@@ -67,7 +68,7 @@ export class UIManager {
             const tab = e.target.closest('.tab');
             if (tab) {
                 const tabId = tab.dataset.tabId;
-                this.eventBus.emit('app:switchTab', tabId);
+                this.eventBus.emit(EventTypes.EDITOR.TAB_SWITCH, tabId);
             }
 
             // 关闭按钮
@@ -76,7 +77,7 @@ export class UIManager {
                 const tab = closeBtn.closest('.tab');
                 const noteId = tab.dataset.tabId;
                 if (noteId !== 'home') {
-                    this.eventBus.emit('app:closeNote', noteId);
+                    this.eventBus.emit(EventTypes.NOTE.CLOSE, noteId);
                 }
             }
         });
@@ -87,23 +88,23 @@ export class UIManager {
             const navItem = e.target.closest('.sidebar-nav-item');
             if (navItem) {
                 const panelId = navItem.dataset.panelId;
-                this.eventBus.emit('sidebar:navClick', panelId);
+                this.eventBus.emit(EventTypes.SIDEBAR.NAV_CLICK, panelId);
             }
         });
 
         // 左侧边栏面板切换后回调，转发到 EventBus
         this.leftSidebar.setPanelChangeCallback((panelId) => {
-            this.eventBus.emit('sidebar:panelChange', panelId);
+            this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, panelId);
         });
 
         // 左侧边栏折叠状态变化事件
         this.leftSidebar.setCollapseChangeCallback((isCollapsed) => {
-            this.eventBus.emit('sidebar:collapseChange', isCollapsed);
+            this.eventBus.emit(EventTypes.SIDEBAR.COLLAPSE_CHANGE, isCollapsed);
         });
 
         // 左侧边栏宽度变化事件
         this.leftSidebar.setWidthChangeCallback((width) => {
-            this.eventBus.emit('sidebar:widthChange', width);
+            this.eventBus.emit(EventTypes.SIDEBAR.WIDTH_CHANGE, width);
         });
 
         // 笔记编辑器标签栏事件委托
@@ -113,7 +114,7 @@ export class UIManager {
             if (addBtn) {
                 const tagsBar = addBtn.closest('.note-tags-bar');
                 const noteId = tagsBar.dataset.noteId;
-                this.eventBus.emit('note:addTag', noteId);
+                this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
                 return;
             }
 
@@ -122,7 +123,70 @@ export class UIManager {
             if (tagItem) {
                 const tagsBar = e.target.closest('.note-tags-bar');
                 const noteId = tagsBar.dataset.noteId;
-                this.eventBus.emit('note:clickTag', noteId);
+                this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
+                return;
+            }
+        });
+
+        // 左侧边栏内容容器事件委托（处理所有动态内容的点击事件）
+        this.leftSidebar.getContentContainer().addEventListener('click', (e) => {
+            // 新建标签按钮
+            const addBtn = e.target.closest('.tag-add-btn');
+            if (addBtn) {
+                e.stopPropagation();
+                this.eventBus.emit(EventTypes.TAG.CREATE);
+                return;
+            }
+
+            // 编辑标签按钮
+            const editBtn = e.target.closest('.edit-btn');
+            if (editBtn) {
+                e.stopPropagation();
+                const tagItem = editBtn.closest('.tag-main-item');
+                if (tagItem) {
+                    const tagId = tagItem.dataset.tagId;
+                    this.eventBus.emit(EventTypes.TAG.EDIT, tagId);
+                }
+                return;
+            }
+
+            // 删除标签按钮
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const tagItem = deleteBtn.closest('.tag-main-item');
+                if (tagItem) {
+                    const tagId = tagItem.dataset.tagId;
+                    this.eventBus.emit(EventTypes.TAG.DELETE, tagId);
+                }
+                return;
+            }
+
+            // 标签主项点击（筛选该标签下的笔记）
+            const tagMainItem = e.target.closest('.tag-main-item');
+            if (tagMainItem) {
+                // 如果点击的是操作按钮，不处理
+                if (e.target.closest('.tag-actions button')) {
+                    return;
+                }
+                const tagId = tagMainItem.dataset.tagId;
+                this.eventBus.emit(EventTypes.NOTE.GET.TAG_NOTES, tagId);
+                return;
+            }
+
+            // 标签下的笔记项点击
+            const tagNoteItem = e.target.closest('.tag-note-item');
+            if (tagNoteItem) {
+                const noteId = tagNoteItem.dataset.noteId;
+                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                return;
+            }
+
+            // 最近笔记项点击
+            const recentNoteItem = e.target.closest('.recent-note-item');
+            if (recentNoteItem) {
+                const noteId = recentNoteItem.dataset.noteId;
+                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
                 return;
             }
         });

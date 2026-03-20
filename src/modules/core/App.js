@@ -7,6 +7,7 @@ import { NoteController } from '../controllers/NoteController.js';
 import { NoteService } from '../services/NoteService.js';
 import { TagService } from '../services/TagService.js';
 import { UIManager } from '../views/UIManager.js';
+import { EventTypes } from './EventTypes.js';
 
 export class App {
     constructor() {
@@ -39,13 +40,7 @@ export class App {
      * 初始化应用
      */
     async init() {
-        // 加载所有笔记
-        await this.noteController.loadAllNotes();
-
-        // 渲染初始侧边栏面板（默认 search 面板）
-        const initialPanel = this.noteController.getInitialPanel();
-        await this.noteController.handlePanelChange(initialPanel);
-
+        this.eventBus.emit(EventTypes.APP.INIT);
         console.log('App started');
     }
 
