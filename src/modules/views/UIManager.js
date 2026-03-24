@@ -338,4 +338,11 @@ export class UIManager {
     modal_confirm(message) {
         return this.modal.confirm(message);
     }
+
+    /**
+     * 显示标签选择模态框
+     */
+    modal_showTagSelection(allTags, currentTagIds) {
+        return this.modal.showTagSelection(allTags, currentTagIds);
+    }
 }

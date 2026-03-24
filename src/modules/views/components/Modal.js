@@ -2,6 +2,8 @@
  * 可复用模态框组件
  * 提供背景虚化的弹窗，支持输入提示和确认对话框
  */
+import { escapeHtml } from '../../utils/helpers.js';
+
 export class Modal {
   constructor() {
     this.overlay = null;
@@ -49,7 +51,7 @@ export class Modal {
         </button>
       </div>
       <div class="modal-body">
-        <input type="text" class="modal-input" value="${this.escapeHtml(defaultValue)}" placeholder="请输入标签名称">
+        <input type="text" class="modal-input" value="${escapeHtml(defaultValue)}" placeholder="请输入标签名称">
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary modal-cancel">取消</button>
@@ -91,7 +93,7 @@ export class Modal {
         </button>
       </div>
       <div class="modal-body">
-        <p class="modal-message">${this.escapeHtml(message)}</p>
+        <p class="modal-message">${escapeHtml(message)}</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary modal-cancel">取消</button>
@@ -169,11 +171,75 @@ export class Modal {
   }
 
   /**
-   * HTML 转义
+   * 显示标签选择模态框
+   * @param {Array} allTags - 所有标签列表
+   * @param {Array} currentTagIds - 当前已选中的标签ID列表
+   * @returns {Promise<Array|null>} 选中的标签ID数组，取消返回null
    */
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  showTagSelection(allTags, currentTagIds) {
+    return new Promise(resolve => {
+      this.resolve = resolve;
+      this.createTagSelectionModal(allTags, currentTagIds);
+    });
   }
+
+  /**
+   * 创建标签选择模态框
+   */
+  createTagSelectionModal(allTags, currentTagIds) {
+    this.createOverlay();
+
+    const selected = new Set(currentTagIds);
+    const modal = document.createElement('div');
+    modal.className = 'modal-container';
+
+    modal.innerHTML = `
+      <div class="modal-header">
+        <h3 class="modal-title">选择标签</h3>
+        <button class="modal-close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="tag-select-list">
+          ${allTags.map(tag => {
+            const isSelected = selected.has(tag.id);
+            return `
+              <div class="tag-select-item ${isSelected ? 'selected' : ''}" data-tag-id="${tag.id}">
+                <div class="tag-select-check"></div>
+                <span class="tag-select-color" style="background-color: ${tag.color}"></span>
+                <span class="tag-select-name">${escapeHtml(tag.name)}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-cancel">取消</button>
+        <button class="btn btn-primary modal-confirm">确定</button>
+      </div>
+    `;
+
+    this.overlay.appendChild(modal);
+    this.bindCommonEvents(modal);
+
+    // 点击标签项切换选择
+    modal.querySelectorAll('.tag-select-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const tagId = item.dataset.tagId;
+        item.classList.toggle('selected');
+        if (selected.has(tagId)) {
+          selected.delete(tagId);
+        } else {
+          selected.add(tagId);
+        }
+      });
+    });
+
+    // 确定按钮
+    modal.querySelector('.modal-confirm').addEventListener('click', () => {
+      this.close(Array.from(selected));
+    });
+  }
+
 }
