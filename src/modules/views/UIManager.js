@@ -109,6 +109,11 @@ export class UIManager {
             // 添加标签按钮
             const addBtn = e.target.closest('.btn-add-tag');
             if (addBtn) {
+                const editor = addBtn.closest('.note-editor');
+                // 如果是回收站只读笔记，不允许操作
+                if (editor && editor.classList.contains('read-only')) {
+                    return;
+                }
                 const tagsBar = addBtn.closest('.note-tags-bar');
                 const noteId = tagsBar.dataset.noteId;
                 this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
@@ -118,6 +123,11 @@ export class UIManager {
             // 已有标签点击 - 打开选择弹窗修改
             const tagItem = e.target.closest('.note-tag-item');
             if (tagItem) {
+                const editor = tagItem.closest('.note-editor');
+                // 如果是回收站只读笔记，不允许操作
+                if (editor && editor.classList.contains('read-only')) {
+                    return;
+                }
                 const tagsBar = e.target.closest('.note-tags-bar');
                 const noteId = tagsBar.dataset.noteId;
                 this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
@@ -127,16 +137,16 @@ export class UIManager {
 
         // 左侧边栏内容容器事件委托（处理所有动态内容的点击事件）
         this.leftSidebar.getContentContainer().addEventListener('click', (e) => {
-            // 新建标签按钮
-            const addBtn = e.target.closest('.tag-add-btn');
+            // 新建标签按钮（标签面板）
+            const addBtn = e.target.closest('.tags-panel .tag-add-btn');
             if (addBtn) {
                 e.stopPropagation();
                 this.eventBus.emit(EventTypes.TAG.CREATE);
                 return;
             }
 
-            // 编辑标签按钮
-            const editBtn = e.target.closest('.edit-btn');
+            // 编辑标签按钮（标签面板）
+            const editBtn = e.target.closest('.tag-main-item .edit-btn');
             if (editBtn) {
                 e.stopPropagation();
                 const tagItem = editBtn.closest('.tag-main-item');
@@ -147,8 +157,8 @@ export class UIManager {
                 return;
             }
 
-            // 删除标签按钮
-            const deleteBtn = e.target.closest('.delete-btn');
+            // 删除标签按钮（标签面板）
+            const deleteBtn = e.target.closest('.tag-main-item .delete-btn');
             if (deleteBtn) {
                 e.stopPropagation();
                 const tagItem = deleteBtn.closest('.tag-main-item');
@@ -222,6 +232,32 @@ export class UIManager {
             const archiveNoteItem = e.target.closest('.archive-note-item');
             if (archiveNoteItem) {
                 const noteId = archiveNoteItem.dataset.noteId;
+                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                return;
+            }
+
+            // 回收站笔记项操作按钮点击
+            const trashActionBtn = e.target.closest('.trash-action-btn');
+            if (trashActionBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const trashItem = trashActionBtn.closest('.trash-note-item');
+                if (trashItem && trashItem.dataset.noteId) {
+                    const noteId = trashItem.dataset.noteId;
+                    if (trashActionBtn.classList.contains('restore-btn')) {
+                        this.eventBus.emit(EventTypes.TRASH.RESTORE, noteId);
+                    } else if (trashActionBtn.classList.contains('delete-btn')) {
+                        this.eventBus.emit(EventTypes.TRASH.DELETE_PERMANENT, noteId);
+                    }
+                }
+                return;
+            }
+
+            // 回收站笔记项点击（打开查看）
+            const trashNoteItem = e.target.closest('.trash-note-item');
+            if (trashNoteItem) {
+                // 如果已经点击了操作按钮，上面已经处理，这里不会执行到
+                const noteId = trashNoteItem.dataset.noteId;
                 this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
                 return;
             }
@@ -329,7 +365,7 @@ export class UIManager {
      * @returns {Promise<boolean>} 用户是否确认
      */
     showConfirm(message) {
-        return Promise.resolve(confirm(message));
+        return this.modal_confirm(message);
     }
 
     // ========== LeftSidebar 代理方法 ==========

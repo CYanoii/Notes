@@ -63,4 +63,39 @@ export class NoteService {
         const results = [];
         return results;
     }
+
+    /**
+     * 获取回收站中的所有笔记
+     * @returns {Promise<Array>} 回收站笔记列表
+     */
+    async getTrashedNotes() {
+        return await window.electronAPI.getTrashedNotes();
+    }
+
+    /**
+     * 将笔记移入回收站
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<void>}
+     */
+    async moveToTrash(noteId) {
+        await window.electronAPI.moveToTrash(noteId);
+    }
+
+    /**
+     * 从回收站恢复笔记
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<void>}
+     */
+    async restoreFromTrash(noteId) {
+        await window.electronAPI.restoreFromTrash(noteId);
+    }
+
+    /**
+     * 永久删除笔记
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<void>}
+     */
+    async deletePermanently(noteId) {
+        await window.electronAPI.deletePermanently(noteId);
+    }
 }

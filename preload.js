@@ -13,6 +13,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteNote: (noteId) => ipcRenderer.invoke('notes:delete', noteId),
   searchNotes: (query) => ipcRenderer.invoke('notes:search', query),
 
+  // 回收站操作
+  getTrashedNotes: () => ipcRenderer.invoke('notes:getTrashed'),
+  moveToTrash: (noteId) => ipcRenderer.invoke('notes:moveToTrash', noteId),
+  restoreFromTrash: (noteId) => ipcRenderer.invoke('notes:restoreFromTrash', noteId),
+  deletePermanently: (noteId) => ipcRenderer.invoke('notes:deletePermanently', noteId),
+
   // 标签操作
   getAllTags: () => ipcRenderer.invoke('tags:getAll'),
   createTag: (name, color) => ipcRenderer.invoke('tags:create', name, color),

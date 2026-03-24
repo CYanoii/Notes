@@ -1154,3 +1154,123 @@ body.resizing {
     white-space: nowrap;
     font-size: 12px;
 }
+
+/* ===== 回收站面板样式 ===== */
+.trash-notes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.trash-note-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: #e2e8f0;
+}
+
+.trash-note-item:hover {
+    background: #4a5568;
+}
+
+.trash-note-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.trash-note-item i {
+    color: #a0aec0;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.trash-note-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trash-note-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.trash-note-item:hover .trash-note-actions {
+    opacity: 1;
+}
+
+.trash-action-btn {
+    background: transparent;
+    border: none;
+    color: #a0aec0;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.trash-action-btn:hover {
+    background: #2d3748;
+}
+
+.trash-action-btn.restore-btn:hover {
+    color: #48bb78;
+}
+
+.trash-action-btn.delete-btn:hover {
+    color: #f56565;
+}
+
+/* ===== 只读编辑器样式 ===== */
+.note-editor.read-only {
+    position: relative;
+}
+
+.note-editor.read-only .note-title-input:disabled {
+    background-color: #f7fafc;
+    color: #718096;
+    cursor: not-allowed;
+}
+
+.note-editor.read-only .note-content-textarea[readonly] {
+    background-color: #f7fafc;
+    color: #718096;
+    cursor: not-allowed;
+}
+
+.readonly-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 0 0 8px 8px;
+}
+
+.readonly-overlay i {
+    color: #a0aec0;
+}

@@ -44,6 +44,12 @@ export const EventTypes = {
   // 搜索事件
   SEARCH: {
     HOME_SEARCH: 'search:homeSearch'
+  },
+
+  // 回收站事件
+  TRASH: {
+    RESTORE: 'trash:restore',
+    DELETE_PERMANENT: 'trash:deletePermanent'
   }
 
 }

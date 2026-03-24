@@ -32,7 +32,8 @@ class NotesManager {
       title,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      tags: []
+      tags: [],
+      status: 'active'
     };
 
     await this.saveMetadata(noteId, metadata);
@@ -42,19 +43,68 @@ class NotesManager {
     return metadata;
   }
 
-  // 删除笔记
+  // 删除笔记（移入回收站，不立即删除）
   async deleteNote(noteId) {
+    await this.moveToTrash(noteId);
+  }
+
+  // 将笔记移入回收站
+  async moveToTrash(noteId) {
+    const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
+    if (!await this.exists(metaFile)) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const metadata = JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+    const updatedMetadata = {
+      ...metadata,
+      status: 'trashed',
+      deletedAt: new Date().toISOString()
+    };
+
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+  }
+
+  // 从回收站恢复笔记
+  async restoreFromTrash(noteId) {
+    const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
+    if (!await this.exists(metaFile)) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const metadata = JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+    const { status, deletedAt, ...rest } = metadata;
+    const updatedMetadata = {
+      ...rest,
+      status: 'active'
+    };
+
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+  }
+
+  // 永久删除笔记（真正删除）
+  async deletePermanently(noteId) {
     await this.removeFromIndex(noteId);
     const noteDir = path.join(this.notesDir, noteId);
     await fs.rm(noteDir, { recursive: true, force: true });
   }
 
-  // 获取所有笔记
+  // 获取所有笔记（只返回活跃状态，排除回收站）
   async getAllNotes() {
     const index = await this.loadIndex();
-    return index.notes.sort((a, b) =>
-      new Date(b.updatedAt) - new Date(a.updatedAt)
-    );
+    return index.notes
+      .filter(note => note.status !== 'trashed')
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  }
+
+  // 获取所有回收站中的笔记
+  async getTrashedNotes() {
+    const index = await this.loadIndex();
+    return index.notes
+      .filter(note => note.status === 'trashed')
+      .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
   }
 
   // 获取最近编辑的笔记

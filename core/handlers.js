@@ -53,6 +53,30 @@ async function setupIpcHandlers() {
     return await notesManager.searchNotes(query);
   });
 
+  // ===== 回收站操作 =====
+  // 获取回收站笔记
+  ipcMain.handle('notes:getTrashed', async () => {
+    return await notesManager.getTrashedNotes();
+  });
+
+  // 移入回收站
+  ipcMain.handle('notes:moveToTrash', async (event, noteId) => {
+    await notesManager.moveToTrash(noteId);
+    return true;
+  });
+
+  // 从回收站恢复
+  ipcMain.handle('notes:restoreFromTrash', async (event, noteId) => {
+    await notesManager.restoreFromTrash(noteId);
+    return true;
+  });
+
+  // 永久删除
+  ipcMain.handle('notes:deletePermanently', async (event, noteId) => {
+    await notesManager.deletePermanently(noteId);
+    return true;
+  });
+
   // ===== 标签操作 =====
   // 获取所有标签
   ipcMain.handle('tags:getAll', async () => {

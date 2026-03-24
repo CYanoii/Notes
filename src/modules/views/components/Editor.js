@@ -28,41 +28,52 @@ export class Editor {
      */
     createNoteEditor(noteData) {
         const noteTags = noteData.tags || [];
+        const isTrashed = noteData.status === 'trashed';
+        const hasTags = noteTags && noteTags.length > 0;
 
         const editor = document.createElement('div');
-        editor.className = 'note-editor';
+        editor.className = `note-editor ${isTrashed ? 'read-only' : ''}`;
         editor.id = `note-${noteData.id}`;
-        const hasTags = noteTags && noteTags.length > 0;
+
+        // 只读模式属性
+        const titleDisabled = isTrashed ? 'disabled' : '';
+        const contentReadonly = isTrashed ? 'readonly' : '';
+        const showAddTagBtn = !isTrashed && !hasTags;
+
         editor.innerHTML = `
             <input type="text"
                    class="note-title-input"
                    value="${escapeHtml(noteData.title)}"
-                   placeholder="输入标题...">
+                   placeholder="输入标题..."
+                   ${titleDisabled}>
             <div class="note-tags-bar" data-note-id="${noteData.id}">
-                ${!hasTags ? `<button class="btn-add-tag"><i class="fas fa-plus"></i> 添加标签</button>` : ''}
+                ${showAddTagBtn ? `<button class="btn-add-tag"><i class="fas fa-plus"></i> 添加标签</button>` : ''}
                 <div class="note-tags-list">
                     ${this.renderNoteTags(noteTags)}
                 </div>
             </div>
             <textarea class="note-content-textarea"
-                      placeholder="开始记录你的想法...">${escapeHtml(noteData.content)}</textarea>
+                      placeholder="开始记录你的想法..."
+                      ${contentReadonly}>${escapeHtml(noteData.content)}</textarea>
         `;
 
-        // 设置输入事件
+        // 只在非回收站时绑定输入事件
         const titleInput = editor.querySelector('.note-title-input');
         const contentTextarea = editor.querySelector('.note-content-textarea');
 
-        titleInput.addEventListener('input', () => {
-            if (this.onTitleChange) {
-                this.onTitleChange(noteData.id, titleInput.value);
-            }
-        });
+        if (!isTrashed) {
+            titleInput.addEventListener('input', () => {
+                if (this.onTitleChange) {
+                    this.onTitleChange(noteData.id, titleInput.value);
+                }
+            });
 
-        contentTextarea.addEventListener('input', () => {
-            if (this.onContentChange) {
-                this.onContentChange(noteData.id, contentTextarea.value);
-            }
-        });
+            contentTextarea.addEventListener('input', () => {
+                if (this.onContentChange) {
+                    this.onContentChange(noteData.id, contentTextarea.value);
+                }
+            });
+        }
 
         // 标签点击事件会在外部委托绑定
         this.container.appendChild(editor);

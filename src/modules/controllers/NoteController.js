@@ -58,6 +58,10 @@ export class NoteController {
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
         });
+
+        // 回收站事件
+        this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
+        this.eventBus.on(EventTypes.TRASH.DELETE_PERMANENT, (noteId) => this.handlePermanentDelete(noteId));
     }
 
     async appInit() {
@@ -122,6 +126,19 @@ export class NoteController {
                     this.uiManager.leftSidebar_renderPanelContent(panelId, recentNotes);
                 } catch (error) {
                     console.error('加载最近笔记失败:', error);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, []);
+                }
+                break;
+            case 'trash':
+                try {
+                    // 获取回收站笔记
+                    const trashedNotes = await this.noteService.getTrashedNotes();
+                    // 按移入日期降序排序（最新删除的在前）
+                    trashedNotes.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, trashedNotes);
+                } catch (error) {
+                    console.error('加载回收站笔记失败:', error);
+                    this.uiManager.toast_show('加载回收站失败', 'error');
                     this.uiManager.leftSidebar_renderPanelContent(panelId, []);
                 }
                 break;
@@ -296,13 +313,10 @@ export class NoteController {
     }
 
     /**
-     * 删除笔记
+     * 删除笔记（移入回收站）
      * @param {string|number} noteId 笔记ID
      */
     async deleteNote(noteId) {
-        const confirmed = await this.uiManager.showConfirm('确定要删除这篇笔记吗？此操作不可恢复。');
-        if (!confirmed) return;
-
         try {
             await this.noteService.deleteNote(noteId);
 
@@ -313,10 +327,15 @@ export class NoteController {
 
             // 刷新笔记列表
             await this.loadAllNotes();
-            this.uiManager.toast_show('笔记删除成功', 'success');
+            // 如果当前在回收站面板，刷新回收站内容
+            const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+            if (currentPanel === 'trash') {
+                await this.handlePanelChange('trash');
+            }
+            this.uiManager.toast_show('已移入回收站', 'success');
         } catch (error) {
-            console.error('删除笔记失败:', error);
-            this.uiManager.toast_show('删除笔记失败', 'error');
+            console.error('移入回收站失败:', error);
+            this.uiManager.toast_show('移入回收站失败', 'error');
         }
     }
 
@@ -398,5 +417,65 @@ export class NoteController {
             });
 
         return { years };
+    }
+
+    /**
+     * 从回收站恢复笔记
+     * @param {string|number} noteId 笔记ID
+     */
+    async handleRestoreNote(noteId) {
+        try {
+            await this.noteService.restoreFromTrash(noteId);
+
+            // 如果笔记当前打开，关闭它重新加载以恢复编辑
+            if (this.notes.has(noteId)) {
+                this.closeNote(noteId);
+            }
+
+            // 刷新笔记列表和回收站
+            await this.loadAllNotes();
+            // 如果当前在回收站面板，刷新回收站内容
+            const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+            if (currentPanel === 'trash') {
+                await this.handlePanelChange('trash');
+            }
+
+            this.uiManager.toast_show('恢复成功', 'success');
+        } catch (error) {
+            console.error('恢复笔记失败:', error);
+            this.uiManager.toast_show('恢复失败', 'error');
+        }
+    }
+
+    /**
+     * 永久删除笔记
+     * @param {string|number} noteId 笔记ID
+     */
+    async handlePermanentDelete(noteId) {
+        // 输出测试提示验证代码
+        console.log('永久删除笔记:', noteId);
+
+        const confirmed = await this.uiManager.showConfirm('确定要永久删除这篇笔记吗？删除后无法恢复。');
+        if (!confirmed) return;
+
+        try {
+            await this.noteService.deletePermanently(noteId);
+
+            // 如果笔记当前打开，先关闭它
+            if (this.notes.has(noteId)) {
+                this.closeNote(noteId);
+            }
+
+            // 刷新回收站面板
+            const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+            if (currentPanel === 'trash') {
+                await this.handlePanelChange('trash');
+            }
+
+            this.uiManager.toast_show('已永久删除', 'success');
+        } catch (error) {
+            console.error('永久删除失败:', error);
+            this.uiManager.toast_show('永久删除失败', 'error');
+        }
     }
 }
