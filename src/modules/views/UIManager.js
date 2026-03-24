@@ -186,6 +186,45 @@ export class UIManager {
                 this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
                 return;
             }
+
+            // 归档年份标题点击（展开/折叠）
+            const archiveYearHeader = e.target.closest('.archive-year-header');
+            if (archiveYearHeader) {
+                const year = archiveYearHeader.dataset.year;
+                // 如果点击的是展开图标，不阻止冒泡
+                if (!e.target.closest('.archive-expand-icon')) {
+                    this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                    // 重新渲染，保持数据不变
+                    const currentPanel = this.leftSidebar.getActivePanelId();
+                    if (currentPanel === 'archive') {
+                        // 数据需要重新获取，NoteController 会处理
+                        this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
+                    }
+                }
+                return;
+            }
+
+            // 归档展开图标点击（展开/折叠）
+            const archiveExpandIcon = e.target.closest('.archive-expand-icon');
+            if (archiveExpandIcon) {
+                const yearHeader = archiveExpandIcon.closest('.archive-year-header');
+                const year = yearHeader.dataset.year;
+                this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                // 重新渲染，保持数据不变
+                const currentPanel = this.leftSidebar.getActivePanelId();
+                if (currentPanel === 'archive') {
+                    this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
+                }
+                return;
+            }
+
+            // 归档笔记项点击
+            const archiveNoteItem = e.target.closest('.archive-note-item');
+            if (archiveNoteItem) {
+                const noteId = archiveNoteItem.dataset.noteId;
+                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                return;
+            }
         });
     }
 
@@ -321,6 +360,13 @@ export class UIManager {
      */
     leftSidebar_toggleTagExpanded(tagId) {
         this.leftSidebar.toggleTagExpanded(tagId);
+    }
+
+    /**
+     * 切换归档年份展开状态
+     */
+    leftSidebar_toggleArchiveYearExpanded(year) {
+        this.leftSidebar.toggleArchiveYearExpanded(year);
     }
 
     // ========== Modal 代理方法 ==========

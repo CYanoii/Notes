@@ -98,9 +98,19 @@ export class NoteController {
                     this.uiManager.leftSidebar_renderPanelContent(panelId);
                 }
                 break;
-            case 'folders':
-                // TODO: 数据层未实现，等待后续开发
-                this.uiManager.leftSidebar_renderPanelContent(panelId);
+            case 'archive':
+                try {
+                    // 获取所有笔记并按创建日期分组（年-月）
+                    const allNotes = await this.noteService.getAllNotes();
+                    // 按创建日期降序排序
+                    allNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    // 按年-月分组
+                    const grouped = this.groupNotesByDate(allNotes);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, grouped);
+                } catch (error) {
+                    console.error('加载归档笔记失败:', error);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, { years: [] });
+                }
                 break;
             case 'recent':
                 try {
@@ -347,5 +357,46 @@ export class NoteController {
      */
     setNoteTagCoordinator(noteTagCoordinator) {
         this.noteTagCoordinator = noteTagCoordinator;
+    }
+
+    /**
+     * 按创建日期对笔记进行分组（年 -> 月）
+     * @param {Array} notes 笔记列表
+     * @returns {Object} 分组结果 { years: [{ year, months: [{ month, notes }] }
+     */
+    groupNotesByDate(notes) {
+        const yearMap = new Map();
+
+        notes.forEach(note => {
+            const date = new Date(note.createdAt);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1; // 1-12
+
+            // 按年分组
+            if (!yearMap.has(year)) {
+                yearMap.set(year, new Map());
+            }
+            const monthMap = yearMap.get(year);
+
+            // 按月分组
+            if (!monthMap.has(month)) {
+                monthMap.set(month, []);
+            }
+            monthMap.get(month).push(note);
+        });
+
+        // 转换为数组并排序（降序，最新年份在前）
+        const years = Array.from(yearMap.entries())
+            .sort(([yearA], [yearB]) => yearB - yearA)
+            .map(([year, monthMap]) => {
+                const months = Array.from(monthMap.entries())
+                    .sort(([monthA], [monthB]) => monthB - monthA)
+                    .map(([month, notes]) => ({ month, notes }));
+                // 计算该年份总笔记数
+                const totalCount = months.reduce((sum, m) => sum + m.notes.length, 0);
+                return { year, months, totalCount };
+            });
+
+        return { years };
     }
 }

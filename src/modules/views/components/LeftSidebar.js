@@ -18,7 +18,7 @@ export class LeftSidebar {
         this.menuItems = [
             { id: 'search', icon: 'fas fa-search', label: '搜索' },
             { id: 'tags', icon: 'fas fa-tags', label: '所有标签' },
-            { id: 'folders', icon: 'fas fa-folder', label: '所有文件夹' },
+            { id: 'archive', icon: 'fas fa-archive', label: '归档' },
             { id: 'recent', icon: 'fas fa-history', label: '最近文件' }
         ];
 
@@ -36,11 +36,15 @@ export class LeftSidebar {
         // 标签展开状态
         this.expandedTags = new Set();  // 存储展开的标签ID
 
+        // 归档年份展开状态
+        this.expandedArchiveYears = new Set();  // 存储展开的年份
+
         // 回调函数
         this.onPanelChange = null;
         this.onCollapseChange = null;
         this.onWidthChange = null;
         this.onTagNoteClick = null;
+        this.onArchiveNoteClick = null;
 
         // DOM 元素引用
         this.container = null;
@@ -444,15 +448,8 @@ export class LeftSidebar {
             case 'tags':
                 this.renderTagsPanel(container, data);
                 break;
-            case 'folders':
-                container.innerHTML = `
-                    <div class="sidebar-panel">
-                        <h3 class="panel-title"><i class="fas fa-folder"></i> 所有文件夹</h3>
-                        <div class="panel-content">
-                            <p class="panel-empty">文件夹功能开发中...</p>
-                        </div>
-                    </div>
-                `;
+            case 'archive':
+                this.renderArchivePanel(container, data);
                 break;
             case 'recent':
                 this.renderRecentPanel(container, data);
@@ -597,5 +594,95 @@ export class LeftSidebar {
      */
     setTagNoteClickCallback(callback) {
         this.onTagNoteClick = callback;
+    }
+
+    /**
+     * 切换归档年份展开状态
+     */
+    toggleArchiveYearExpanded(year) {
+        if (this.expandedArchiveYears.has(year)) {
+            this.expandedArchiveYears.delete(year);
+        } else {
+            this.expandedArchiveYears.add(year);
+        }
+    }
+
+    /**
+     * 设置归档笔记点击回调
+     */
+    setArchiveNoteClickCallback(callback) {
+        this.onArchiveNoteClick = callback;
+    }
+
+    /**
+     * 渲染归档面板（按创建日期年-月分组）
+     */
+    renderArchivePanel(container, groupedNotes) {
+        if (!groupedNotes || !groupedNotes.years || groupedNotes.years.length === 0) {
+            container.innerHTML = `
+                <div class="sidebar-panel archive-panel">
+                    <h3 class="panel-title"><i class="fas fa-archive"></i> 归档</h3>
+                    <div class="panel-content">
+                        <p class="panel-empty">暂无笔记</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const { years } = groupedNotes;
+
+        container.innerHTML = `
+            <div class="sidebar-panel archive-panel">
+                <h3 class="panel-title"><i class="fas fa-archive"></i> 归档</h3>
+                <div class="panel-content">
+                    <ul class="archive-list">
+                        ${years.map(yearData => {
+                            const isExpanded = this.expandedArchiveYears.has(yearData.year);
+                            const expandIcon = isExpanded ? 'fa-chevron-down' : 'fa-chevron-right';
+                            return `
+                            <li class="archive-year-item">
+                                <div class="archive-year-header" data-year="${yearData.year}">
+                                    <i class="fas ${expandIcon} archive-expand-icon"></i>
+                                    <span class="archive-year-text">${yearData.year}年</span>
+                                    <span class="archive-year-count">${yearData.totalCount}</span>
+                                </div>
+                                ${isExpanded ? `
+                                <ul class="archive-months-list">
+                                    ${yearData.months.map(monthData => {
+                                        const monthName = this.getMonthName(monthData.month);
+                                        return `
+                                        <li class="archive-month-item">
+                                            <div class="archive-month-header">
+                                                <span class="archive-month-text">${monthName}</span>
+                                                <span class="archive-month-count">${monthData.notes.length}</span>
+                                            </div>
+                                            <ul class="archive-notes-list">
+                                                ${monthData.notes.map(note => `
+                                                    <li class="archive-note-item" data-note-id="${note.id}">
+                                                        <i class="fas fa-sticky-note"></i>
+                                                        <span class="archive-note-title">${this.escapeHtml(note.title || '无标题')}</span>
+                                                    </li>
+                                                `).join('')}
+                                            </ul>
+                                        </li>
+                                        `;
+                                    }).join('')}
+                                </ul>
+                                ` : ''}
+                            </li>
+                            `;
+                        }).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * 获取月份名称
+     */
+    getMonthName(month) {
+        return `${month}月`;
     }
 }

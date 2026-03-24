@@ -1040,3 +1040,117 @@ body.resizing {
     padding: 16px 20px;
     border-top: 1px solid #e2e8f0;
 }
+
+/* ===== 归档面板样式 ===== */
+.archive-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.archive-year-item {
+    margin-bottom: 4px;
+}
+
+.archive-year-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: #e2e8f0;
+}
+
+.archive-year-header:hover {
+    background: #4a5568;
+}
+
+.archive-expand-icon {
+    color: #a0aec0;
+    font-size: 10px;
+    width: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.archive-year-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+.archive-year-count {
+    color: #a0aec0;
+    font-size: 12px;
+    background: #4a5568;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.archive-months-list {
+    list-style: none;
+    padding: 0;
+    padding-left: 20px;
+    margin: 4px 0 8px 0;
+}
+
+.archive-month-item {
+    margin-bottom: 6px;
+}
+
+.archive-month-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    color: #cbd5e0;
+}
+
+.archive-month-text {
+    flex: 1;
+    font-size: 12px;
+}
+
+.archive-month-count {
+    color: #a0aec0;
+    font-size: 11px;
+}
+
+.archive-notes-list {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0 0;
+}
+
+.archive-note-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: #cbd5e0;
+}
+
+.archive-note-item:hover {
+    background: #4a5568;
+}
+
+.archive-note-item i {
+    color: #a0aec0;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.archive-note-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
