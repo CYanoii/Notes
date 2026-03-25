@@ -25,20 +25,7 @@ export class TagController {
         this.eventBus.on(EventTypes.TAG.CREATE, () => this.createTag());
         this.eventBus.on(EventTypes.TAG.EDIT, (tagId) => this.editTag(tagId));
         this.eventBus.on(EventTypes.TAG.DELETE, (tagId) => this.deleteTag(tagId));
-    }
-
-    /**
-     * 刷新标签列表
-     */
-    async refreshTagsList() {
-        const tags = await this.tagService.getAllTags();
-        const tagCounts = await this.tagService.getTagNoteCounts();
-        // 获取每个标签对应的笔记列表
-        const tagNotes = {};
-        for (const tag of tags) {
-            tagNotes[tag.id] = await this.tagService.getNotesByTag(tag.id);
-        }
-        this.uiManager.leftSidebar_renderPanelContent('tags', { tags, tagCounts, tagNotes });
+        this.eventBus.on(EventTypes.NOTE.GET.TAG_NOTES, (tagId) => this.handleTagClick(tagId));
     }
 
     /**
@@ -47,7 +34,7 @@ export class TagController {
     async handleTagClick(tagId) {
         // 切换标签展开/折叠状态
         this.uiManager.leftSidebar_toggleTagExpanded(tagId);
-        await this.refreshTagsList();
+        await this.noteTagCoordinator.refreshTagsList();
     }
 
     /**
@@ -64,7 +51,7 @@ export class TagController {
 
         try {
             await this.tagService.createTag(name.trim());
-            await this.refreshTagsList();
+            await this.noteTagCoordinator.refreshTagsList();
             this.uiManager.toast_show('标签创建成功', 'success');
         } catch (error) {
             console.error('创建标签失败:', error);
@@ -92,7 +79,7 @@ export class TagController {
             }
 
             await this.tagService.updateTag(tagId, { name: newName.trim() });
-            await this.refreshTagsList();
+            await this.noteTagCoordinator.refreshTagsList();
             // 热更新所有已打开笔记的标签显示
             await this.noteTagCoordinator.refreshAllOpenNotesTags();
             this.uiManager.toast_show('标签更新成功', 'success');
@@ -117,7 +104,7 @@ export class TagController {
                 this.currentSelectedTagId = null;
             }
 
-            await this.refreshTagsList();
+            await this.noteTagCoordinator.refreshTagsList();
 
             // 从所有已打开笔记的内存数据中移除被删除的标签ID，并更新显示
             await this.noteTagCoordinator.removeTagFromAllOpenNotes(tagId);

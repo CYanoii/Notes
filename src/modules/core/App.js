@@ -16,44 +16,35 @@ export class App {
         // 1. 创建核心实例（唯一）
         this.eventBus = new EventBus();
 
-        // 2. 创建数据服务层（依赖 EventBus）
-        this.noteService = new NoteService(this.eventBus);
-        this.tagService = new TagService(this.eventBus);
+        // 2. 创建数据服务层
+        this.noteService = new NoteService();
+        this.tagService = new TagService();
 
         // 3. 创建 UI 管理器，由它统一创建和管理所有 UI 组件
         this.uiManager = new UIManager(this.eventBus);
 
-        // 4. 创建控制器层（依赖下层模块 + EventBus）
-        // 由于存在循环依赖，先创建 NoteController，再创建其他，最后设置引用
-        this.noteController = new NoteController(
+        // 4. 创建协调器层（仅依赖服务层，不依赖控制器，消除循环依赖）
+        this.noteTagCoordinator = new NoteTagCoordinator(
             this.noteService,
             this.tagService,
-            this.uiManager,
-            this.eventBus
+            this.uiManager
         );
 
-        // 创建标签控制器和笔记-标签协调器
-        // 注意：这里需要先创建标签控制器占位，由于协调器依赖标签控制器，标签控制器也依赖协调器
+        // 5. 创建控制器层（依赖下层模块 + 协调器）
+        this.noteController = new NoteController(
+            this.noteService,
+            this.uiManager,
+            this.eventBus,
+            this.noteTagCoordinator
+        );
+
+        // 创建标签控制器，协调器已创建好直接注入
         this.tagController = new TagController(
             this.tagService,
             this.uiManager,
             this.eventBus,
-            null // 先占位，noteTagCoordinator 创建后再注入
+            this.noteTagCoordinator
         );
-
-        this.noteTagCoordinator = new NoteTagCoordinator(
-            this.noteService,
-            this.tagService,
-            this.uiManager,
-            this.eventBus,
-            this.noteController,
-            this.tagController
-        );
-
-        // 补全依赖
-        this.tagController.noteTagCoordinator = this.noteTagCoordinator;
-        this.noteController.setTagController(this.tagController);
-        this.noteController.setNoteTagCoordinator(this.noteTagCoordinator);
 
         // 暴露到全局方便调试
         this.exposeToGlobal();

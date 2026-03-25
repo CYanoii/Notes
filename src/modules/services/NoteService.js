@@ -3,8 +3,59 @@
  * 封装所有与 Electron API 的交互，实现数据层与业务层分离
  */
 export class NoteService {
-    constructor(eventBus) {
-        this.eventBus = eventBus;
+    constructor() {
+        this.openNotes = new Map(); // 存储已打开的笔记（内存缓存）
+        this.currentNoteId = null;  // 当前打开的笔记ID
+    }
+
+    /**
+     * 获取所有已打开的笔记
+     * @returns {Map} 已打开笔记 Map
+     */
+    getAllOpenNotes() {
+        return this.openNotes;
+    }
+
+    /**
+     * 获取当前笔记 ID
+     * @returns {string|number|null} 当前笔记 ID
+     */
+    getCurrentNoteId() {
+        return this.currentNoteId;
+    }
+
+    /**
+     * 获取指定打开的笔记
+     * @param {string|number} noteId 笔记 ID
+     * @returns {Object|undefined} 笔记对象
+     */
+    getOpenNoteById(noteId) {
+        return this.openNotes.get(noteId);
+    }
+
+    /**
+     * 设置当前笔记 ID
+     * @param {string|number|null} noteId 笔记 ID
+     */
+    setCurrentNoteId(noteId) {
+        this.currentNoteId = noteId;
+    }
+
+    /**
+     * 添加打开的笔记到缓存
+     * @param {string|number} noteId 笔记 ID
+     * @param {Object} noteData 笔记数据
+     */
+    addOpenNote(noteId, noteData) {
+        this.openNotes.set(noteId, noteData);
+    }
+
+    /**
+     * 从缓存移除关闭的笔记
+     * @param {string|number} noteId 笔记 ID
+     */
+    removeOpenNote(noteId) {
+        this.openNotes.delete(noteId);
     }
 
     /**

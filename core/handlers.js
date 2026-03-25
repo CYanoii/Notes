@@ -10,8 +10,7 @@ let tagsManager;
 
 async function setupIpcHandlers() {
   notesManager = new NotesManager();
-  tagsManager = new TagsManager(notesManager);
-  notesManager.tagsManager = tagsManager;
+  tagsManager = new TagsManager();
 
   // 等待初始化完成
   await notesManager.initialize();
@@ -100,15 +99,6 @@ async function setupIpcHandlers() {
     return true;
   });
 
-  // 获取标签下的笔记
-  ipcMain.handle('tags:getNotes', async (event, tagId) => {
-    return await tagsManager.getNotesByTag(tagId);
-  });
-
-  // 获取标签笔记计数
-  ipcMain.handle('tags:getTagCounts', async () => {
-    return await tagsManager.getTagNoteCounts();
-  });
 }
 
 module.exports = { setupIpcHandlers };

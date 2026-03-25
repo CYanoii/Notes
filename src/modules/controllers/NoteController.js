@@ -6,15 +6,13 @@ import { debounce } from '../utils/helpers.js';
 import { EventTypes } from '../core/EventTypes.js';
 
 export class NoteController {
-    constructor(noteService, tagService, uiManager, eventBus) {
+    constructor(noteService, uiManager, eventBus, noteTagCoordinator) {
         this.noteService = noteService;
-        this.tagService = tagService;
         this.uiManager = uiManager;
         this.eventBus = eventBus;
+        this.noteTagCoordinator = noteTagCoordinator;
 
-        this.notes = new Map(); // 存储打开的笔记
-        this.currentNoteId = null;
-        this.lastSearchQuery = ''; // 保存最近一次搜索关键词用于热更新
+        // 已打开笔记缓存由 NoteService 维护
 
         // 初始化事件监听
         this.initEventListeners();
@@ -25,8 +23,6 @@ export class NoteController {
                 if (callback) callback();
             });
         }, 500);
-        // 防抖搜索函数
-        this.debouncedSidebarSearch = debounce((query) => this.handleSidebarSearch(query), 200);
     }
 
     /**
@@ -65,11 +61,19 @@ export class NoteController {
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
         });
-        this.eventBus.on(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, (query) => this.handleSidebarSearch(query));
 
         // 回收站事件
         this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
         this.eventBus.on(EventTypes.TRASH.DELETE_PERMANENT, (noteId) => this.handlePermanentDelete(noteId));
+
+        // 笔记标签更新事件（原由 Coordinator 监听）
+        this.eventBus.on(EventTypes.NOTE.UPDATE.TAG, (noteId) => {
+            this.noteTagCoordinator.updateNoteTag(noteId, this.getNoteById(noteId));
+        });
+        // 侧边栏搜索事件（原由 Coordinator 监听）
+        this.eventBus.on(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, (query) => {
+            this.noteTagCoordinator.handleSidebarSearch(query);
+        });
     }
 
     async appInit() {
@@ -102,15 +106,16 @@ export class NoteController {
                 if (this.currentNoteId) {
                     this.uiManager.leftSidebar_setActiveSearchResult(this.currentNoteId);
                 }
-                if (this.lastSearchQuery) {
+                const lastQuery = this.noteTagCoordinator.lastSearchQuery;
+                if (lastQuery) {
                     // 如果有上次搜索关键词，重新搜索获取最新结果
-                    this.handleSidebarSearch(this.lastSearchQuery);
+                    this.noteTagCoordinator.handleSidebarSearch(lastQuery);
                 }
-                this.uiManager.leftSidebar_renderPanelContent(panelId, { results: [], query: this.lastSearchQuery });
+                this.uiManager.leftSidebar_renderPanelContent(panelId, { results: [], query: this.noteTagCoordinator.lastSearchQuery });
                 break;
             case 'tags':
                 try {
-                    await this.tagController.refreshTagsList();
+                    await this.noteTagCoordinator.refreshTagsList();
                 } catch (error) {
                     console.error('加载标签列表失败:', error);
                     this.uiManager.toast_show('加载标签列表失败', 'error');
@@ -214,7 +219,7 @@ export class NoteController {
      */
     async openNote(noteData) {
         // 如果笔记已经打开，直接切换到它
-        if (this.notes.has(noteData.id)) {
+        if (this.noteService.getOpenNoteById(noteData.id)) {
             this.switchToNote(noteData.id);
             return;
         }
@@ -234,13 +239,13 @@ export class NoteController {
      * @param {Object} noteData 笔记数据
      */
     addNoteToApp(noteData) {
-        this.notes.set(noteData.id, noteData);
+        this.noteService.addOpenNote(noteData.id, noteData);
         this.uiManager.tabBar_createNoteTab(noteData);
         this.uiManager.editor_createNoteEditor(noteData);
         this.switchToNote(noteData.id);
         this.loadAllNotes(); // 刷新列表
         // 刷新标签显示
-        setTimeout(() => this.noteTagCoordinator.refreshNoteTags(noteData.id), 0);
+        setTimeout(() => this.noteTagCoordinator.refreshNoteTags(noteData.id, noteData), 0);
     }
 
     /**
@@ -250,7 +255,7 @@ export class NoteController {
     switchToNote(noteId) {
         this.uiManager.tabBar_switchToTab(noteId);
         this.uiManager.editor_switchToNoteEditor(noteId);
-        this.currentNoteId = noteId;
+        this.noteService.setCurrentNoteId(noteId);
 
         // 更新侧边栏搜索结果选中状态
         this.uiManager.leftSidebar_setActiveSearchResult(noteId);
@@ -263,7 +268,7 @@ export class NoteController {
     switchToHome() {
         this.uiManager.tabBar_switchToTab('home');
         this.uiManager.editor_switchToHomePage();
-        this.currentNoteId = null;
+        this.noteService.setCurrentNoteId(null);
 
         // 清除搜索结果选中状态
         this.uiManager.leftSidebar_clearSearchResultSelection();
@@ -275,14 +280,14 @@ export class NoteController {
      */
     closeNote(noteId) {
         // 从Map中移除
-        this.notes.delete(noteId);
+        this.noteService.removeOpenNote(noteId);
 
         // 移除标签页和编辑器
         this.uiManager.tabBar_closeNoteTab(noteId);
         this.uiManager.editor_closeNoteEditor(noteId);
 
         // 如果关闭的是当前笔记，切换到首页
-        if (this.currentNoteId === noteId) {
+        if (this.noteService.getCurrentNoteId() === noteId) {
             this.switchToHome();
         }
 
@@ -295,7 +300,7 @@ export class NoteController {
      * @param {string} newTitle 新标题
      */
     updateNoteTitle(noteId, newTitle) {
-        const note = this.notes.get(noteId);
+        const note = this.noteService.getOpenNoteById(noteId);
         if (note) {
             note.title = newTitle;
             this.uiManager.tabBar_updateTabTitle(noteId, newTitle);
@@ -303,7 +308,7 @@ export class NoteController {
             // 保存完成后刷新搜索结果
             this.debouncedSave(noteId, () => {
                 // 热更新：如果在搜索面板，刷新搜索结果
-                this.refreshSearchResults();
+                this.noteTagCoordinator.refreshSearchResults();
             });
         }
     }
@@ -314,13 +319,13 @@ export class NoteController {
      * @param {string} newContent 新内容
      */
     updateNoteContent(noteId, newContent) {
-        const note = this.notes.get(noteId);
+        const note = this.noteService.getOpenNoteById(noteId);
         if (note) {
             note.content = newContent;
             // 保存完成后刷新搜索结果
             this.debouncedSave(noteId, () => {
                 // 热更新：如果在搜索面板，刷新搜索结果
-                this.refreshSearchResults();
+                this.noteTagCoordinator.refreshSearchResults();
             });
         }
     }
@@ -330,7 +335,7 @@ export class NoteController {
      * @param {string|number} noteId 笔记ID
      */
     async saveNote(noteId) {
-        const note = this.notes.get(noteId);
+        const note = this.noteService.getOpenNoteById(noteId);
         if (note) {
             try {
                 await this.noteService.updateNote(note.id, note);
@@ -351,7 +356,7 @@ export class NoteController {
             await this.noteService.deleteNote(noteId);
 
             // 如果笔记当前打开，先关闭它
-            if (this.notes.has(noteId)) {
+            if (this.noteService.getOpenNoteById(noteId)) {
                 this.closeNote(noteId);
             }
 
@@ -380,33 +385,20 @@ export class NoteController {
     // ===== 供协调器使用的辅助方法 =====
 
     /**
-     * 根据ID获取笔记（供协调器使用）
+     * 根据ID获取笔记（供事件处理使用）
      * @param {string|number} noteId 笔记ID
      */
     getNoteById(noteId) {
-        return this.notes.get(noteId);
+        return this.noteService.getOpenNoteById(noteId);
     }
 
     /**
-     * 获取所有打开的笔记 Map（供协调器使用）
+     * 获取所有打开的笔记 Map（供事件处理使用）
      */
     getAllOpenNotes() {
-        return this.notes;
+        return this.noteService.getAllOpenNotes();
     }
 
-    /**
-     * 设置 TagController 引用（供依赖注入使用）
-     */
-    setTagController(tagController) {
-        this.tagController = tagController;
-    }
-
-    /**
-     * 设置 NoteTagCoordinator 引用（供依赖注入使用）
-     */
-    setNoteTagCoordinator(noteTagCoordinator) {
-        this.noteTagCoordinator = noteTagCoordinator;
-    }
 
     /**
      * 按创建日期对笔记进行分组（年 -> 月）
@@ -458,7 +450,7 @@ export class NoteController {
             await this.noteService.restoreFromTrash(noteId);
 
             // 如果笔记当前打开，关闭它重新加载以恢复编辑
-            if (this.notes.has(noteId)) {
+            if (this.noteService.getOpenNoteById(noteId)) {
                 this.closeNote(noteId);
             }
 
@@ -492,7 +484,7 @@ export class NoteController {
             await this.noteService.deletePermanently(noteId);
 
             // 如果笔记当前打开，先关闭它
-            if (this.notes.has(noteId)) {
+            if (this.noteService.getOpenNoteById(noteId)) {
                 this.closeNote(noteId);
             }
 
@@ -509,41 +501,4 @@ export class NoteController {
         }
     }
 
-    /**
-     * 处理侧边栏搜索输入
-     * @param {string} query 搜索关键词
-     */
-    async handleSidebarSearch(query) {
-        this.lastSearchQuery = query.trim();
-
-        if (!this.lastSearchQuery) {
-            // 空查询，清空搜索结果（不重新渲染输入框）
-            this.uiManager.leftSidebar_updateSearchResults([], '');
-            return;
-        }
-
-        try {
-            const results = await this.noteService.searchNotes(this.lastSearchQuery);
-            // 如果有当前打开的笔记，设置为激活状态
-            if (this.currentNoteId) {
-                this.uiManager.leftSidebar_setActiveSearchResult(this.currentNoteId);
-            }
-            // 只更新搜索结果，不重新渲染整个面板（保留输入框光标位置）
-            this.uiManager.leftSidebar_updateSearchResults(results, this.lastSearchQuery);
-        } catch (error) {
-            console.error('搜索失败:', error);
-            this.uiManager.toast_show('搜索失败', 'error');
-            this.uiManager.leftSidebar_updateSearchResults([], this.lastSearchQuery);
-        }
-    }
-
-    /**
-     * 刷新搜索结果（用于热更新，内容修改后）
-     */
-    async refreshSearchResults() {
-        const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
-        if (currentPanel === 'search' && this.lastSearchQuery) {
-            await this.handleSidebarSearch(this.lastSearchQuery);
-        }
-    }
 }

@@ -84,20 +84,20 @@ Notes/
 **数据服务层 (services/)**
 | 模块 | 职责 |
 |------|------|
-| `services/NoteService.js` | 封装所有与 Electron IPC 的数据交互，隔离业务层与原生 API |
+| `services/NoteService.js` | 封装所有与 Electron IPC 的数据交互，隔离业务层与原生 API。维护**已打开笔记内存缓存**和当前笔记ID状态 |
 | `services/TagService.js` | 封装标签相关的 IPC 数据交互，提供标签数据访问 |
 
 **控制器层 (controllers/)**
 | 模块 | 职责 |
 |------|------|
-| `controllers/NoteController.js` | 编排笔记增删改查、打开/关闭/切换业务流程，协调视图层与数据服务 |
-| `controllers/TagController.js` | 编排标签增删改查业务流程，协调视图层与数据服务 |
+| `controllers/NoteController.js` | 接收 UI 事件，编排笔记增删改查、打开/关闭/切换业务流程，调用协调器处理交叉逻辑，协调视图层更新 |
+| `controllers/TagController.js` | 接收 UI 事件，编排标签增删改查业务流程，调用协调器处理交叉逻辑，协调视图层更新 |
 
 **协调器层 (coordinators/)**
 
 | 模块 | 职责 |
 |------|------|
-| `coordinators/NoteTagCoordinator.js` | 处理同时涉及笔记和标签的交叉业务逻辑（笔记绑定标签、刷新标签显示等） |
+| `coordinators/NoteTagCoordinator.js` | 仅依赖 Service 层，处理同时涉及笔记和标签的**交叉业务逻辑**（搜索、笔记绑定标签、批量移除标签、刷新标签计数等） |
 
 **视图层 (views/)**
 | 模块 | 职责 |
@@ -116,6 +116,29 @@ Notes/
 | `utils/formatters.js` | 日期格式化工具 |
 | `utils/validators.js` | 数据验证工具 |
 | `utils/helpers.js` | HTML 转义（防XSS）、防抖等通用帮助函数 |
+
+### 依赖规则与数据流
+
+遵循**单向依赖**原则，消除循环依赖：
+
+```
+UI → EventBus → Controller → Coordinator → Service → IPC → Manager (主进程)
+                           ← (返回结果) ←
+```
+
+**依赖规则：**
+
+- ✅ **Coordinator 不依赖 Controller** → 仅依赖 Service 层
+- ✅ **Controller 依赖 Coordinator** → Controller 调用 Coordinator
+- ✅ **Controller 之间不相互调用**
+- ✅ **事件仅在 UI → Controller 之间使用** → Coordinator 不监听 UI 事件
+
+**数据流：**
+
+1. UI 层通过 EventBus 发出业务事件
+2. Controller 接收事件，从内存缓存获取状态，调用 Coordinator
+3. Coordinator 编排 Service 层数据操作，完成交叉业务逻辑
+4. Coordinator 返回结果给 Controller，Controller 更新 UI
 
 ### 编码规范
 

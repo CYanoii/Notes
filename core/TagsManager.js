@@ -18,8 +18,7 @@ const DEFAULT_COLORS = [
 ];
 
 class TagsManager {
-  constructor(notesManager) {
-    this.notesManager = notesManager;
+  constructor() {
     this.notesDir = path.join(app.getPath('userData'), 'notes');
     this.tagsIndexFile = path.join(this.notesDir, 'tags-index.json');
   }
@@ -90,7 +89,7 @@ class TagsManager {
     return updatedTag;
   }
 
-  // 删除标签，并从所有笔记中移除该标签引用
+  // 删除标签（仅从标签索引中删除）
   async deleteTag(tagId) {
     // 从标签索引中删除
     const index = await this.loadTagsIndex();
@@ -98,46 +97,7 @@ class TagsManager {
     index.lastUpdated = new Date().toISOString();
     await this.saveTagsIndex(index);
 
-    // 从所有笔记中移除该标签引用
-    await this.removeTagFromAllNotes(tagId);
-
     return true;
-  }
-
-  // 从所有笔记中移除指定标签ID
-  async removeTagFromAllNotes(tagId) {
-    const allNotes = await this.notesManager.getAllNotes();
-
-    for (const note of allNotes) {
-      if (note.tags && note.tags.includes(tagId)) {
-        const updatedTags = note.tags.filter(t => t !== tagId);
-        await this.notesManager.updateNote(note.id, { tags: updatedTags });
-      }
-    }
-  }
-
-  // 获取拥有指定标签的所有笔记
-  async getNotesByTag(tagId) {
-    const allNotes = await this.notesManager.getAllNotes();
-    return allNotes.filter(note =>
-      note.tags && note.tags.includes(tagId)
-    );
-  }
-
-  // 获取每个标签对应的笔记数量
-  async getTagNoteCounts() {
-    const allNotes = await this.notesManager.getAllNotes();
-    const counts = {};
-
-    for (const note of allNotes) {
-      if (note.tags) {
-        for (const tagId of note.tags) {
-          counts[tagId] = (counts[tagId] || 0) + 1;
-        }
-      }
-    }
-
-    return counts;
   }
 
   // 根据ID批量获取标签详情
