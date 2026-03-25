@@ -3,6 +3,9 @@
  * 分为图标导航区和内容展示区，支持切换不同功能面板
  * 再次点击已选中项可折叠/展开内容区
  */
+import { debounce } from '../../utils/helpers.js';
+import { EventTypes } from '../../core/EventTypes.js';
+
 export class LeftSidebar {
     constructor() {
         // 当前激活的面板
@@ -39,6 +42,11 @@ export class LeftSidebar {
 
         // 归档年份展开状态
         this.expandedArchiveYears = new Set();  // 存储展开的年份
+
+        // 搜索状态
+        this.activeSearchResultId = null;  // 当前选中的搜索结果ID
+        this.lastSearchQuery = '';         // 上一次搜索关键词
+        this.lastSearchResults = [];       // 上一次搜索结果
 
         // 回调函数
         this.onPanelChange = null;
@@ -437,14 +445,7 @@ export class LeftSidebar {
 
         switch (panelId) {
             case 'search':
-                container.innerHTML = `
-                    <div class="sidebar-panel">
-                        <h3 class="panel-title"><i class="fas fa-search"></i> 快速搜索</h3>
-                        <div class="panel-content">
-                            <p class="panel-empty">在顶部搜索框搜索笔记</p>
-                        </div>
-                    </div>
-                `;
+                this.renderSearchPanel(container, data);
                 break;
             case 'tags':
                 this.renderTagsPanel(container, data);
@@ -731,5 +732,214 @@ export class LeftSidebar {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * 设置当前激活的搜索结果
+     * @param {string} noteId 笔记ID
+     */
+    setActiveSearchResult(noteId) {
+        this.activeSearchResultId = noteId;
+    }
+
+    /**
+     * 更新搜索结果选中状态（重新渲染高亮）
+     */
+    refreshSearchResultSelection(container) {
+        const resultsContainer = container.querySelector('.search-results-container');
+        if (!resultsContainer) return;
+
+        // 移除所有active类
+        resultsContainer.querySelectorAll('.search-result-card').forEach(card => {
+            card.classList.toggle('active', card.dataset.noteId === this.activeSearchResultId);
+        });
+    }
+
+    /**
+     * 清除搜索结果选中状态
+     */
+    clearSearchResultSelection(container) {
+        this.activeSearchResultId = null;
+        const resultsContainer = container.querySelector('.search-results-container');
+        if (!resultsContainer) return;
+
+        resultsContainer.querySelectorAll('.search-result-card').forEach(card => {
+            card.classList.remove('active');
+        });
+    }
+
+    /**
+     * 渲染搜索面板
+     */
+    renderSearchPanel(container, data) {
+        // 如果有保存的搜索状态，使用它（切换面板回来时恢复状态）
+        let query = this.lastSearchQuery;
+        let results = this.lastSearchResults;
+
+        // 如果没有保存的状态，才使用传入的数据
+        if (!this.lastSearchQuery && data && data.query !== undefined) {
+            query = data.query || '';
+            results = data.results || [];
+            this.lastSearchQuery = query;
+            this.lastSearchResults = results;
+        }
+
+        container.innerHTML = `
+            <div class="sidebar-panel search-panel">
+                <h3 class="panel-title"><i class="fas fa-search"></i> 快速搜索</h3>
+                <div class="panel-content">
+                    <div class="search-input-wrapper">
+                        <input
+                            type="text"
+                            class="sidebar-search-input"
+                            placeholder="输入关键词搜索..."
+                            value="${this.escapeHtml(query)}"
+                            autocomplete="off"
+                        >
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="search-results-container">
+                        ${this.renderSearchResults(results, query)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 绑定输入事件实现动态搜索
+        const searchInput = container.querySelector('.sidebar-search-input');
+        // 聚焦但不选中光标，保持用户之前的输入位置
+        searchInput.focus();
+        searchInput.addEventListener('input', debounce((e) => {
+            const value = e.target.value.trim();
+            window.eventBus.emit(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, value);
+        }, 200));
+    }
+
+    /**
+     * 更新搜索结果（不重新渲染输入框，避免光标位置丢失）
+     */
+    updateSearchResults(container, results, query) {
+        // 保存搜索状态
+        this.lastSearchQuery = query;
+        this.lastSearchResults = results;
+
+        const resultsContainer = container.querySelector('.search-results-container');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = this.renderSearchResults(results, query);
+        }
+    }
+
+    /**
+     * 渲染搜索结果列表
+     */
+    renderSearchResults(results, query) {
+        if (results.length === 0) {
+            if (!query) {
+                return `<p class="panel-empty">输入关键词开始搜索</p>`;
+            }
+            return `<p class="panel-empty">未找到匹配的笔记</p>`;
+        }
+
+        return `
+            <ul class="search-results-list">
+                ${results.map(note => {
+                    const isActive = note.id === this.activeSearchResultId;
+                    const preview = this.generateSearchPreview(note.content || '', query);
+                    const tagsHtml = this.renderNoteTags(note, query);
+
+                    return `
+                        <li class="search-result-card ${isActive ? 'active' : ''}" data-note-id="${note.id}">
+                            <div class="search-result-title">
+                                ${this.highlightMatch(this.escapeHtml(note.title || '无标题'), query)}
+                            </div>
+                            <div class="search-result-preview">${preview}</div>
+                            ${tagsHtml}
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        `;
+    }
+
+    /**
+     * 渲染笔记标签
+     */
+    renderNoteTags(note, query) {
+        if (!note.tags || !note.tagsData || note.tags.length === 0) {
+            return '';
+        }
+
+        const tagsHtml = note.tagsData.map(tag => {
+            const tagName = this.escapeHtml(tag.name);
+            const coloredName = query
+                ? this.highlightMatch(tagName, query)
+                : tagName;
+
+            return `
+                <span class="search-note-tag" style="border-color: ${tag.color}">
+                    ${coloredName}
+                </span>
+            `;
+        }).join('');
+
+        return `<div class="search-note-tags">${tagsHtml}</div>`;
+    }
+
+    /**
+     * 生成搜索预览片段，包含匹配关键词的上下文
+     */
+    generateSearchPreview(content, query) {
+        if (!content || !query) return '';
+
+        const lowerContent = content.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        const index = lowerContent.indexOf(lowerQuery);
+
+        if (index === -1) {
+            // 内容中没有匹配，可能匹配在标题或标签，取前80字符
+            const snippet = content.replace(/\s+/g, ' ').trim().slice(0, 80);
+            if (!snippet) return '';
+            return this.escapeHtml(snippet) + (content.length > 80 ? '...' : '');
+        }
+
+        // 提取匹配位置周围的上下文：约25字符前，65字符后
+        const start = Math.max(0, index - 20);
+        const end = Math.min(content.length, index + query.length + 60);
+        let snippet = content.slice(start, end);
+
+        // 清理多余空白
+        snippet = snippet.replace(/\s+/g, ' ').trim();
+
+        // 转义并高亮
+        return this.highlightMatch(this.escapeHtml(snippet), query);
+    }
+
+    /**
+     * 高亮匹配的关键词
+     * 将所有匹配位置用<mark>标签包裹
+     */
+    highlightMatch(text, query) {
+        if (!query || !text) return text;
+
+        const lowerQuery = query.toLowerCase();
+        const lowerText = text.toLowerCase();
+        let result = '';
+        let lastIndex = 0;
+        let index = lowerText.indexOf(lowerQuery);
+
+        while (index !== -1) {
+            // 添加匹配前的文本
+            result += text.slice(lastIndex, index);
+            // 添加高亮的匹配部分
+            result += `<mark>${text.slice(index, index + query.length)}</mark>`;
+
+            lastIndex = index + query.length;
+            index = lowerText.indexOf(lowerQuery, lastIndex);
+        }
+
+        // 添加剩余文本
+        result += text.slice(lastIndex);
+
+        return result;
     }
 }

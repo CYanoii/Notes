@@ -43,7 +43,8 @@ export const EventTypes = {
   
   // 搜索事件
   SEARCH: {
-    HOME_SEARCH: 'search:homeSearch'
+    HOME_SEARCH: 'search:homeSearch',
+    SIDEBAR_SEARCH_INPUT: 'search:sidebarSearchInput'
   },
 
   // 回收站事件

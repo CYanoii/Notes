@@ -261,6 +261,14 @@ export class UIManager {
                 this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
                 return;
             }
+
+            // 搜索结果项点击
+            const searchResultItem = e.target.closest('.search-result-card');
+            if (searchResultItem) {
+                const noteId = searchResultItem.dataset.noteId;
+                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                return;
+            }
         });
     }
 
@@ -392,6 +400,30 @@ export class UIManager {
     }
 
     /**
+     * 更新搜索结果（不重新渲染输入框）
+     */
+    leftSidebar_updateSearchResults(results, query) {
+        const container = this.leftSidebar.getContentContainer();
+        this.leftSidebar.updateSearchResults(container, results, query);
+    }
+
+    /**
+     * 刷新搜索结果选中状态
+     */
+    leftSidebar_refreshSearchResultSelection() {
+        const container = this.leftSidebar.getContentContainer();
+        this.leftSidebar.refreshSearchResultSelection(container);
+    }
+
+    /**
+     * 清除搜索结果选中状态
+     */
+    leftSidebar_clearSearchResultSelection() {
+        const container = this.leftSidebar.getContentContainer();
+        this.leftSidebar.clearSearchResultSelection(container);
+    }
+
+    /**
      * 切换标签展开状态
      */
     leftSidebar_toggleTagExpanded(tagId) {
@@ -403,6 +435,13 @@ export class UIManager {
      */
     leftSidebar_toggleArchiveYearExpanded(year) {
         this.leftSidebar.toggleArchiveYearExpanded(year);
+    }
+
+    /**
+     * 设置当前激活的搜索结果
+     */
+    leftSidebar_setActiveSearchResult(noteId) {
+        this.leftSidebar.setActiveSearchResult(noteId);
     }
 
     // ========== Modal 代理方法 ==========

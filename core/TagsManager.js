@@ -140,6 +140,14 @@ class TagsManager {
     return counts;
   }
 
+  // 根据ID批量获取标签详情
+  async getTagsByIds(tagIds) {
+    const allTags = await this.getAllTags();
+    return tagIds
+      .map(tagId => allTags.find(tag => tag.id === tagId))
+      .filter(tag => tag !== undefined);
+  }
+
   // 检查文件是否存在
   async exists(filePath) {
     try {

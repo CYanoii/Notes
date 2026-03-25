@@ -6,9 +6,10 @@ const path = require('path');
 const { app } = require('electron');
 
 class NotesManager {
-  constructor() {
+  constructor(tagsManager = null) {
     this.notesDir = path.join(app.getPath('userData'), 'notes');
     this.indexFile = path.join(this.notesDir, 'notes-index.json');
+    this.tagsManager = tagsManager;
   }
 
   // 初始化 - 确保笔记目录和索引文件存在
@@ -113,14 +114,68 @@ class NotesManager {
     return allNotes.slice(0, limit);
   }
 
-  // 搜索笔记
+  // 获取笔记内容
+  async getNoteContent(noteId) {
+    const noteFile = path.join(this.notesDir, noteId, 'note.md');
+    if (!await this.exists(noteFile)) {
+      return '';
+    }
+    return await fs.readFile(noteFile, 'utf-8');
+  }
+
+  // 搜索笔记 - 搜索标题、内容、标签名称
   async searchNotes(query) {
     const allNotes = await this.getAllNotes();
     const lowerQuery = query.toLowerCase();
 
-    return allNotes.filter(note => {
-      return note.title.toLowerCase().includes(lowerQuery);
-    });
+    // 获取所有标签用于标签名称匹配
+    let tagMap = new Map();
+    if (this.tagsManager) {
+      const allTags = await this.tagsManager.getAllTags();
+      tagMap = new Map(allTags.map(tag => [tag.id, tag.name.toLowerCase()]));
+    }
+
+    const matchingNotes = [];
+
+    for (const note of allNotes) {
+      let matches = false;
+
+      // 检查标题
+      const titleMatches = note.title.toLowerCase().includes(lowerQuery);
+
+      // 检查标签名称
+      let tagMatches = false;
+      if (note.tags && note.tags.length > 0) {
+        tagMatches = note.tags.some(tagId => {
+          const tagName = tagMap.get(tagId);
+          return tagName && tagName.includes(lowerQuery);
+        });
+      }
+
+      // 检查内容
+      let contentMatches = false;
+      if (!titleMatches && !tagMatches) {
+        // 只有标题和标签都不匹配，才需要读取内容检查
+        const content = await this.getNoteContent(note.id);
+        contentMatches = content.toLowerCase().includes(lowerQuery);
+      }
+
+      // 任意一处匹配就算匹配
+      matches = titleMatches || tagMatches || contentMatches;
+
+      if (matches) {
+        // 返回完整笔记对象（包含内容用于前端预览）
+        const fullNote = await this.getNote(note.id);
+        // 添加完整标签数据（名称和颜色）用于前端显示
+        if (this.tagsManager && fullNote.tags && fullNote.tags.length > 0) {
+          fullNote.tagsData = await this.tagsManager.getTagsByIds(fullNote.tags);
+        }
+        matchingNotes.push(fullNote);
+      }
+    }
+
+    // 按更新时间降序排序，最新的排在前面
+    return matchingNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
 
   // 获取单个笔记

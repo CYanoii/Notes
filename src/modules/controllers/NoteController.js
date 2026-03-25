@@ -14,12 +14,19 @@ export class NoteController {
 
         this.notes = new Map(); // 存储打开的笔记
         this.currentNoteId = null;
+        this.lastSearchQuery = ''; // 保存最近一次搜索关键词用于热更新
 
         // 初始化事件监听
         this.initEventListeners();
 
-        // 防抖保存函数
-        this.debouncedSave = debounce((noteId) => this.saveNote(noteId), 500);
+        // 防抖保存函数，支持可选回调
+        this.debouncedSave = debounce((noteId, callback) => {
+            this.saveNote(noteId).then(() => {
+                if (callback) callback();
+            });
+        }, 500);
+        // 防抖搜索函数
+        this.debouncedSidebarSearch = debounce((query) => this.handleSidebarSearch(query), 200);
     }
 
     /**
@@ -58,6 +65,7 @@ export class NoteController {
             console.log('搜索:', query);
             this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
         });
+        this.eventBus.on(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, (query) => this.handleSidebarSearch(query));
 
         // 回收站事件
         this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
@@ -90,8 +98,15 @@ export class NoteController {
     async handlePanelChange(panelId) {
         switch (panelId) {
             case 'search':
-                // 搜索面板不需要额外数据
-                this.uiManager.leftSidebar_renderPanelContent(panelId);
+                // 搜索面板初始渲染（空结果，显示搜索框）
+                if (this.currentNoteId) {
+                    this.uiManager.leftSidebar_setActiveSearchResult(this.currentNoteId);
+                }
+                if (this.lastSearchQuery) {
+                    // 如果有上次搜索关键词，重新搜索获取最新结果
+                    this.handleSidebarSearch(this.lastSearchQuery);
+                }
+                this.uiManager.leftSidebar_renderPanelContent(panelId, { results: [], query: this.lastSearchQuery });
                 break;
             case 'tags':
                 try {
@@ -236,6 +251,10 @@ export class NoteController {
         this.uiManager.tabBar_switchToTab(noteId);
         this.uiManager.editor_switchToNoteEditor(noteId);
         this.currentNoteId = noteId;
+
+        // 更新侧边栏搜索结果选中状态
+        this.uiManager.leftSidebar_setActiveSearchResult(noteId);
+        this.uiManager.leftSidebar_refreshSearchResultSelection();
     }
 
     /**
@@ -245,6 +264,9 @@ export class NoteController {
         this.uiManager.tabBar_switchToTab('home');
         this.uiManager.editor_switchToHomePage();
         this.currentNoteId = null;
+
+        // 清除搜索结果选中状态
+        this.uiManager.leftSidebar_clearSearchResultSelection();
     }
 
     /**
@@ -278,7 +300,11 @@ export class NoteController {
             note.title = newTitle;
             this.uiManager.tabBar_updateTabTitle(noteId, newTitle);
             this.uiManager.editor_updateEditorTitle(noteId, newTitle);
-            this.debouncedSave(noteId);
+            // 保存完成后刷新搜索结果
+            this.debouncedSave(noteId, () => {
+                // 热更新：如果在搜索面板，刷新搜索结果
+                this.refreshSearchResults();
+            });
         }
     }
 
@@ -291,7 +317,11 @@ export class NoteController {
         const note = this.notes.get(noteId);
         if (note) {
             note.content = newContent;
-            this.debouncedSave(noteId);
+            // 保存完成后刷新搜索结果
+            this.debouncedSave(noteId, () => {
+                // 热更新：如果在搜索面板，刷新搜索结果
+                this.refreshSearchResults();
+            });
         }
     }
 
@@ -476,6 +506,44 @@ export class NoteController {
         } catch (error) {
             console.error('永久删除失败:', error);
             this.uiManager.toast_show('永久删除失败', 'error');
+        }
+    }
+
+    /**
+     * 处理侧边栏搜索输入
+     * @param {string} query 搜索关键词
+     */
+    async handleSidebarSearch(query) {
+        this.lastSearchQuery = query.trim();
+
+        if (!this.lastSearchQuery) {
+            // 空查询，清空搜索结果（不重新渲染输入框）
+            this.uiManager.leftSidebar_updateSearchResults([], '');
+            return;
+        }
+
+        try {
+            const results = await this.noteService.searchNotes(this.lastSearchQuery);
+            // 如果有当前打开的笔记，设置为激活状态
+            if (this.currentNoteId) {
+                this.uiManager.leftSidebar_setActiveSearchResult(this.currentNoteId);
+            }
+            // 只更新搜索结果，不重新渲染整个面板（保留输入框光标位置）
+            this.uiManager.leftSidebar_updateSearchResults(results, this.lastSearchQuery);
+        } catch (error) {
+            console.error('搜索失败:', error);
+            this.uiManager.toast_show('搜索失败', 'error');
+            this.uiManager.leftSidebar_updateSearchResults([], this.lastSearchQuery);
+        }
+    }
+
+    /**
+     * 刷新搜索结果（用于热更新，内容修改后）
+     */
+    async refreshSearchResults() {
+        const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+        if (currentPanel === 'search' && this.lastSearchQuery) {
+            await this.handleSidebarSearch(this.lastSearchQuery);
         }
     }
 }

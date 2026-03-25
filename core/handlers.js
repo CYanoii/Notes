@@ -11,6 +11,7 @@ let tagsManager;
 async function setupIpcHandlers() {
   notesManager = new NotesManager();
   tagsManager = new TagsManager(notesManager);
+  notesManager.tagsManager = tagsManager;
 
   // 等待初始化完成
   await notesManager.initialize();

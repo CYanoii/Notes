@@ -59,9 +59,7 @@ export class NoteService {
      * @returns {Promise<Array>} 匹配的笔记列表
      */
     async searchNotes(query) {
-        // 待实现API
-        const results = [];
-        return results;
+        return await window.electronAPI.searchNotes(query);
     }
 
     /**
