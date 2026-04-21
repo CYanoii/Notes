@@ -1,6 +1,7 @@
 /**
  * 编辑器组件
  * 负责笔记编辑器的创建、切换和内容管理
+ * 使用 Vditor 提供 Markdown 编辑支持
  */
 import { escapeHtml } from '../../utils/helpers.js';
 
@@ -10,6 +11,7 @@ export class Editor {
         this.homePage = document.getElementById('tab-home');
         this.onTitleChange = null;
         this.onContentChange = null;
+        this.vditors = new Map(); // 存储每个笔记的 Vditor 实例
     }
 
     /**
@@ -20,6 +22,20 @@ export class Editor {
     setCallbacks(onTitleChange, onContentChange) {
         this.onTitleChange = onTitleChange;
         this.onContentChange = onContentChange;
+    }
+
+    /**
+     * 渲染 Markdown 为 HTML
+     * @param {string} content Markdown 内容
+     * @returns {string} HTML 字符串
+     */
+    renderMarkdown(content) {
+        if (!content) return '';
+        if (typeof window.marked !== 'undefined') {
+            return window.marked.parse(content);
+        }
+        // Fallback: 简单转义 HTML
+        return escapeHtml(content);
     }
 
     /**
@@ -37,7 +53,6 @@ export class Editor {
 
         // 只读模式属性
         const titleDisabled = isTrashed ? 'disabled' : '';
-        const contentReadonly = isTrashed ? 'readonly' : '';
         const showAddTagBtn = !isTrashed && !hasTags;
 
         editor.innerHTML = `
@@ -52,14 +67,11 @@ export class Editor {
                     ${this.renderNoteTags(noteTags)}
                 </div>
             </div>
-            <textarea class="note-content-textarea"
-                      placeholder="开始记录你的想法..."
-                      ${contentReadonly}>${escapeHtml(noteData.content)}</textarea>
+            <div class="vditor-container" id="vditor-${noteData.id}"></div>
         `;
 
-        // 只在非回收站时绑定输入事件
+        // 只在非回收站时绑定标题输入事件
         const titleInput = editor.querySelector('.note-title-input');
-        const contentTextarea = editor.querySelector('.note-content-textarea');
 
         if (!isTrashed) {
             titleInput.addEventListener('input', () => {
@@ -68,11 +80,33 @@ export class Editor {
                 }
             });
 
-            contentTextarea.addEventListener('input', () => {
-                if (this.onContentChange) {
-                    this.onContentChange(noteData.id, contentTextarea.value);
+            // 初始化 Vditor 编辑器
+            const vditorContainer = editor.querySelector('.vditor-container');
+            const vditor = new Vditor(vditorContainer, {
+                placeholder: '开始记录你的想法...',
+                value: noteData.content || '',
+                cache: {
+                    enable: false
+                },
+                preview: {
+                    maxWidth: 1200
+                },
+                after: () => {
+                    // 编辑器初始化完成
+                },
+                input: (value) => {
+                    if (this.onContentChange) {
+                        this.onContentChange(noteData.id, value);
+                    }
                 }
             });
+
+            // 存储 Vditor 实例
+            this.vditors.set(noteData.id, vditor);
+        } else {
+            // 只读模式：直接渲染 HTML 不显示编辑器
+            const vditorContainer = editor.querySelector('.vditor-container');
+            vditorContainer.innerHTML = `<div class="vditor-readonly">${this.renderMarkdown(noteData.content || '')}</div>`;
         }
 
         // 标签点击事件会在外部委托绑定
@@ -171,6 +205,13 @@ export class Editor {
      * @param {string|number} noteId 笔记ID
      */
     closeNoteEditor(noteId) {
+        // 销毁 Vditor 实例
+        const vditor = this.vditors.get(noteId);
+        if (vditor) {
+            vditor.destroy();
+            this.vditors.delete(noteId);
+        }
+
         const editor = document.getElementById(`note-${noteId}`);
         if (editor) {
             editor.remove();
@@ -195,9 +236,18 @@ export class Editor {
      * @param {string} newContent 新内容
      */
     updateEditorContent(noteId, newContent) {
-        const contentTextarea = document.querySelector(`#note-${noteId} .note-content-textarea`);
-        if (contentTextarea && contentTextarea.value !== newContent) {
-            contentTextarea.value = newContent;
+        const vditor = this.vditors.get(noteId);
+        if (vditor) {
+            const currentValue = vditor.getValue();
+            if (currentValue !== newContent) {
+                vditor.setValue(newContent);
+            }
+        } else {
+            // 只读模式下更新预览
+            const container = document.querySelector(`#note-${noteId} .vditor-readonly`);
+            if (container) {
+                container.innerHTML = this.renderMarkdown(newContent || '');
+            }
         }
     }
 }

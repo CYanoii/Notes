@@ -14,6 +14,7 @@
     "electron": "^40.0.0"
   },
   "dependencies": {
-    "electron-reload": "^2.0.0-alpha.1"
+    "electron-reload": "^2.0.0-alpha.1",
+    "vditor": "^3.11.2"
   }
 }
