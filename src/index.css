@@ -388,8 +388,8 @@ body {
     font-size: 24px;
     font-weight: 600;
     color: #2d3748;
-    padding: 10px 0;
-    margin-bottom: 20px;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
     border-bottom: 2px solid #e2e8f0;
     width: 100%;
 }
@@ -757,7 +757,7 @@ body.resizing {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
 }
 
