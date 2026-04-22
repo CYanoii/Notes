@@ -57,9 +57,7 @@ export class NoteController {
 
         // 搜索事件
         this.eventBus.on(EventTypes.SEARCH.HOME_SEARCH, (query) => {
-            // 搜索功能后续实现
-            console.log('搜索:', query);
-            this.uiManager.toast_show(`搜索功能将在后续版本中完善，搜索关键词：${query}`, 'info');
+            this.handleHomeSearch(query);
         });
 
         // 回收站事件
@@ -185,6 +183,46 @@ export class NoteController {
     handleWidthChange(width) {
         // CSS flex 自动适配主容器宽度，此处预留接口供后续扩展
         // console.log('侧边栏宽度变化:', width);
+    }
+
+    /**
+     * 处理首页搜索
+     * 1. 侧边栏收起时展开并跳转到搜索页
+     * 2. 看向其它栏时转到搜索栏
+     * 3. 就在搜索栏则重置搜索框文字
+     * 4. 将内容填充至搜索页的搜索框
+     * @param {string} query 搜索关键词
+     */
+    handleHomeSearch(query) {
+        // 内容为空时直接返回，不进行跳转
+        if (!query || query.trim() === '') {
+            return;
+        }
+
+        const currentPanel = this.uiManager.leftSidebar_getActivePanelId();
+        const isCollapsed = this.uiManager.leftSidebar_getIsCollapsed();
+
+        if (isCollapsed) {
+            // 收起时：展开并跳转到搜索页
+            this.uiManager.leftSidebar_switchPanel('search');
+        } else if (currentPanel !== 'search') {
+            // 看向其它栏时：跳转到搜索页
+            this.uiManager.leftSidebar_switchPanel('search');
+        } else {
+            // 就在搜索栏：重置搜索框文字（清空搜索结果）
+            this.noteTagCoordinator.lastSearchQuery = '';
+            this.uiManager.leftSidebar_updateSearchResults([], '');
+        }
+
+        // 填充搜索页的搜索框并触发搜索
+        setTimeout(() => {
+            const searchInput = document.querySelector('.sidebar-search-input');
+            if (searchInput) {
+                searchInput.value = query;
+                // 触发搜索
+                this.noteTagCoordinator.handleSidebarSearch(query);
+            }
+        }, 50);
     }
 
     /**

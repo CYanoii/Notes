@@ -264,17 +264,33 @@ body {
 
 .btn-search {
     background: #4299e1;
-    color: white;
     border: none;
     width: 40px;
     height: 40px;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
 }
 
-.btn-search:hover {
+.btn-search i {
+    margin: 0;
+    color: white;
+}
+
+.btn-search.disabled {
+    background: #e2e8f0;
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+.btn-search:not(.disabled):hover {
     background: #3182ce;
+}
+
+.btn-search:not(.disabled):active {
+    transform: scale(0.95);
 }
 
 .all-notes h2 {

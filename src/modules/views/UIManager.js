@@ -50,14 +50,33 @@ export class UIManager {
 
         // 搜索框事件
         const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.querySelector('.btn-search');
+
+        const updateSearchBtnState = () => {
+            const value = searchInput.value.trim();
+            if (value) {
+                searchBtn.classList.remove('disabled');
+                searchBtn.disabled = false;
+            } else {
+                searchBtn.classList.add('disabled');
+                searchBtn.disabled = true;
+            }
+        };
+
+        // 初始化按钮状态
+        updateSearchBtnState();
+
+        searchInput.addEventListener('input', updateSearchBtnState);
         searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && searchInput.value.trim()) {
                 this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
             }
         });
 
-        document.querySelector('.btn-search').addEventListener('click', () => {
-            this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
+        searchBtn.addEventListener('click', () => {
+            if (!searchBtn.disabled) {
+                this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
+            }
         });
 
         // 标签栏事件委托（处理标签切换和关闭）
@@ -377,6 +396,13 @@ export class UIManager {
     }
 
     // ========== LeftSidebar 代理方法 ==========
+
+    /**
+     * 获取当前折叠状态
+     */
+    leftSidebar_getIsCollapsed() {
+        return this.leftSidebar.getIsCollapsed();
+    }
 
     /**
      * 获取当前激活的面板 ID
