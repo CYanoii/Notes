@@ -51,6 +51,12 @@ export const EventTypes = {
   TRASH: {
     RESTORE: 'trash:restore',
     DELETE_PERMANENT: 'trash:deletePermanent'
+  },
+
+  // 标签筛选事件
+  TAG_FILTER: {
+    STATE_CHANGE: 'tagFilter:stateChange',
+    CLEAR: 'tagFilter:clear'
   }
 
 }

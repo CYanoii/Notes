@@ -14,6 +14,9 @@ export class NoteController {
 
         // 已打开笔记缓存由 NoteService 维护
 
+        // 标签筛选状态 {tagId: 'unselected' | 'selected' | 'blocked'}
+        this.tagFilterStates = {};
+
         // 初始化事件监听
         this.initEventListeners();
 
@@ -64,17 +67,29 @@ export class NoteController {
         this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
         this.eventBus.on(EventTypes.TRASH.DELETE_PERMANENT, (noteId) => this.handlePermanentDelete(noteId));
 
-        // 笔记标签更新事件（原由 Coordinator 监听）
-        this.eventBus.on(EventTypes.NOTE.UPDATE.TAG, (noteId) => {
-            this.noteTagCoordinator.updateNoteTag(noteId, this.getNoteById(noteId));
+        // 笔记标签更新事件（原由 Coordinator 监听）（添加异步等待确保标签更新完成后再刷新列表）
+        this.eventBus.on(EventTypes.NOTE.UPDATE.TAG, async (noteId) => {
+            await this.noteTagCoordinator.updateNoteTag(noteId, this.getNoteById(noteId));
+            this.loadAllNotes();
         });
         // 侧边栏搜索事件（原由 Coordinator 监听）
         this.eventBus.on(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, (query) => {
             this.noteTagCoordinator.handleSidebarSearch(query);
         });
+
+        // 标签筛选事件
+        this.eventBus.on(EventTypes.TAG_FILTER.STATE_CHANGE, (tagId, newState) => {
+            this.handleTagFilterStateChange(tagId, newState);
+        });
+        this.eventBus.on(EventTypes.TAG_FILTER.CLEAR, () => {
+            this.handleTagFilterClear();
+        });
     }
 
     async appInit() {
+        // 加载标签筛选栏
+        await this.refreshTagFilter();
+
         // 加载所有笔记
         await this.loadAllNotes();
 
@@ -230,12 +245,93 @@ export class NoteController {
      */
     async loadAllNotes() {
         try {
-            const notes = await this.noteService.getAllNotes();
+            let notes = await this.noteService.getAllNotes();
+            // 应用标签筛选
+            notes = this.applyTagFilter(notes);
             this.uiManager.noteList_renderNotes(notes);
         } catch (error) {
             console.error('加载所有笔记失败:', error);
             this.uiManager.toast_show('加载笔记失败', 'error');
         }
+    }
+
+    /**
+     * 根据标签筛选状态过滤笔记
+     * @param {Array} notes 原始笔记列表
+     * @returns {Array} 过滤后的笔记列表
+     */
+    applyTagFilter(notes) {
+        const selectedTags = [];
+        const blockedTags = [];
+
+        // 收集选中和屏蔽的标签
+        for (const [tagId, state] of Object.entries(this.tagFilterStates)) {
+            if (state === 'selected') {
+                selectedTags.push(tagId);
+            } else if (state === 'blocked') {
+                blockedTags.push(tagId);
+            }
+        }
+
+        // 如果没有筛选条件，返回所有笔记
+        if (selectedTags.length === 0 && blockedTags.length === 0) {
+            return notes;
+        }
+
+        return notes.filter(note => {
+            const noteTags = note.tags || [];
+
+            // 检查是否包含所有选中的标签（AND 逻辑）
+            const hasAllSelected = selectedTags.every(tagId => noteTags.includes(tagId));
+
+            // 检查是否不包含任何屏蔽的标签
+            const hasNoBlocked = !blockedTags.some(tagId => noteTags.includes(tagId));
+
+            return hasAllSelected && hasNoBlocked;
+        });
+    }
+
+    /**
+     * 刷新标签筛选栏显示
+     */
+    async refreshTagFilter() {
+        try {
+            const tags = await this.noteTagCoordinator.tagService.getAllTags();
+            // 清理已删除标签的筛选状态
+            const validTagIds = new Set(tags.map(t => t.id));
+            for (const tagId of Object.keys(this.tagFilterStates)) {
+                if (!validTagIds.has(tagId)) {
+                    delete this.tagFilterStates[tagId];
+                }
+            }
+            this.uiManager.tagFilter_render(tags, this.tagFilterStates);
+        } catch (error) {
+            console.error('刷新标签筛选栏失败:', error);
+        }
+    }
+
+    /**
+     * 处理标签筛选状态变化
+     * @param {string} tagId 标签ID
+     * @param {string} newState 新状态
+     */
+    async handleTagFilterStateChange(tagId, newState) {
+        if (newState === 'unselected') {
+            delete this.tagFilterStates[tagId];
+        } else {
+            this.tagFilterStates[tagId] = newState;
+        }
+        await this.refreshTagFilter();
+        await this.loadAllNotes();
+    }
+
+    /**
+     * 处理清除标签筛选
+     */
+    async handleTagFilterClear() {
+        this.tagFilterStates = {};
+        await this.refreshTagFilter();
+        await this.loadAllNotes();
     }
 
     /**

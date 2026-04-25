@@ -92,6 +92,10 @@ export class NoteService {
      */
     async updateNote(noteId, noteData) {
         const result = await window.electronAPI.updateNote(noteId, noteData);
+        // 更新内存缓存
+        if (this.openNotes.has(noteId)) {
+            this.openNotes.set(noteId, result);
+        }
         return result;
     }
 

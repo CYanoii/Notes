@@ -1556,3 +1556,104 @@ body.resizing {
     border-top: 2px solid #e2e8f0;
     margin: 2em 0;
 }
+
+/* ===== 首页标签筛选样式 ===== */
+.tag-filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.tag-filter-empty {
+    color: #a0aec0;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.tag-filter-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    user-select: none;
+}
+
+.tag-filter-item .tag-filter-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tag-filter-item .tag-filter-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 未选中状态 */
+.tag-filter-item.unselected {
+    background: #f7fafc;
+    border-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.tag-filter-item.unselected:hover {
+    background: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+/* 选中状态 */
+.tag-filter-item.selected {
+    background: #ebf8ff;
+    border-color: #4299e1;
+    color: #2d3748;
+}
+
+.tag-filter-item.selected:hover {
+    background: #e6f3ff;
+}
+
+/* 屏蔽状态 */
+.tag-filter-item.blocked {
+    background: #fff5f5;
+    border-color: #fc8181;
+    color: #c53030;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.tag-filter-item.blocked:hover {
+    background: #fed7d7;
+}
+
+/* 清除筛选按钮 */
+.tag-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f7fafc;
+    border: 1px dashed #cbd5e0;
+    color: #718096;
+}
+
+.tag-filter-clear:hover {
+    background: #edf2f7;
+    border-color: #a0aec0;
+}

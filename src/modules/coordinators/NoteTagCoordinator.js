@@ -208,4 +208,30 @@ export class NoteTagCoordinator {
 
         this.uiManager.leftSidebar_renderPanelContent('tags', { tags, tagCounts, tagNotes });
     }
+
+    /**
+     * 刷新首页标签筛选栏
+     * @param {Object} tagStates 可选的标签筛选状态映射
+     */
+    async refreshHomeTagFilter(tagStates = {}) {
+        const tags = await this.tagService.getAllTags();
+        this.uiManager.tagFilter_render(tags, tagStates);
+    }
+
+    /**
+     * 刷新首页笔记列表
+     */
+    async refreshHomeNotes() {
+        const notes = await this.noteService.getAllNotes();
+        this.uiManager.noteList_renderNotes(notes);
+    }
+
+    /**
+     * 刷新标签相关首页显示（标签筛选栏和笔记列表）
+     * @param {Object} tagStates 可选的标签筛选状态映射，用于保留筛选状态
+     */
+    async refreshTagRelatedHomeDisplay(tagStates = {}) {
+        await this.refreshHomeTagFilter(tagStates);
+        await this.refreshHomeNotes();
+    }
 }

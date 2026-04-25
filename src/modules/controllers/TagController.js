@@ -52,6 +52,7 @@ export class TagController {
         try {
             await this.tagService.createTag(name.trim());
             await this.noteTagCoordinator.refreshTagsList();
+            await this.noteTagCoordinator.refreshTagRelatedHomeDisplay();
             this.uiManager.toast_show('标签创建成功', 'success');
         } catch (error) {
             console.error('创建标签失败:', error);
@@ -82,6 +83,7 @@ export class TagController {
             await this.noteTagCoordinator.refreshTagsList();
             // 热更新所有已打开笔记的标签显示
             await this.noteTagCoordinator.refreshAllOpenNotesTags();
+            await this.noteTagCoordinator.refreshTagRelatedHomeDisplay();
             this.uiManager.toast_show('标签更新成功', 'success');
         } catch (error) {
             console.error('编辑标签失败:', error);
@@ -114,19 +116,11 @@ export class TagController {
                 this.currentSelectedTagId = null;
             }
 
+            await this.noteTagCoordinator.refreshTagRelatedHomeDisplay();
             this.uiManager.toast_show('标签删除成功', 'success');
         } catch (error) {
             console.error('删除标签失败:', error);
             this.uiManager.toast_show('删除标签失败', 'error');
         }
-    }
-
-    /**
-     * HTML 转义
-     */
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 }
