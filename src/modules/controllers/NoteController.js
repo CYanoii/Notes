@@ -84,6 +84,11 @@ export class NoteController {
         this.eventBus.on(EventTypes.TAG_FILTER.CLEAR, () => {
             this.handleTagFilterClear();
         });
+
+        // 设置事件
+        this.eventBus.on(EventTypes.SETTINGS.OPEN, () => {
+            this.uiManager.modal_showSettingsPopover();
+        });
     }
 
     async appInit() {

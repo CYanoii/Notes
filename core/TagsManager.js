@@ -18,8 +18,13 @@ const DEFAULT_COLORS = [
 ];
 
 class TagsManager {
-  constructor() {
-    this.notesDir = path.join(app.getPath('userData'), 'notes');
+  constructor(dataRootPath) {
+    // 如果传入了自定义路径，使用自定义路径；否则使用默认路径
+    if (dataRootPath) {
+      this.notesDir = dataRootPath;
+    } else {
+      this.notesDir = path.join(app.getPath('userData'), 'notes');
+    }
     this.tagsIndexFile = path.join(this.notesDir, 'tags-index.json');
   }
 

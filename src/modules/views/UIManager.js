@@ -112,7 +112,13 @@ export class UIManager {
             const navItem = e.target.closest('.sidebar-nav-item');
             if (navItem) {
                 const panelId = navItem.dataset.panelId;
-                this.eventBus.emit(EventTypes.SIDEBAR.NAV_CLICK, panelId);
+                const actionId = navItem.dataset.actionId;
+
+                if (actionId === 'settings') {
+                    this.eventBus.emit(EventTypes.SETTINGS.OPEN);
+                } else if (panelId) {
+                    this.eventBus.emit(EventTypes.SIDEBAR.NAV_CLICK, panelId);
+                }
             }
         });
 
@@ -510,5 +516,12 @@ export class UIManager {
      */
     modal_showTagSelection(allTags, currentTagIds) {
         return this.modal.showTagSelection(allTags, currentTagIds);
+    }
+
+    /**
+     * 显示设置浮出窗口
+     */
+    modal_showSettingsPopover() {
+        this.modal.showSettingsPopover();
     }
 }

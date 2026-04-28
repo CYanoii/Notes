@@ -26,6 +26,11 @@ export class LeftSidebar {
             { id: 'trash', icon: 'fas fa-trash-alt', label: '回收站' }
         ];
 
+        // 底部功能按钮
+        this.bottomItems = [
+            { id: 'settings', icon: 'fas fa-cog', label: '设置' }
+        ];
+
         // 拉伸配置
         this.minExpandedWidth = 180;     // 展开状态最小宽度（包含导航栏）
         this.collapseThreshold = 90;     // 超过最小宽度多少像素才触发收起
@@ -54,6 +59,7 @@ export class LeftSidebar {
         this.onWidthChange = null;
         this.onTagNoteClick = null;
         this.onArchiveNoteClick = null;
+        this.onSettingsClick = null;
 
         // DOM 元素引用
         this.container = null;
@@ -98,6 +104,18 @@ export class LeftSidebar {
             const navItem = document.createElement('div');
             navItem.className = `sidebar-nav-item ${item.id === this.activePanel ? 'active' : ''}`;
             navItem.dataset.panelId = item.id;
+            navItem.title = item.label;
+
+            navItem.innerHTML = `<i class="${item.icon}"></i>`;
+
+            this.navContainer.appendChild(navItem);
+        });
+
+        // 渲染底部功能按钮
+        this.bottomItems.forEach(item => {
+            const navItem = document.createElement('div');
+            navItem.className = 'sidebar-nav-item sidebar-nav-bottom';
+            navItem.dataset.actionId = item.id;
             navItem.title = item.label;
 
             navItem.innerHTML = `<i class="${item.icon}"></i>`;
@@ -617,6 +635,13 @@ export class LeftSidebar {
      */
     setArchiveNoteClickCallback(callback) {
         this.onArchiveNoteClick = callback;
+    }
+
+    /**
+     * 设置设置按钮点击回调
+     */
+    setSettingsClickCallback(callback) {
+        this.onSettingsClick = callback;
     }
 
     /**

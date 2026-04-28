@@ -57,6 +57,11 @@ export const EventTypes = {
   TAG_FILTER: {
     STATE_CHANGE: 'tagFilter:stateChange',
     CLEAR: 'tagFilter:clear'
+  },
+
+  // 设置事件
+  SETTINGS: {
+    OPEN: 'settings:open'
   }
 
 }

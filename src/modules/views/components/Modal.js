@@ -184,6 +184,100 @@ export class Modal {
   }
 
   /**
+   * 显示设置浮出窗口
+   */
+  async showSettingsPopover() {
+    this.createOverlay();
+
+    // 加载当前配置
+    const config = await window.electronAPI.getConfig();
+
+    const popover = document.createElement('div');
+    popover.className = 'settings-popover';
+    popover.innerHTML = `
+      <div class="settings-popover-header">
+        <h3 class="settings-popover-title">设置</h3>
+        <button class="settings-popover-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="settings-popover-body">
+        <div class="settings-item">
+          <label class="settings-label">数据目录</label>
+          <div class="settings-path-row">
+            <input type="text" class="settings-path-input" value="${config.dataRootPath || ''}" placeholder="留空使用默认路径">
+            <button class="settings-select-btn">选择</button>
+            <button class="settings-clear-btn" title="清除并使用默认路径">×</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-popover-footer">
+        <button class="btn btn-primary settings-apply-btn">应用</button>
+      </div>
+    `;
+
+    this.overlay.appendChild(popover);
+
+    // 存储临时路径值
+    let tempDataRootPath = config.dataRootPath || '';
+
+    // 选择按钮点击
+    popover.querySelector('.settings-select-btn').addEventListener('click', async () => {
+      const folderPath = await window.electronAPI.selectFolder();
+      if (folderPath) {
+        tempDataRootPath = folderPath;
+        popover.querySelector('.settings-path-input').value = folderPath;
+      }
+    });
+
+    // 清除按钮点击
+    popover.querySelector('.settings-clear-btn').addEventListener('click', () => {
+      tempDataRootPath = '';
+      popover.querySelector('.settings-path-input').value = '';
+    });
+
+    // 输入框变化跟踪
+    popover.querySelector('.settings-path-input').addEventListener('input', (e) => {
+      tempDataRootPath = e.target.value;
+    });
+
+    // 应用按钮点击
+    popover.querySelector('.settings-apply-btn').addEventListener('click', async () => {
+      // 应用配置并重新加载数据管理器
+      await window.electronAPI.applyConfigAndReload('dataRootPath', tempDataRootPath);
+      this.close();
+      // 刷新页面以重新加载数据
+      window.location.reload();
+    });
+
+    // 关闭按钮
+    popover.querySelector('.settings-popover-close').addEventListener('click', () => {
+      this.close();
+    });
+
+    // 点击遮罩关闭
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay) {
+        this.close();
+      }
+    });
+
+    // ESC 键关闭
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        this.close();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    // 阻止冒泡
+    popover.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  /**
    * 创建标签选择模态框
    */
   createTagSelectionModal(allTags, currentTagIds) {

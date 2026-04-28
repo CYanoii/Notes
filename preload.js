@@ -4,6 +4,14 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // 配置操作
+  getConfig: () => ipcRenderer.invoke('config:get'),
+  setConfig: (key, value) => ipcRenderer.invoke('config:set', key, value),
+  applyConfigAndReload: (key, value) => ipcRenderer.invoke('config:applyAndReload', key, value),
+
+  // 文件夹选择
+  selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
+
   // 笔记操作
   createNote: () => ipcRenderer.invoke('notes:create'),
   getNote: (noteId) => ipcRenderer.invoke('notes:get', noteId),
