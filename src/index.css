@@ -98,6 +98,22 @@ body {
     border-radius: 50%;
 }
 
+/* 拖拽样式 */
+.tab.dragging {
+    opacity: 0.5;
+    background: #3182ce;
+}
+
+.tab.drag-over {
+    border-left: 2px solid #4299e1;
+    padding-left: 6px;
+}
+
+/* 主页标签页不允许拖拽 */
+.tab[data-tab-id="home"] {
+    cursor: default;
+}
+
 .header-actions {
     display: flex;
     align-items: center;

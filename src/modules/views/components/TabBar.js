@@ -7,6 +7,26 @@ import { escapeHtml } from '../../utils/helpers.js';
 export class TabBar {
     constructor() {
         this.tabBar = document.getElementById('tabBar');
+        this.draggedTab = null;
+        this.init();
+    }
+
+    /**
+     * 初始化组件
+     */
+    init() {
+        this.bindDragEvents();
+    }
+
+    /**
+     * 绑定拖拽事件
+     */
+    bindDragEvents() {
+        this.tabBar.addEventListener('dragstart', (e) => this.onDragStart(e));
+        this.tabBar.addEventListener('dragend', (e) => this.onDragEnd(e));
+        this.tabBar.addEventListener('dragover', (e) => this.onDragOver(e));
+        this.tabBar.addEventListener('drop', (e) => this.onDrop(e));
+        this.tabBar.addEventListener('dragleave', (e) => this.onDragLeave(e));
     }
 
     /**
@@ -17,6 +37,7 @@ export class TabBar {
         const tab = document.createElement('div');
         tab.className = 'tab';
         tab.dataset.tabId = noteData.id;
+        tab.draggable = true;
         tab.innerHTML = `
             <div class="tab-icon-title">
                 <i class="fas fa-file-alt"></i>
@@ -74,5 +95,80 @@ export class TabBar {
     getActiveTabId() {
         const activeTab = this.tabBar.querySelector('.tab.active');
         return activeTab ? activeTab.dataset.tabId : null;
+    }
+
+    /**
+     * 开始拖拽
+     */
+    onDragStart(e) {
+        const tab = e.target.closest('.tab');
+        if (!tab || tab.dataset.tabId === 'home') {
+            e.preventDefault();
+            return;
+        }
+        this.draggedTab = tab;
+        tab.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', tab.dataset.tabId);
+    }
+
+    /**
+     * 结束拖拽
+     */
+    onDragEnd(e) {
+        const tab = e.target.closest('.tab');
+        if (tab) {
+            tab.classList.remove('dragging');
+        }
+        this.draggedTab = null;
+        this.tabBar.querySelectorAll('.tab').forEach(t => t.classList.remove('drag-over'));
+    }
+
+    /**
+     * 拖拽经过其他标签
+     */
+    onDragOver(e) {
+        e.preventDefault();
+        const tab = e.target.closest('.tab');
+        if (!tab || tab === this.draggedTab || tab.dataset.tabId === 'home') {
+            return;
+        }
+        e.dataTransfer.dropEffect = 'move';
+        this.tabBar.querySelectorAll('.tab').forEach(t => t.classList.remove('drag-over'));
+        tab.classList.add('drag-over');
+    }
+
+    /**
+     * 放置标签
+     */
+    onDrop(e) {
+        e.preventDefault();
+        const targetTab = e.target.closest('.tab');
+        if (!targetTab || !this.draggedTab || targetTab === this.draggedTab || targetTab.dataset.tabId === 'home') {
+            return;
+        }
+
+        // 交换位置
+        const parent = this.draggedTab.parentNode;
+        const draggedIndex = Array.from(parent.children).indexOf(this.draggedTab);
+        const targetIndex = Array.from(parent.children).indexOf(targetTab);
+
+        if (draggedIndex < targetIndex) {
+            parent.insertBefore(this.draggedTab, targetTab.nextSibling);
+        } else {
+            parent.insertBefore(this.draggedTab, targetTab);
+        }
+
+        this.onDragEnd(e);
+    }
+
+    /**
+     * 拖拽离开
+     */
+    onDragLeave(e) {
+        const tab = e.target.closest('.tab');
+        if (tab && !tab.contains(e.relatedTarget)) {
+            tab.classList.remove('drag-over');
+        }
     }
 }
