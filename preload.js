@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setConfig: (key, value) => ipcRenderer.invoke('config:set', key, value),
   applyConfigAndReload: (key, value) => ipcRenderer.invoke('config:applyAndReload', key, value),
 
+  // 页面状态操作
+  loadPageState: () => ipcRenderer.invoke('pageState:load'),
+  savePageState: (state) => ipcRenderer.invoke('pageState:save', state),
+
   // 文件夹选择
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
 

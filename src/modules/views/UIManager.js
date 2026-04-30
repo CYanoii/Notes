@@ -50,6 +50,11 @@ export class UIManager {
             (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
         );
 
+        // TabBar 组件事件回调 - 将标签页顺序变化事件转发到 eventBus
+        this.tabBar.setOrderChangeCallback((order) => {
+            this.eventBus.emit(EventTypes.TAB_BAR.ORDER_CHANGE, order);
+        });
+
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
         document.getElementById('newNoteBtn').addEventListener('click', () => {
@@ -380,6 +385,20 @@ export class UIManager {
         this.tabBar.updateTabTitle(noteId, newTitle);
     }
 
+    /**
+     * 获取标签页顺序
+     */
+    tabBar_getTabOrder() {
+        return this.tabBar.getTabOrder();
+    }
+
+    /**
+     * 设置标签页顺序变化回调
+     */
+    tabBar_setOrderChangeCallback(callback) {
+        this.tabBar.setOrderChangeCallback(callback);
+    }
+
     // ========== NoteList 代理方法 ==========
 
     /**
@@ -482,6 +501,27 @@ export class UIManager {
      */
     leftSidebar_setActiveSearchResult(noteId) {
         this.leftSidebar.setActiveSearchResult(noteId);
+    }
+
+    /**
+     * 折叠侧边栏
+     */
+    leftSidebar_collapse() {
+        this.leftSidebar.collapse();
+    }
+
+    /**
+     * 展开侧边栏
+     */
+    leftSidebar_expand() {
+        this.leftSidebar.expand();
+    }
+
+    /**
+     * 设置侧边栏宽度
+     */
+    leftSidebar_setWidth(width) {
+        this.leftSidebar.setWidth(width);
     }
 
     // ========== TagFilter 代理方法 ==========

@@ -2,6 +2,8 @@
  * IPC 处理器 - 注册所有 IPC 通信
  */
 const { ipcMain, dialog } = require('electron');
+const fs = require('fs').promises;
+const path = require('path');
 const NotesManager = require('./NotesManager');
 const TagsManager = require('./TagsManager');
 const ConfigManager = require('./ConfigManager');
@@ -62,6 +64,28 @@ async function setupIpcHandlers() {
       return null;
     }
     return result.filePaths[0];
+  });
+
+  // ===== 页面状态操作 =====
+  ipcMain.handle('pageState:load', async () => {
+    const pageStateFile = path.join(configManager.getDataRootPath(), 'page-state.json');
+    try {
+      const data = await fs.readFile(pageStateFile, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      // 文件不存在，返回默认状态
+      return {
+        sidebar: { isCollapsed: false, width: 280 },
+        openTabs: [],
+        activeTabId: 'home'
+      };
+    }
+  });
+
+  ipcMain.handle('pageState:save', async (event, state) => {
+    const pageStateFile = path.join(configManager.getDataRootPath(), 'page-state.json');
+    await fs.writeFile(pageStateFile, JSON.stringify(state, null, 2), 'utf-8');
+    return true;
   });
 
   // ===== 笔记操作 =====

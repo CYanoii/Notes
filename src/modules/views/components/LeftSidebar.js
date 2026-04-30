@@ -79,13 +79,8 @@ export class LeftSidebar {
         this.contentContainer = this.container.querySelector('.sidebar-content');
         this.resizeHandle = document.getElementById('resizeHandle');
 
-        // 从localStorage恢复宽度
-        const savedWidth = localStorage.getItem('sidebarWidth');
-        if (savedWidth && !this.isCollapsed) {
-            this.setWidth(parseInt(savedWidth));
-        } else {
-            this.setWidth(this.defaultWidth);
-        }
+        // 使用默认宽度，由 PageStateController 恢复状态
+        this.setWidth(this.defaultWidth);
 
         // 默认展开
         this.container.classList.add('expanded');
@@ -234,14 +229,9 @@ export class LeftSidebar {
             this.setWidth(50);
         }
 
-        // 保存宽度到localStorage
-        if (!this.isCollapsed) {
-            localStorage.setItem('sidebarWidth', currentWidth.toString());
-
-            // 触发宽度变化回调
-            if (this.onWidthChange) {
-                this.onWidthChange(currentWidth);
-            }
+        // 触发宽度变化回调
+        if (this.onWidthChange) {
+            this.onWidthChange(currentWidth);
         }
 
         // 恢复过渡效果
@@ -385,18 +375,26 @@ export class LeftSidebar {
         this.container.classList.toggle('collapsed', this.isCollapsed);
         this.container.classList.toggle('expanded', !this.isCollapsed);
 
-        // 展开时恢复上次保存的宽度
-        if (!this.isCollapsed) {
-            const savedWidth = localStorage.getItem('sidebarWidth');
-            if (savedWidth) {
-                this.setWidth(parseInt(savedWidth));
-            } else {
-                this.setWidth(this.defaultWidth);
-            }
-        }
-
         if (this.onCollapseChange) {
             this.onCollapseChange(this.isCollapsed);
+        }
+    }
+
+    /**
+     * 折叠侧边栏
+     */
+    collapse() {
+        if (!this.isCollapsed) {
+            this.toggleCollapse();
+        }
+    }
+
+    /**
+     * 展开侧边栏
+     */
+    expand() {
+        if (this.isCollapsed) {
+            this.toggleCollapse();
         }
     }
 

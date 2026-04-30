@@ -8,6 +8,7 @@ export class TabBar {
     constructor() {
         this.tabBar = document.getElementById('tabBar');
         this.draggedTab = null;
+        this.onOrderChange = null;
         this.init();
     }
 
@@ -16,6 +17,13 @@ export class TabBar {
      */
     init() {
         this.bindDragEvents();
+    }
+
+    /**
+     * 设置顺序变化回调
+     */
+    setOrderChangeCallback(callback) {
+        this.onOrderChange = callback;
     }
 
     /**
@@ -46,9 +54,8 @@ export class TabBar {
             <span class="tab-close"><i class="fas fa-times"></i></span>
         `;
 
-        // 插入到主页标签页之后
-        const homeTab = this.tabBar.querySelector('.tab[data-tab-id="home"]');
-        homeTab.parentNode.insertBefore(tab, homeTab.nextSibling);
+        // 插入到标签栏最后
+        this.tabBar.appendChild(tab);
     }
 
     /**
@@ -95,6 +102,15 @@ export class TabBar {
     getActiveTabId() {
         const activeTab = this.tabBar.querySelector('.tab.active');
         return activeTab ? activeTab.dataset.tabId : null;
+    }
+
+    /**
+     * 获取当前标签页顺序
+     * @returns {string[]} 标签页ID数组（不包含home）
+     */
+    getTabOrder() {
+        const tabs = this.tabBar.querySelectorAll('.tab[data-tab-id]:not([data-tab-id="home"])');
+        return Array.from(tabs).map(tab => tab.dataset.tabId);
     }
 
     /**
@@ -160,6 +176,11 @@ export class TabBar {
         }
 
         this.onDragEnd(e);
+
+        // 触发顺序变化回调
+        if (this.onOrderChange) {
+            this.onOrderChange(this.getTabOrder());
+        }
     }
 
     /**

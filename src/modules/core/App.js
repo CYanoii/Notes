@@ -5,8 +5,10 @@
 import { EventBus } from './EventBus.js';
 import { NoteController } from '../controllers/NoteController.js';
 import { TagController } from '../controllers/TagController.js';
+import { PageStateController } from '../controllers/PageStateController.js';
 import { NoteService } from '../services/NoteService.js';
 import { TagService } from '../services/TagService.js';
+import { PageStateService } from '../services/PageStateService.js';
 import { NoteTagCoordinator } from '../coordinators/NoteTagCoordinator.js';
 import { UIManager } from '../views/UIManager.js';
 import { EventTypes } from './EventTypes.js';
@@ -19,6 +21,7 @@ export class App {
         // 2. 创建数据服务层
         this.noteService = new NoteService();
         this.tagService = new TagService();
+        this.pageStateService = new PageStateService();
 
         // 3. 创建 UI 管理器，由它统一创建和管理所有 UI 组件
         this.uiManager = new UIManager(this.eventBus);
@@ -38,12 +41,17 @@ export class App {
             this.noteTagCoordinator
         );
 
-        // 创建标签控制器，协调器已创建好直接注入
         this.tagController = new TagController(
             this.tagService,
             this.uiManager,
             this.eventBus,
             this.noteTagCoordinator
+        );
+
+        this.pageStateController = new PageStateController(
+            this.pageStateService,
+            this.uiManager,
+            this.eventBus
         );
 
         // 暴露到全局方便调试

@@ -62,6 +62,11 @@ export const EventTypes = {
   // 设置事件
   SETTINGS: {
     OPEN: 'settings:open'
+  },
+
+  // 标签栏事件
+  TAB_BAR: {
+    ORDER_CHANGE: 'tabBar:orderChange'
   }
 
 }
