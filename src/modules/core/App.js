@@ -11,7 +11,6 @@ import { TagService } from '../services/TagService.js';
 import { PageStateService } from '../services/PageStateService.js';
 import { NoteTagCoordinator } from '../coordinators/NoteTagCoordinator.js';
 import { UIManager } from '../views/UIManager.js';
-import { EventTypes } from './EventTypes.js';
 
 export class App {
     constructor() {
@@ -64,7 +63,35 @@ export class App {
      * 初始化应用
      */
     async init() {
-        this.eventBus.emit(EventTypes.APP.INIT);
+        // 1. 基础初始化：加载标签筛选栏、笔记列表、渲染初始面板
+        // 加载标签筛选栏
+        await this.noteController.refreshTagFilter();
+        // 加载所有笔记
+        await this.noteController.loadAllNotes();
+        // 渲染初始侧边栏面板（默认 search 面板）
+        const initialPanel = this.noteController.getInitialPanel();
+        await this.noteController.handlePanelChange(initialPanel);
+
+        // 2. 恢复页面状态：侧边栏状态 + 获取要恢复的笔记和标签页信息
+        const { validNotes, validNoteIds, activeTabId } = await this.pageStateController.restorePageState();
+
+        // 3. 打开恢复的笔记
+        for (const note of validNotes) {
+            await this.noteController.openNote(note);
+        }
+
+        // 4. 恢复标签页顺序
+        if (validNoteIds.length > 0) {
+            this.pageStateController.reorderTabs(validNoteIds);
+        }
+        
+        // 5. 切换到之前激活的标签页
+        if (activeTabId && activeTabId !== 'home') {
+            this.noteController.switchToNote(activeTabId);
+        } else {
+            this.noteController.switchToHome();
+        }
+
         console.log('App started');
     }
 

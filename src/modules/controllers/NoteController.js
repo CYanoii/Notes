@@ -32,9 +32,6 @@ export class NoteController {
      * 初始化事件监听器（通过 EventBus 解耦）
      */
     initEventListeners() {
-        // 应用生命周期事件
-        this.eventBus.on(EventTypes.APP.INIT, () => this.appInit());
-
         // 笔记事件
         this.eventBus.on(EventTypes.NOTE.OPEN, (note) => this.openNote(note));
         this.eventBus.on(EventTypes.NOTE.CLOSE, (noteId) => this.closeNote(noteId));
@@ -89,18 +86,6 @@ export class NoteController {
         this.eventBus.on(EventTypes.SETTINGS.OPEN, () => {
             this.uiManager.modal_showSettingsPopover();
         });
-    }
-
-    async appInit() {
-        // 加载标签筛选栏
-        await this.refreshTagFilter();
-
-        // 加载所有笔记
-        await this.loadAllNotes();
-
-        // 渲染初始侧边栏面板（默认 search 面板）
-        const initialPanel = this.getInitialPanel();
-        await this.handlePanelChange(initialPanel);
     }
 
     /**
@@ -429,8 +414,6 @@ export class NoteController {
         if (this.noteService.getCurrentNoteId() === noteId) {
             this.switchToHome();
         }
-
-        this.eventBus.emit('note:closed', noteId);
     }
 
     /**

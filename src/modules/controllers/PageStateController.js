@@ -38,11 +38,6 @@ export class PageStateController {
      * 初始化事件监听器
      */
     initEventListeners() {
-        // 应用初始化事件
-        this.eventBus.on(EventTypes.APP.INIT, () => {
-            this.restorePageState();
-        });
-
         // 侧边栏折叠状态变化
         this.eventBus.on(EventTypes.SIDEBAR.COLLAPSE_CHANGE, (isCollapsed) => {
             this.currentState.sidebar.isCollapsed = isCollapsed;
@@ -115,6 +110,7 @@ export class PageStateController {
 
     /**
      * 恢复页面状态
+     * @returns {Promise<{validNotes: Array, validNoteIds: Array, activeTabId: string}>}
      */
     async restorePageState() {
         const state = await this.loadState();
@@ -134,11 +130,10 @@ export class PageStateController {
             }
         }
 
-        // 恢复已打开的标签页
+        // 收集所有有效笔记
+        const validNotes = [];
+        const validNoteIds = [];
         if (state.openTabs && state.openTabs.length > 0) {
-            // 先收集所有有效笔记
-            const validNotes = [];
-            const validNoteIds = [];
             for (const noteId of state.openTabs) {
                 const note = await window.electronAPI.getNote(noteId);
                 if (note) {
@@ -146,32 +141,17 @@ export class PageStateController {
                     validNoteIds.push(noteId);
                 }
             }
-
-            // 批量打开所有笔记（不触发状态保存）
-            for (const note of validNotes) {
-                this.eventBus.emit(EventTypes.NOTE.OPEN, note);
-            }
-
-            // 延迟执行排序和切换，确保所有标签页都已创建
-            setTimeout(() => {
-                this.reorderTabs(validNoteIds);
-
-                // 切换到之前激活的标签页
-                let targetTabId = state.activeTabId;
-                // 如果是无效值或已被删除，则切换到home
-                if (!targetTabId || !validNoteIds.includes(targetTabId)) {
-                    targetTabId = 'home';
-                }
-
-                this.eventBus.emit(EventTypes.EDITOR.TAB_SWITCH, targetTabId);
-                this.isRestoring = false;
-                // 恢复完成后保存一次
-                this.saveState();
-            }, 100);
-        } else {
-            this.isRestoring = false;
-            this.eventBus.emit(EventTypes.EDITOR.TAB_SWITCH, 'home');
         }
+
+        // 确定要切换到的标签页
+        let activeTabId = state.activeTabId;
+        if (!activeTabId || !validNoteIds.includes(activeTabId)) {
+            activeTabId = 'home';
+        }
+
+        this.isRestoring = false;
+
+        return { validNotes, validNoteIds, activeTabId };
     }
 
     /**
