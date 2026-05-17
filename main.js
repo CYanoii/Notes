@@ -1,7 +1,7 @@
 /**
  * Electron 主进程入口
  */
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const { setupIpcHandlers } = require('./core/handlers');
 
@@ -15,6 +15,56 @@ if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
 }
 
 let mainWindow;
+let tray;
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'icon.ico');
+  let trayIcon;
+
+  try {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    if (trayIcon.isEmpty()) {
+      trayIcon = nativeImage.createEmpty();
+    }
+  } catch (e) {
+    trayIcon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(trayIcon);
+  tray.setToolTip('CYanote');
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -31,6 +81,14 @@ function createWindow() {
 
   mainWindow.loadFile('src/index.html');
 
+  // 监听关闭事件，最小化到托盘而不是退出
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   // 开发工具
   // mainWindow.webContents.openDevTools();
 }
@@ -42,11 +100,18 @@ app.whenReady().then(async () => {
   // 创建窗口
   createWindow();
 
+  // 创建托盘
+  createTray();
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true;
 });
 
 app.on('window-all-closed', () => {
