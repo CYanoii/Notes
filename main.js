@@ -7,11 +7,11 @@ const { setupIpcHandlers } = require('./core/handlers');
 
 // 只在开发环境启用 electron-reload
 if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
-const electronReload = require('electron-reload');
-electronReload(__dirname, {
-  // electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
-  electron: require(`${__dirname}/node_modules/electron`) 
-});
+  const electronReload = require('electron-reload');
+  electronReload(__dirname, {
+    // electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
+    electron: require(`${__dirname}/node_modules/electron`) 
+  });
 }
 
 let mainWindow;
@@ -20,6 +20,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    frame: false,
+    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

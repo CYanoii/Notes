@@ -1,7 +1,7 @@
 /**
  * IPC 处理器 - 注册所有 IPC 通信
  */
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, BrowserWindow } = require('electron');
 const fs = require('fs').promises;
 const path = require('path');
 const NotesManager = require('./NotesManager');
@@ -169,6 +169,37 @@ async function setupIpcHandlers() {
   ipcMain.handle('tags:delete', async (event, tagId) => {
     await tagsManager.deleteTag(tagId);
     return true;
+  });
+
+// ===== 窗口控制 =====
+  ipcMain.handle('window:minimize', () => {
+    BrowserWindow.getFocusedWindow().minimize();
+  });
+
+  ipcMain.handle('window:maximize', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  });
+
+  ipcMain.handle('window:close', () => {
+    BrowserWindow.getFocusedWindow().close();
+  });
+
+  ipcMain.handle('window:isMaximized', () => {
+    return BrowserWindow.getFocusedWindow().isMaximized();
+  });
+
+  ipcMain.handle('window:setTitle', (event, title) => {
+    BrowserWindow.getFocusedWindow().setTitle(title);
+  });
+
+  ipcMain.handle('window:getFolderName', () => {
+    const dataPath = configManager.getDataRootPath();
+    return path.basename(dataPath);
   });
 
 }

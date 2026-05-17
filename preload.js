@@ -35,5 +35,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllTags: () => ipcRenderer.invoke('tags:getAll'),
   createTag: (name, color) => ipcRenderer.invoke('tags:create', name, color),
   updateTag: (tagId, updates) => ipcRenderer.invoke('tags:update', tagId, updates),
-  deleteTag: (tagId) => ipcRenderer.invoke('tags:delete', tagId)
+  deleteTag: (tagId) => ipcRenderer.invoke('tags:delete', tagId),
+
+  // 窗口控制
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+  isWindowMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+  setWindowTitle: (title) => ipcRenderer.invoke('window:setTitle', title),
+  getFolderName: () => ipcRenderer.invoke('window:getFolderName')
 });

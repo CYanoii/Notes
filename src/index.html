@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>笔记</title>
+    <title>CYanote</title>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@3.11.2/dist/index.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+    <!-- 自定义标题栏 -->
+    <div class="titlebar">
+        <div class="titlebar-left">
+            <span class="titlebar-icon"></span>
+            <span class="titlebar-title" id="titlebarTitle">CYanote</span>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn minimize" id="titlebarMinimize">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="titlebar-btn maximize" id="titlebarMaximize">
+                <i class="far fa-square"></i>
+            </button>
+            <button class="titlebar-btn close" id="titlebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- 左侧边栏 -->
         <aside class="left-sidebar">

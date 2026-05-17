@@ -63,6 +63,9 @@ export class App {
      * 初始化应用
      */
     async init() {
+        // 0. 初始化标题栏
+        this.initTitleBar();
+
         // 1. 基础初始化：加载标签筛选栏、笔记列表、渲染初始面板
         // 加载标签筛选栏
         await this.noteController.refreshTagFilter();
@@ -84,7 +87,7 @@ export class App {
         if (validNoteIds.length > 0) {
             this.pageStateController.reorderTabs(validNoteIds);
         }
-        
+
         // 5. 切换到之前激活的标签页
         if (activeTabId && activeTabId !== 'home') {
             this.noteController.switchToNote(activeTabId);
@@ -93,6 +96,49 @@ export class App {
         }
 
         console.log('App started');
+    }
+
+    /**
+     * 初始化标题栏
+     */
+    async initTitleBar() {
+        // 设置初始标题（软件名 - 文件夹名）
+        const folderName = await window.electronAPI.getFolderName();
+        document.getElementById('titlebarTitle').textContent = `CYanote - ${folderName}`;
+
+        const minimizeBtn = document.getElementById('titlebarMinimize');
+        const maximizeBtn = document.getElementById('titlebarMaximize');
+        const closeBtn = document.getElementById('titlebarClose');
+
+        minimizeBtn.addEventListener('click', () => {
+            window.electronAPI.minimizeWindow();
+        });
+
+        maximizeBtn.addEventListener('click', async () => {
+            await window.electronAPI.maximizeWindow();
+            this.updateMaximizeButton();
+        });
+
+        closeBtn.addEventListener('click', () => {
+            window.electronAPI.closeWindow();
+        });
+
+        // 初始化最大化按钮状态
+        this.updateMaximizeButton();
+    }
+
+    /**
+     * 更新最大化按钮图标
+     */
+    async updateMaximizeButton() {
+        const maximizeBtn = document.getElementById('titlebarMaximize');
+        const isMaximized = await window.electronAPI.isWindowMaximized();
+        const icon = maximizeBtn.querySelector('i');
+        if (isMaximized) {
+            icon.className = 'far fa-clone';
+        } else {
+            icon.className = 'far fa-square';
+        }
     }
 
     /**
