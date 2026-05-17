@@ -1,4 +1,4 @@
-# 笔记应用 (Notes)
+# CYanote
 
 一个基于 Electron 构建的桌面笔记应用程序，支持多页签、纯文本笔记、标签分类、本地存储。
 
@@ -14,17 +14,19 @@
 - **实时自动保存** - 编辑时自动保存，无需手动操作
 - **快速搜索** - 支持按标题、标签、内容全文搜索，搜索结果实时预览，标签高亮显示
 - **Toast 消息提示** - 操作反馈友好
+- **系统托盘** - 支持最小化到托盘，托盘菜单包含显示窗口/退出选项
 
 ## 项目结构
 
 ```
-Notes/
-├── main.js                 # Electron 主进程入口（窗口管理）
+CYanote/
+├── main.js                 # Electron 主进程入口（窗口管理、系统托盘）
 ├── preload.js              # 预加载脚本（安全桥接）
 ├── package.json            # 项目配置
 ├── core/                   # 主进程核心模块
-│   ├── NotesManager.js     # 笔记管理核心逻辑（CRUD）
+│   ├── NotesManager.js     # 笔记管理核心逻辑（CRUD、索引、回收站）
 │   ├── TagsManager.js      # 标签管理核心逻辑
+│   ├── ConfigManager.js    # 配置管理（数据路径、设置持久化）
 │   └── handlers.js         # IPC 处理器注册（桥接主进程和渲染进程）
 └── src/
     ├── index.html          # 主页面 HTML
@@ -32,90 +34,102 @@ Notes/
     ├── renderer.js         # 渲染进程入口（启动应用）
     └── modules/            # 前端模块（分层架构，单一职责）
         ├── core/           # 核心模块
-        │   ├── App.js      # 应用入口：依赖注入中心，初始化所有模块
-        │   ├── EventBus.js # 全局事件总线，模块间通信
-        │   └── EventTypes.js # 统一事件类型命名规范
-        ├── services/       # 数据服务层（纯数据操作）
-        │   ├── NoteService.js # 封装 Electron API，提供笔记数据访问
-        │   └── TagService.js  # 封装 Electron API，提供标签数据访问
-        ├── controllers/    # 控制器层（业务逻辑编排）
-        │   ├── NoteController.js  # 编排笔记增删改查业务流程，协调视图与数据
-        │   └── TagController.js  # 编排标签增删改查业务流程，协调视图与数据
-        ├── coordinators/ 	# 协调器层（处理跨领域交叉业务）
-        │   └── NoteTagCoordinator.js # 协调笔记与标签的交叉业务逻辑
+        │   ├── App.js           # 应用入口：依赖注入中心，初始化所有模块
+        │   ├── EventBus.js      # 全局事件总线，模块间通信
+        │   └── EventTypes.js    # 统一事件类型命名规范
+        ├── services/       # 数据服务层（纯数据操作，封装 IPC 调用）
+        │   ├── NoteService.js      # 笔记数据访问 + 内存缓存管理
+        │   ├── TagService.js       # 标签数据访问
+        │   └── PageStateService.js # 页面状态（侧边栏/标签页）持久化
+        ├── controllers/    # 控制器层（业务逻辑编排，接收 UI 事件）
+        │   ├── NoteController.js      # 笔记增删改查业务流程编排
+        │   ├── TagController.js       # 标签增删改查业务流程编排
+        │   └── PageStateController.js # 页面状态恢复编排
+        ├── coordinators/  # 协调器层（处理跨领域交叉业务）
+        │   └── NoteTagCoordinator.js # 笔记与标签的交叉逻辑（搜索、绑定、批量操作）
         ├── views/          # 视图层（UI 渲染与交互）
-        │   ├── UIManager.js       # UI 组件统一管理入口，统一绑定所有事件
+        │   ├── UIManager.js       # UI 组件统一管理入口，所有事件统一绑定
         │   └── components/        # 可复用 UI 组件
-        │       ├── LeftSidebar.js # 左侧边栏导航，处理菜单切换
-        │       ├── NoteList.js   # 笔记列表渲染，处理卡片点击/删除事件
-        │       ├── Editor.js     # 编辑器创建、切换、内容管理
-        │       ├── TabBar.js     # 标签页栏创建、切换、关闭渲染
-        │       ├── Modal.js      # 模态框组件（用于新建标签等操作）
-        │       └── Toast.js      # Toast 提示组件，显示轻量级消息
-        └── utils/          # 工具函数（按功能拆分）
+        │       ├── LeftSidebar.js # 左侧边栏导航（面板切换、折叠、宽度调整）
+        │       ├── NoteList.js    # 笔记列表渲染（卡片、删除）
+        │       ├── Editor.js      # 编辑器创建、切换、内容管理
+        │       ├── TabBar.js       # 标签页栏（拖拽排序）
+        │       ├── TagFilter.js    # 标签筛选栏
+        │       ├── Modal.js        # 模态框组件（输入/确认/标签选择/设置）
+        │       └── Toast.js        # Toast 提示组件
+        └── utils/          # 工具函数
             ├── formatters.js    # 日期格式化
             ├── validators.js    # 数据验证
-            └── helpers.js       # 防抖、HTML 转义（防XSS）等通用函数
+            └── helpers.js       # 防抖、HTML 转义（防XSS）
 ```
 
 ### 架构设计
 
-采用**分层架构 + 依赖注入 + 事件总线**，遵循单一职责原则：
+采用**分层架构 + 依赖注入 + 事件总线**，遵循单一职责原则。
 
 #### 主进程模块
 
 | 文件 | 职责 |
 |------|------|
-| `main.js` | 应用入口，负责窗口创建和生命周期管理 |
-| `preload.js` | 安全桥接，通过 `contextBridge` 暴露 API 给渲染进程 |
-| `core/NotesManager.js` | 笔记数据操作（创建、读取、更新、删除、列表获取、回收站、归档） |
-| `core/TagsManager.js` | 标签数据操作（创建、删除、列表获取、关联笔记） |
-| `core/handlers.js` | IPC 通信处理器，将主进程功能暴露给渲染进程 |
+| `main.js` | 应用入口，窗口创建/托盘管理/生命周期管理 |
+| `preload.js` | 安全桥接，通过 `contextBridge` 暴露 Electron API |
+| `core/NotesManager.js` | 笔记数据操作（创建/读取/更新/删除/回收站/归档/搜索） |
+| `core/TagsManager.js` | 标签数据操作（创建/删除/列表/关联笔记/使用计数） |
+| `core/ConfigManager.js` | 配置管理（数据存储路径、设置持久化） |
+| `core/handlers.js` | IPC 通信处理器，暴露主进程功能给渲染进程 |
 
 #### 前端模块（src/modules/）
 
 **核心层 (core/)**
+
 | 模块 | 职责 |
 |------|------|
 | `core/App.js` | 应用入口，依赖注入中心，创建并注入所有模块实例 |
 | `core/EventBus.js` | 全局事件总线，实现模块间的松耦合通信 |
-| `core/EventTypes.js` | 统一事件类型常量命名，避免硬编码拼写错误 |
+| `core/EventTypes.js` | 统一事件类型常量，避免硬编码拼写错误 |
 
 **数据服务层 (services/)**
+
 | 模块 | 职责 |
 |------|------|
-| `services/NoteService.js` | 封装所有与 Electron IPC 的数据交互，隔离业务层与原生 API。维护**已打开笔记内存缓存**和当前笔记ID状态 |
-| `services/TagService.js` | 封装标签相关的 IPC 数据交互，提供标签数据访问 |
+| `services/NoteService.js` | 封装笔记 IPC 调用 + **内存缓存已打开笔记** + 当前笔记ID状态 |
+| `services/TagService.js` | 封装标签 IPC 调用 |
+| `services/PageStateService.js` | 页面状态持久化（侧边栏折叠/宽度、打开的标签页顺序） |
 
 **控制器层 (controllers/)**
+
 | 模块 | 职责 |
 |------|------|
-| `controllers/NoteController.js` | 接收 UI 事件，编排笔记增删改查、打开/关闭/切换业务流程，调用协调器处理交叉逻辑，协调视图层更新 |
-| `controllers/TagController.js` | 接收 UI 事件，编排标签增删改查业务流程，调用协调器处理交叉逻辑，协调视图层更新 |
+| `controllers/NoteController.js` | 接收 UI 事件，编排笔记增删改查、打开/关闭/切换业务流程 |
+| `controllers/TagController.js` | 接收 UI 事件，编排标签增删改查业务流程 |
+| `controllers/PageStateController.js` | 编排页面状态恢复流程（恢复侧边栏/标签页/激活状态） |
 
 **协调器层 (coordinators/)**
 
 | 模块 | 职责 |
 |------|------|
-| `coordinators/NoteTagCoordinator.js` | 仅依赖 Service 层，处理同时涉及笔记和标签的**交叉业务逻辑**（搜索、笔记绑定标签、批量移除标签、刷新标签计数等） |
+| `coordinators/NoteTagCoordinator.js` | 仅依赖 Service 层，处理笔记+标签**交叉业务**（搜索、绑定标签、批量移除、刷新计数） |
 
 **视图层 (views/)**
+
 | 模块 | 职责 |
 |------|------|
-| `views/UIManager.js` | 整合管理所有 UI 组件，提供统一的全局 UI 接口。**所有事件监听统一在此绑定**。<br>代理方法使用 `组件_方法名` 命名规范（如 `editor_createNoteEditor`） |
-| `views/components/LeftSidebar.js` | 左侧边栏导航，主页/标签切换，新建标签按钮，使用 `setCallbacks` 设置回调 |
-| `views/components/NoteList.js` | 笔记列表渲染，卡片点击/删除事件，支持按标签筛选，使用 `setCallbacks` 设置回调 |
-| `views/components/Editor.js` | 编辑器创建、切换、内容更新管理，使用 `setCallbacks` 设置回调 |
-| `views/components/TabBar.js` | 标签页栏创建、切换、关闭渲染管理 |
-| `views/components/Modal.js` | 通用模态框组件，支持输入提示、确认对话框、标签选择 |
-| `views/components/Toast.js` | Toast 提示组件，显示操作反馈消息 |
+| `views/UIManager.js` | 整合管理所有 UI 组件，所有事件监听**统一在此绑定**，代理方法用 `组件_方法名` 命名 |
+| `views/components/LeftSidebar.js` | 左侧边栏（导航面板切换、折叠、宽度拖拽调整） |
+| `views/components/NoteList.js` | 笔记列表（卡片渲染、点击/删除） |
+| `views/components/Editor.js` | 编辑器（创建/切换/内容管理，使用 Vditor） |
+| `views/components/TabBar.js` | 标签页栏（创建/切换/关闭/拖拽排序） |
+| `views/components/TagFilter.js` | 标签筛选栏（多选筛选） |
+| `views/components/Modal.js` | 通用模态框（输入提示/确认对话框/标签选择/设置浮出） |
+| `views/components/Toast.js` | Toast 提示（info/success/error/warning） |
 
 **工具层 (utils/)**
+
 | 模块 | 职责 |
 |------|------|
-| `utils/formatters.js` | 日期格式化工具 |
-| `utils/validators.js` | 数据验证工具 |
-| `utils/helpers.js` | HTML 转义（防XSS）、防抖等通用帮助函数 |
+| `utils/formatters.js` | 日期格式化 |
+| `utils/validators.js` | 数据验证 |
+| `utils/helpers.js` | HTML 转义（防XSS）、防抖 |
 
 ### 依赖规则与数据流
 
@@ -127,25 +141,23 @@ UI → EventBus → Controller → Coordinator → Service → IPC → Manager (
 ```
 
 **依赖规则：**
-
-- ✅ **Coordinator 不依赖 Controller** → 仅依赖 Service 层
-- ✅ **Controller 依赖 Coordinator** → Controller 调用 Coordinator
-- ✅ **Controller 之间不相互调用**
-- ✅ **事件仅在 UI → Controller 之间使用** → Coordinator 不监听 UI 事件
+- ✅ Coordinator 仅依赖 Service 层，不依赖 Controller
+- ✅ Controller 依赖 Coordinator
+- ✅ Controller 之间不相互调用
+- ✅ 事件仅在 UI → Controller 之间使用，Coordinator 不监听 UI 事件
 
 **数据流：**
-
-1. UI 层通过 EventBus 发出业务事件
-2. Controller 接收事件，从内存缓存获取状态，调用 Coordinator
-3. Coordinator 编排 Service 层数据操作，完成交叉业务逻辑
+1. UI 通过 EventBus 发出业务事件
+2. Controller 接收事件，调用 Coordinator
+3. Coordinator 编排 Service 层数据操作
 4. Coordinator 返回结果给 Controller，Controller 更新 UI
 
 ### 编码规范
 
-- **组件回调统一使用 `setCallbacks` 模式**：所有 UI 组件通过 `setCallbacks` 方法设置回调，保持代码风格一致
-- **UIManager 代理方法命名规范**：`组件名_方法名`，例如 `editor_createNoteEditor`、`tabBar_switchToTab`，清晰标识代理的是哪个组件的哪个方法
-- **事件总线命名规范**：`模块:事件`，例如 `editor:titleChange`、`note:click`
-- **依赖注入**：App 作为依赖注入中心，所有模块统一创建并注入依赖
+- **组件回调统一使用 `setCallbacks` 模式**
+- **UIManager 代理方法命名**：`组件名_方法名`（如 `editor_createNoteEditor`）
+- **事件总线命名**：`模块:事件`（如 `editor:titleChange`）
+- **依赖注入**：App 作为依赖注入中心
 
 ## 快速开始
 
@@ -161,18 +173,15 @@ npm install
 npm run start
 ```
 
+### 打包构建
+
+```bash
+npm run dist
+```
+
 ## 技术栈
 
 - **Electron 40.0.0** - 桌面应用框架
+- **Vditor 3.11.2** - Markdown 编辑器
 - **原生 HTML/CSS/JS** - 前端技术
-- **文件系统 API** - 笔记存储
-
-# TODO
-
-1. ~~标签功能~~ ✅ 已完成
-2. ~~回收站功能~~ ✅ 已完成
-3. ~~归档功能~~ ✅ 已完成
-4. ~~搜索功能~~ ✅ 已完成（支持标题/标签/内容全文搜索，关键词高亮，标签预览）
-5. 记录关闭前页面状态
-6. 支持 markdown
-7. 页面状态记录
+- **文件系统 API** - 笔记本地存储
