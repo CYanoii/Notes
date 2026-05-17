@@ -125,6 +125,11 @@ export class App {
 
         // 初始化最大化按钮状态
         this.updateMaximizeButton();
+
+        // 监听窗口大小变化（如双击标题栏最大化）
+        window.addEventListener('resize', () => {
+            this.updateMaximizeButton();
+        });
     }
 
     /**

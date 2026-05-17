@@ -1,6 +1,16 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 .app-container {
     display: flex;
-    height: 100vh;
+    position: absolute;
+    top: 32px;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
 /* 右侧主容器 */
