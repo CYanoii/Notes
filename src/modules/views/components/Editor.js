@@ -82,6 +82,9 @@ export class Editor {
 
             // 初始化 Vditor 编辑器
             const vditorContainer = editor.querySelector('.vditor-container');
+            // 当前正在编辑的笔记ID
+            const currentNoteId = noteData.id;
+
             const vditor = new Vditor(vditorContainer, {
                 placeholder: '开始记录你的想法...',
                 value: noteData.content || '',
@@ -90,6 +93,26 @@ export class Editor {
                 },
                 preview: {
                     maxWidth: 1200
+                },
+                upload: {
+                    handler: async (files) => {
+                        for (const file of files) {
+                            try {
+                                // 读取文件为 base64
+                                const arrayBuffer = await file.arrayBuffer();
+                                const base64 = btoa(
+                                    new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+                                );
+
+                                // 保存到笔记的 assets 文件夹
+                                const filePath = await window.electronAPI.saveAsset(currentNoteId, file.name, base64);
+                                // 插入图片 Markdown 格式
+                                vditor.insertValue(`![${file.name}](${filePath.replace(/\\/g, '/').replace(/ /g, '%20')})`);
+                            } catch (error) {
+                                console.error('文件上传失败:', error);
+                            }
+                        }
+                    }
                 },
                 after: () => {
                     // 编辑器初始化完成

@@ -149,6 +149,11 @@ async function setupIpcHandlers() {
     return true;
   });
 
+  // 保存资源文件
+  ipcMain.handle('notes:saveAsset', async (event, noteId, fileName, fileData) => {
+    return await notesManager.saveAsset(noteId, fileName, fileData);
+  });
+
   // ===== 标签操作 =====
   // 获取所有标签
   ipcMain.handle('tags:getAll', async () => {

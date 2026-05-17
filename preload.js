@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   restoreFromTrash: (noteId) => ipcRenderer.invoke('notes:restoreFromTrash', noteId),
   deletePermanently: (noteId) => ipcRenderer.invoke('notes:deletePermanently', noteId),
 
+  // 资源文件操作
+  saveAsset: (noteId, fileName, fileData) => ipcRenderer.invoke('notes:saveAsset', noteId, fileName, fileData),
+
   // 标签操作
   getAllTags: () => ipcRenderer.invoke('tags:getAll'),
   createTag: (name, color) => ipcRenderer.invoke('tags:create', name, color),

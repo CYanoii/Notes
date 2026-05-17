@@ -202,6 +202,19 @@ class NotesManager {
     return updatedMetadata;
   }
 
+  // 保存资源文件到笔记的 assets 文件夹
+  async saveAsset(noteId, fileName, fileData) {
+    const assetsDir = path.join(this.notesDir, noteId, 'assets');
+    await fs.mkdir(assetsDir, { recursive: true });
+
+    // 将 base64 数据转换为 Buffer 并保存
+    const buffer = Buffer.from(fileData, 'base64');
+    const filePath = path.join(assetsDir, fileName);
+    await fs.writeFile(filePath, buffer);
+
+    // 返回文件路径
+    return filePath;
+  }
 
   // 检查文件是否存在
   async exists(filePath) {
