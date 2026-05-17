@@ -8,13 +8,36 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^40.0.0"
+    "electron": "^40.0.0",
+    "electron-builder": "^26.8.1"
   },
   "dependencies": {
     "electron-reload": "^2.0.0-alpha.1",
     "vditor": "^3.11.2"
+  },
+  "build": {
+    "appId": "com.cyanoii.cyanote",
+    "productName": "CYanote",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "!dist"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true, 
+      "createDesktopShortcut": true
+    }
   }
 }

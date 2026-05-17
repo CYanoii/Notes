@@ -5,11 +5,14 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { setupIpcHandlers } = require('./core/handlers');
 
+// 只在开发环境启用 electron-reload
+if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
 const electronReload = require('electron-reload');
 electronReload(__dirname, {
   // electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
   electron: require(`${__dirname}/node_modules/electron`) 
 });
+}
 
 let mainWindow;
 
