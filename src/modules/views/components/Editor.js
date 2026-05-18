@@ -165,8 +165,9 @@ export class Editor {
 
                                 // 保存到笔记的 assets 文件夹
                                 const filePath = await window.electronAPI.saveAsset(currentNoteId, file.name, base64);
-                                // 插入图片 Markdown 格式
-                                vditor.insertValue(`![${file.name}](${filePath.replace(/\\/g, '/').replace(/ /g, '%20')})`);
+                                // 插入图片
+                                // vditor.insertValue(`![${file.name}](${filePath.replace(/\\/g, '/').replace(/ /g, '%20')})`);
+                                vditor.insertMD(`<img src="${filePath.replace(/\\/g, '/').replace(/ /g, '%20')}" alt="${file.name}" style="zoom:100%;" />`);
                             } catch (error) {
                                 console.error('文件上传失败:', error);
                             }
