@@ -38,6 +38,7 @@ export class NoteController {
         this.eventBus.on(EventTypes.NOTE.CREATE, () => this.createNewNote());
         this.eventBus.on(EventTypes.NOTE.DELETE, (noteId) => this.deleteNote(noteId));
         this.eventBus.on(EventTypes.NOTE.UPDATE.TITLE, (noteId, newTitle) => this.updateNoteTitle(noteId, newTitle));
+        this.eventBus.on(EventTypes.NOTE.UPDATE.EXCERPT, (noteId, newExcerpt) => this.updateNoteExcerpt(noteId, newExcerpt));
         this.eventBus.on(EventTypes.NOTE.UPDATE.CONTENT, (noteId, newContent) => this.updateNoteContent(noteId, newContent));
 
         // 左侧边栏事件
@@ -430,6 +431,21 @@ export class NoteController {
             // 保存完成后刷新搜索结果
             this.debouncedSave(noteId, () => {
                 // 热更新：如果在搜索面板，刷新搜索结果
+                this.noteTagCoordinator.refreshSearchResults();
+            });
+        }
+    }
+
+    /**
+     * 更新笔记摘要
+     * @param {string|number} noteId 笔记ID
+     * @param {string} newExcerpt 新摘要
+     */
+    updateNoteExcerpt(noteId, newExcerpt) {
+        const note = this.noteService.getOpenNoteById(noteId);
+        if (note) {
+            note.excerpt = newExcerpt;
+            this.debouncedSave(noteId, () => {
                 this.noteTagCoordinator.refreshSearchResults();
             });
         }

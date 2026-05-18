@@ -13,6 +13,7 @@ export const EventTypes = {
     DELETE: 'note:delete',
     UPDATE: {
       TITLE: 'note:update:title',
+      EXCERPT: 'note:update:excerpt',
       CONTENT: 'note:update:content',
       TAG: 'note:update:tag'
     },

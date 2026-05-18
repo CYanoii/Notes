@@ -48,7 +48,7 @@ export class NoteList {
                 <i class="fas fa-trash"></i>
             </button>
             <h3>${escapeHtml(note.title) || '无标题'}</h3>
-            <p>${escapeHtml(note.content?.substring(0, 100))}${note.content?.length > 100 ? '...' : ''}</p>
+            <p class="note-excerpt">${escapeHtml(note.excerpt || '无摘要')}</p>
             <div class="note-meta">
                 <span>${formatDate(note.updatedAt, 'YYYY-MM-DD HH:mm')}</span>
                 <span><i class="fas fa-calendar-alt"></i> 最后修改</span>

@@ -47,6 +47,7 @@ export class UIManager {
         // Editor 组件事件回调 - 将编辑器输入事件转发到 eventBus
         this.editor.setCallbacks(
             (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
+            (noteId, excerpt) => this.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, excerpt),
             (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
         );
 

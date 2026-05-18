@@ -31,6 +31,25 @@
     border-bottom-color: #4299e1;
 }
 
+.note-excerpt-input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #718096;
+    background: transparent;
+    padding-bottom: 5px;
+    margin: 0 20px 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.note-excerpt-input::placeholder {
+    color: #a0aec0;
+}
+
+.note-excerpt-input:focus {
+    border-bottom-color: #4299e1;
+}
+
 .note-content-textarea {
     flex: 1;
     border: none;
@@ -124,6 +143,12 @@
 }
 
 .note-editor.read-only .note-title-input:disabled {
+    background-color: #f7fafc;
+    color: #718096;
+    cursor: not-allowed;
+}
+
+.note-editor.read-only .note-excerpt-input:disabled {
     background-color: #f7fafc;
     color: #718096;
     cursor: not-allowed;

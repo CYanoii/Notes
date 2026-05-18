@@ -10,6 +10,7 @@ export class Editor {
         this.container = document.getElementById('notesContainer');
         this.homePage = document.getElementById('tab-home');
         this.onTitleChange = null;
+        this.onExcerptChange = null;
         this.onContentChange = null;
         this.vditors = new Map(); // 存储每个笔记的 Vditor 实例
     }
@@ -17,10 +18,12 @@ export class Editor {
     /**
      * 设置事件回调
      * @param {Function} onTitleChange 标题变化回调
+     * @param {Function} onExcerptChange 摘要变化回调
      * @param {Function} onContentChange 内容变化回调
      */
-    setCallbacks(onTitleChange, onContentChange) {
+    setCallbacks(onTitleChange, onExcerptChange, onContentChange) {
         this.onTitleChange = onTitleChange;
+        this.onExcerptChange = onExcerptChange;
         this.onContentChange = onContentChange;
     }
 
@@ -61,6 +64,12 @@ export class Editor {
                    value="${escapeHtml(noteData.title)}"
                    placeholder="输入标题..."
                    ${titleDisabled}>
+            <input type="text"
+                   class="note-excerpt-input"
+                   value="${escapeHtml(noteData.excerpt || '')}"
+                   placeholder="输入摘要（最多50字）..."
+                   maxlength="50"
+                   ${titleDisabled}>
             <div class="note-tags-bar" data-note-id="${noteData.id}">
                 ${showAddTagBtn ? `<button class="btn-add-tag"><i class="fas fa-plus"></i> 添加标签</button>` : ''}
                 <div class="note-tags-list">
@@ -77,6 +86,14 @@ export class Editor {
             titleInput.addEventListener('input', () => {
                 if (this.onTitleChange) {
                     this.onTitleChange(noteData.id, titleInput.value);
+                }
+            });
+
+            // 绑定摘要输入事件
+            const excerptInput = editor.querySelector('.note-excerpt-input');
+            excerptInput.addEventListener('input', () => {
+                if (this.onExcerptChange) {
+                    this.onExcerptChange(noteData.id, excerptInput.value);
                 }
             });
 
