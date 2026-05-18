@@ -178,11 +178,13 @@ async function setupIpcHandlers() {
 
 // ===== 窗口控制 =====
   ipcMain.handle('window:minimize', () => {
-    BrowserWindow.getFocusedWindow().minimize();
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.minimize();
   });
 
   ipcMain.handle('window:maximize', () => {
     const win = BrowserWindow.getFocusedWindow();
+    if (!win) return;
     if (win.isMaximized()) {
       win.unmaximize();
     } else {
@@ -191,15 +193,18 @@ async function setupIpcHandlers() {
   });
 
   ipcMain.handle('window:close', () => {
-    BrowserWindow.getFocusedWindow().close();
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.close();
   });
 
   ipcMain.handle('window:isMaximized', () => {
-    return BrowserWindow.getFocusedWindow().isMaximized();
+    const win = BrowserWindow.getFocusedWindow();
+    return win ? win.isMaximized() : false;
   });
 
   ipcMain.handle('window:setTitle', (event, title) => {
-    BrowserWindow.getFocusedWindow().setTitle(title);
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.setTitle(title);
   });
 
   ipcMain.handle('window:getFolderName', () => {
