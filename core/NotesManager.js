@@ -185,16 +185,17 @@ class NotesManager {
     }
 
     const metadata = JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+    const { content, ...metadataUpdates } = updates;
     const updatedMetadata = {
       ...metadata,
-      ...updates,
+      ...metadataUpdates,
       updatedAt: new Date().toISOString()
     };
 
     await this.saveMetadata(noteId, updatedMetadata);
 
-    if (updates.content !== undefined) {
-      await this.saveContent(noteId, updates.content);
+    if (content !== undefined) {
+      await this.saveContent(noteId, content);
     }
 
     await this.updateIndex(noteId, updatedMetadata);
@@ -242,6 +243,7 @@ class NotesManager {
   // 加入索引
   async addToIndex(noteMetadata) {
     const index = await this.loadIndex();
+    // 这里引入了全部的元数据使索引文件和笔记元数据文件结构完全一样，可以考虑只保留索引需要的字段
     index.notes.push(noteMetadata);
     index.lastUpdated = new Date().toISOString();
     await this.saveIndex(index);
@@ -260,6 +262,7 @@ class NotesManager {
     const index = await this.loadIndex();
     const noteIndex = index.notes.findIndex(n => n.id === noteId);
     if (noteIndex !== -1) {
+      // 这里引入了全部的元数据使索引文件和笔记元数据文件结构完全一样，可以考虑只保留索引需要的字段
       index.notes[noteIndex] = metadata;
       index.lastUpdated = new Date().toISOString();
       await this.saveIndex(index);
