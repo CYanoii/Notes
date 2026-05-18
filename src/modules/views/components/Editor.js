@@ -108,6 +108,48 @@ export class Editor {
                 cache: {
                     enable: false
                 },
+                toolbar: [
+                    { name: 'emoji', tipPosition: 'se' },
+                    { name: 'headings', tipPosition: 'se' },
+                    { name: 'bold', tipPosition: 'se' },
+                    { name: 'italic', tipPosition: 'se' },
+                    { name: 'strike', tipPosition: 'se' },
+                    '|',
+                    { name: 'line', tipPosition: 's' },
+                    { name: 'quote', tipPosition: 's' },
+                    { name: 'list', tipPosition: 's' },
+                    { name: 'ordered-list', tipPosition: 's' },
+                    { name: 'check', tipPosition: 's' },
+                    { name: 'outdent', tipPosition: 's' },
+                    { name: 'indent', tipPosition: 's' },
+                    { name: 'code', tipPosition: 's' },
+                    { name: 'inline-code', tipPosition: 's' },
+                    { name: 'insert-after', tipPosition: 's' },
+                    { name: 'insert-before', tipPosition: 's' },
+                    '|',
+                    { name: 'undo', tipPosition: 's' },
+                    { name: 'redo', tipPosition: 's' },
+                    '|',
+                    { name: 'upload', tipPosition: 's' },
+                    { name: 'link', tipPosition: 's' },
+                    { name: 'table', tipPosition: 's' },
+                    '|',
+                    { name: 'edit-mode', tipPosition: 'sw' },
+                    { name: 'preview', tipPosition: 'sw' },
+                    { name: 'fullscreen', tipPosition: 'sw' },
+                    '|',
+                    {
+                        hotkey: '⇧⌘R',
+                        name: 'recovery',
+                        tipPosition: 'sw',
+                        tip: '恢复顶部栏 (⇧⌘R)',
+                        className: 'recover',
+                        icon: '<svg t="1717420000000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><path d="M128 160 L896 160" stroke="#666666" stroke-width="96" stroke-linecap="round" fill="none" /><path d="M512 300 L512 896 M320 700 L512 896 L704 700" stroke="#666666" stroke-width="96" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>',
+                        click () {
+                            editor.classList.remove('editor-focused');
+                        }
+                    }
+                ],
                 preview: {
                     maxWidth: 1200
                 },
@@ -132,7 +174,27 @@ export class Editor {
                     }
                 },
                 after: () => {
-                    // 编辑器初始化完成
+                    // 点击 Vditor 编辑区域时隐藏顶部栏
+                    vditorContainer.addEventListener('click', (e) => {
+                        // .vditor-content 是 Vditor 的内容编辑区
+                        if (e.target.closest('.vditor-content')) {
+                            editor.classList.add('editor-focused');
+                        }
+                    });
+                    // 点击顶部区域（标题、摘要、标签）时显示顶部栏
+                    editor.addEventListener('click', (e) => {
+                        if (e.target.closest('.note-title-input') ||
+                            e.target.closest('.note-excerpt-input') ||
+                            e.target.closest('.note-tags-bar')) {
+                            editor.classList.remove('editor-focused');
+                        }
+                    });
+                    // 监听键盘快捷键 ⇧⌘R 恢复顶部栏
+                    vditorContainer.addEventListener('keydown', (e) => {
+                        if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.key === 'r') {
+                            editor.classList.remove('editor-focused');
+                        }
+                    });
                 },
                 input: (value) => {
                     if (this.onContentChange) {
