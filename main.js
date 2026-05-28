@@ -5,8 +5,11 @@ const { app, BrowserWindow, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const { setupIpcHandlers } = require('./core/handlers');
 
+// 判断是否为开发环境
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
 // 只在开发环境启用 electron-reload
-if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+if (isDev) {
   const electronReload = require('electron-reload');
   electronReload(__dirname, {
     // electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
@@ -79,7 +82,15 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile('src/index.html');
+  // 根据环境加载不同的入口
+  if (isDev) {
+    // 开发环境：连接 Vite 开发服务器
+    mainWindow.loadURL('http://localhost:5173');
+    // mainWindow.webContents.openDevTools();
+  } else {
+    // 生产环境：加载本地文件
+    mainWindow.loadFile('dist_vue/index.html');
+  }
 
   // 监听关闭事件，最小化到托盘而不是退出
   mainWindow.on('close', (event) => {
@@ -88,9 +99,6 @@ function createWindow() {
       mainWindow.hide();
     }
   });
-
-  // 开发工具
-  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(async () => {

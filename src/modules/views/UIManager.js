@@ -3,7 +3,6 @@
  * 整合管理所有 UI 组件，提供统一的全局 UI 接口
  * 所有 eventBus 事件在此统一绑定
  */
-import { Toast } from './components/Toast.js';
 import { Editor } from './components/Editor.js';
 import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
@@ -17,7 +16,6 @@ export class UIManager {
         this.eventBus = eventBus;
 
         // 统一创建所有 UI 组件实例
-        this.toast = new Toast();
         this.editor = new Editor();
         this.noteList = new NoteList();
         this.tabBar = new TabBar();
@@ -417,7 +415,11 @@ export class UIManager {
      * @param {string} type 提示类型：info/success/error/warning
      */
     toast_show(message, type = 'info') {
-        this.toast.show(message, type);
+        if (window.toastApi?.show) {
+            window.toastApi.show(message, type);
+        } else {
+            console.warn('[Toast] Vue Toast 未加载，消息：', message, type);
+        }
     }
 
     /**

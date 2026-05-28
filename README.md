@@ -22,6 +22,7 @@
 CYanote/
 ├── main.js                 # Electron 主进程入口（窗口管理、系统托盘）
 ├── preload.js              # 预加载脚本（安全桥接）
+├── vite.config.js          # Vite 配置（含 Vue 插件）
 ├── package.json            # 项目配置
 ├── core/                   # 主进程核心模块
 │   ├── NotesManager.js     # 笔记管理核心逻辑（CRUD、索引、回收站）
@@ -32,35 +33,57 @@ CYanote/
     ├── index.html          # 主页面 HTML
     ├── index.css           # 全局样式
     ├── renderer.js         # 渲染进程入口（启动应用）
-    └── modules/            # 前端模块（分层架构，单一职责）
-        ├── core/           # 核心模块
-        │   ├── App.js           # 应用入口：依赖注入中心，初始化所有模块
-        │   ├── EventBus.js      # 全局事件总线，模块间通信
-        │   └── EventTypes.js    # 统一事件类型命名规范
-        ├── services/       # 数据服务层（纯数据操作，封装 IPC 调用）
-        │   ├── NoteService.js      # 笔记数据访问 + 内存缓存管理
-        │   ├── TagService.js       # 标签数据访问
-        │   └── PageStateService.js # 页面状态（侧边栏/标签页）持久化
-        ├── controllers/    # 控制器层（业务逻辑编排，接收 UI 事件）
-        │   ├── NoteController.js      # 笔记增删改查业务流程编排
-        │   ├── TagController.js       # 标签增删改查业务流程编排
-        │   └── PageStateController.js # 页面状态恢复编排
-        ├── coordinators/  # 协调器层（处理跨领域交叉业务）
-        │   └── NoteTagCoordinator.js # 笔记与标签的交叉逻辑（搜索、绑定、批量操作）
-        ├── views/          # 视图层（UI 渲染与交互）
-        │   ├── UIManager.js       # UI 组件统一管理入口，所有事件统一绑定
-        │   └── components/        # 可复用 UI 组件
-        │       ├── LeftSidebar.js # 左侧边栏导航（面板切换、折叠、宽度调整）
-        │       ├── NoteList.js    # 笔记列表渲染（卡片、删除）
-        │       ├── Editor.js      # 编辑器创建、切换、内容管理
-        │       ├── TabBar.js       # 标签页栏（拖拽排序）
-        │       ├── TagFilter.js    # 标签筛选栏
-        │       ├── Modal.js        # 模态框组件（输入/确认/标签选择/设置）
-        │       └── Toast.js        # Toast 提示组件
-        └── utils/          # 工具函数
-            ├── formatters.js    # 日期格式化
-            ├── validators.js    # 数据验证
-            └── helpers.js       # 防抖、HTML 转义（防XSS）
+    ├── styles/             # CSS 样式模块
+    │   ├── base.css        # 基础样式
+    │   ├── layout.css      # 布局样式
+    │   ├── sidebar.css     # 侧边栏样式
+    │   ├── titlebar.css    # 标题栏样式
+    │   ├── header.css      # 头部样式
+    │   ├── editor.css      # 编辑器样式
+    │   ├── vditor.css      # Vditor 样式
+    │   ├── home.css        # 首页样式
+    │   ├── tags.css        # 标签页样式
+    │   ├── search.css      # 搜索样式
+    │   ├── archive.css     # 归档样式
+    │   ├── components.css  # 组件样式
+    │   ├── tag-filter.css  # 标签筛选样式
+    │   └── settings.css    # 设置样式
+    ├── modules/            # 前端模块（分层架构，单一职责）
+    │   ├── core/           # 核心模块
+    │   │   ├── App.js           # 应用入口：依赖注入中心，初始化所有模块
+    │   │   ├── EventBus.js      # 全局事件总线，模块间通信
+    │   │   └── EventTypes.js    # 统一事件类型命名规范
+    │   ├── services/       # 数据服务层（纯数据操作，封装 IPC 调用）
+    │   │   ├── NoteService.js      # 笔记数据访问 + 内存缓存管理
+    │   │   ├── TagService.js       # 标签数据访问
+    │   │   └── PageStateService.js # 页面状态（侧边栏/标签页）持久化
+    │   ├── controllers/    # 控制器层（业务逻辑编排，接收 UI 事件）
+    │   │   ├── NoteController.js      # 笔记增删改查业务流程编排
+    │   │   ├── TagController.js       # 标签增删改查业务流程编排
+    │   │   └── PageStateController.js # 页面状态恢复编排
+    │   ├── coordinators/  # 协调器层（处理跨领域交叉业务）
+    │   │   └── NoteTagCoordinator.js # 笔记与标签的交叉逻辑（搜索、绑定、批量操作）
+    │   ├── views/          # 视图层（UI 渲染与交互）
+    │   │   ├── UIManager.js       # UI 组件统一管理入口，所有事件统一绑定
+    │   │   └── components/        # 可复用 UI 组件
+    │   │       ├── LeftSidebar.js # 左侧边栏导航（面板切换、折叠、宽度调整）
+    │   │       ├── NoteList.js    # 笔记列表渲染（卡片、删除）
+    │   │       ├── Editor.js      # 编辑器创建、切换、内容管理
+    │   │       ├── TabBar.js       # 标签页栏（拖拽排序）
+    │   │       ├── TagFilter.js    # 标签筛选栏
+    │   │       ├── Modal.js        # 模态框组件（输入/确认/标签选择/设置）
+    │   │       └── Toast.js        # Toast 提示组件
+    │   └── utils/          # 工具函数
+    │       ├── formatters.js    # 日期格式化
+    │       ├── validators.js    # 数据验证
+    │       └── helpers.js       # 防抖、HTML 转义（防XSS）
+    └── vue/                # Vue 组件（Toast 提示系统）
+        ├── components/
+        │   ├── Toast.vue         # Toast 单个消息组件
+        │   └── ToastContainer.vue # Toast 容器组件
+        ├── composables/
+        │   └── useToast.js      # Toast composable
+        └── toast-entry.js       # Vue 应用入口
 ```
 
 ### 架构设计
@@ -159,29 +182,72 @@ UI → EventBus → Controller → Coordinator → Service → IPC → Manager (
 - **事件总线命名**：`模块:事件`（如 `editor:titleChange`）
 - **依赖注入**：App 作为依赖注入中心
 
-## 快速开始
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 启动应用
-
-```bash
-npm run start
-```
-
-### 打包构建
-
-```bash
-npm run dist
-```
-
 ## 技术栈
 
 - **Electron 40.0.0** - 桌面应用框架
+- **Vite 6.4.2** - 构建工具
+- **Vue 3.5.34** - 前端框架
 - **Vditor 3.11.2** - Markdown 编辑器
-- **原生 HTML/CSS/JS** - 前端技术
+- **原生 HTML/CSS/JS** - 主应用界面
 - **文件系统 API** - 笔记本地存储
+
+## 开发说明
+
+### 目录结构
+
+```
+CYanote/
+├── main.js                 # Electron 主进程入口（窗口管理、系统托盘）
+├── preload.js              # 预加载脚本（安全桥接）
+├── vite.config.js          # Vite 配置（含 Vue 插件）
+├── package.json            # 项目配置
+├── core/                   # 主进程核心模块
+│   ├── NotesManager.js     # 笔记管理核心逻辑（CRUD、索引、回收站）
+│   ├── TagsManager.js      # 标签管理核心逻辑
+│   ├── ConfigManager.js    # 配置管理（数据路径、设置持久化）
+│   └── handlers.js         # IPC 处理器注册（桥接主进程和渲染进程）
+└── src/
+    ├── index.html          # 主页面 HTML
+    ├── index.css           # 全局样式
+    ├── renderer.js         # 渲染进程入口（启动应用）
+    ├── styles/             # CSS 样式模块
+    ├── modules/            # 前端模块（分层架构，单一职责）
+    │   ├── core/           # 核心模块
+    │   ├── services/       # 数据服务层
+    │   ├── controllers/    # 控制器层
+    │   ├── coordinators/   # 协调器层
+    │   ├── views/          # 视图层
+    │   └── utils/          # 工具函数
+    └── vue/                # Vue 组件（Toast 提示系统）
+        ├── components/
+        │   ├── Toast.vue         # Toast 单个消息组件
+        │   └── ToastContainer.vue # Toast 容器组件
+        ├── composables/
+        │   └── useToast.js      # Toast composable
+        └── toast-entry.js       # Vue 应用入口
+```
+
+### 开发命令
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式（同时启动 Vite 开发服务器和 Electron）
+npm run dev
+
+# 单独启动 Vite 开发服务器
+npm run dev:vite
+
+# 单独启动 Electron（开发环境）
+npm run dev:electron
+
+# 构建 Vue 前端
+npm run build:vue
+
+# 打包 Electron 应用
+npm run dist
+
+# 直接启动 Electron（生产环境）
+npm run start
+```

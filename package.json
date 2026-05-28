@@ -7,18 +7,23 @@
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
+    "dev:vite": "vite",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "dev": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
     "start": "electron .",
-    "dev": "vite",
     "build:vue": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "electron-builder"
+    "dist": "npm run build:vue && electron-builder"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "electron": "^40.0.0",
     "electron-builder": "^26.8.1",
     "vite": "^6.4.2",
-    "vue": "^3.5.34"
+    "vue": "^3.5.34",
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
     "electron-reload": "^2.0.0-alpha.1",
@@ -28,12 +33,12 @@
     "appId": "com.cyanoii.cyanote",
     "productName": "CYanote",
     "directories": {
-      "output": "dist"
+      "output": "dist_electron"
     },
     "files": [
       "**/*",
       "!node_modules/.cache",
-      "!dist"
+      "!dist_electron"
     ],
     "win": {
       "target": "nsis",

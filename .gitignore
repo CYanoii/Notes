@@ -1,5 +1,8 @@
 .vscode/
 
+/dist_electron/
+/dist_vue/
+
 # Logs
 logs
 *.log
