@@ -215,7 +215,9 @@ export class NoteTagCoordinator {
      */
     async refreshHomeTagFilter(tagStates = {}) {
         const tags = await this.tagService.getAllTags();
-        this.uiManager.tagFilter_render(tags, tagStates);
+        if (window.tagFilterApi?.updateTags) {
+            window.tagFilterApi.updateTags(tags, tagStates);
+        }
     }
 
     /**

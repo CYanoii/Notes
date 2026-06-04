@@ -295,7 +295,10 @@ export class NoteController {
                     delete this.tagFilterStates[tagId];
                 }
             }
-            this.uiManager.tagFilter_render(tags, this.tagFilterStates);
+            // 使用 Vue TagFilter API
+            if (window.tagFilterApi?.updateTags) {
+                window.tagFilterApi.updateTags(tags, this.tagFilterStates);
+            }
         } catch (error) {
             console.error('刷新标签筛选栏失败:', error);
         }

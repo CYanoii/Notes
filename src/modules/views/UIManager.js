@@ -7,7 +7,6 @@ import { Editor } from './components/Editor.js';
 import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
-import { TagFilter } from './components/TagFilter.js';
 import { EventTypes } from '../core/EventTypes.js';
 
 export class UIManager {
@@ -19,7 +18,6 @@ export class UIManager {
         this.noteList = new NoteList();
         this.tabBar = new TabBar();
         this.leftSidebar = new LeftSidebar();
-        this.tagFilter = new TagFilter();
 
         this.bindEvents();
     }
@@ -32,12 +30,6 @@ export class UIManager {
         this.noteList.setCallbacks(
             (note) => this.eventBus.emit(EventTypes.NOTE.OPEN, note),
             (noteId) => this.eventBus.emit(EventTypes.NOTE.DELETE, noteId)
-        );
-
-        // TagFilter 组件事件回调 - 将标签筛选事件转发到 eventBus
-        this.tagFilter.setCallbacks(
-            (tagId, newState) => this.eventBus.emit(EventTypes.TAG_FILTER.STATE_CHANGE, tagId, newState),
-            () => this.eventBus.emit(EventTypes.TAG_FILTER.CLEAR)
         );
 
         // Editor 组件事件回调 - 将编辑器输入事件转发到 eventBus
@@ -523,17 +515,6 @@ export class UIManager {
      */
     leftSidebar_setWidth(width) {
         this.leftSidebar.setWidth(width);
-    }
-
-    // ========== TagFilter 代理方法 ==========
-
-    /**
-     * 渲染标签筛选栏
-     * @param {Array} tags 标签列表
-     * @param {Object} tagStates 标签状态映射
-     */
-    tagFilter_render(tags, tagStates) {
-        this.tagFilter.renderTagFilter(tags, tagStates);
     }
 
     // ========== Modal 代理方法 ==========

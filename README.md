@@ -77,17 +77,20 @@ CYanote/
     │       ├── formatters.js    # 日期格式化
     │       ├── validators.js    # 数据验证
     │       └── helpers.js       # 防抖、HTML 转义（防XSS）
-    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框）
+    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框 + TagFilter 标签筛选）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
         │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
-        │   └── ModalContainer.vue # Modal 容器组件
+        │   ├── ModalContainer.vue # Modal 容器组件
+        │   └── TagFilter.vue     # 标签筛选组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
-        │   └── useModal.js     # Modal composable
+        │   ├── useModal.js     # Modal composable
+        │   └── useTagFilter.js # TagFilter composable
         ├── toast-entry.js       # Toast Vue 应用入口
-        └── modal-entry.js       # Modal Vue 应用入口
+        ├── modal-entry.js       # Modal Vue 应用入口
+        └── tag-filter-entry.js  # TagFilter Vue 应用入口
 ```
 
 ### 架构设计
@@ -146,7 +149,7 @@ CYanote/
 | `views/components/NoteList.js` | 笔记列表（卡片渲染、点击/删除） |
 | `views/components/Editor.js` | 编辑器（创建/切换/内容管理，使用 Vditor） |
 | `views/components/TabBar.js` | 标签页栏（创建/切换/关闭/拖拽排序） |
-| `views/components/TagFilter.js` | 标签筛选栏（多选筛选） |
+| `views/components/TagFilter.js` | ~~标签筛选栏（已迁移至 Vue）~~ |
 
 **工具层 (utils/)**
 
@@ -166,6 +169,7 @@ CYanote/
 | `vue/components/ModalContainer.vue` | Modal 容器组件 |
 | `vue/composables/useToast.js` | Toast 组合式函数 |
 | `vue/composables/useModal.js` | Modal 组合式函数 |
+| `vue/composables/useTagFilter.js` | TagFilter 组合式函数 |
 
 ### 依赖规则与数据流
 
@@ -231,17 +235,20 @@ CYanote/
     │   ├── coordinators/   # 协调器层
     │   ├── views/          # 视图层
     │   └── utils/          # 工具函数
-    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框）
+    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框 + TagFilter 标签筛选）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
         │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
-        │   └── ModalContainer.vue # Modal 容器组件
+        │   ├── ModalContainer.vue # Modal 容器组件
+        │   └── TagFilter.vue     # 标签筛选组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
-        │   └── useModal.js     # Modal composable
+        │   ├── useModal.js     # Modal composable
+        │   └── useTagFilter.js # TagFilter composable
         ├── toast-entry.js       # Toast Vue 应用入口
-        └── modal-entry.js       # Modal Vue 应用入口
+        ├── modal-entry.js       # Modal Vue 应用入口
+        └── tag-filter-entry.js  # TagFilter Vue 应用入口
 ```
 
 ### 开发命令
