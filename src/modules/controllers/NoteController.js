@@ -250,9 +250,7 @@ export class NoteController {
             let notes = await this.noteService.getAllNotes();
             // 应用标签筛选
             notes = this.applyTagFilter(notes);
-            if (window.noteListApi?.updateNotes) {
-                window.noteListApi.updateNotes(notes);
-            }
+            this.uiManager.noteList_renderNotes(notes);
         } catch (error) {
             console.error('加载所有笔记失败:', error);
             this.uiManager.toast_show('加载笔记失败', 'error');
@@ -309,9 +307,7 @@ export class NoteController {
                 }
             }
             // 使用 Vue TagFilter API
-            if (window.tagFilterApi?.updateTags) {
-                window.tagFilterApi.updateTags(tags, this.tagFilterStates);
-            }
+            this.uiManager.tagFilter_render(tags, this.tagFilterStates);
         } catch (error) {
             console.error('刷新标签筛选栏失败:', error);
         }

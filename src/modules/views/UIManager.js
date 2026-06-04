@@ -376,14 +376,27 @@ export class UIManager {
         return [];
     }
 
+    // ========== TagFilter 代理方法 ==========
+
     /**
-     * 设置标签页顺序变化回调
+     * 渲染标签筛选栏
      */
-    tabBar_setOrderChangeCallback(callback) {
-        this.tabBar.setOrderChangeCallback(callback);
+    tagFilter_render(tags, tagStates) {
+        if (window.tagFilterApi?.updateTags) {
+            window.tagFilterApi.updateTags(tags, tagStates);
+        }
     }
 
     // ========== NoteList 代理方法 ==========
+
+    /**
+     * 渲染笔记列表
+     */
+    noteList_renderNotes(notes) {
+        if (window.noteListApi?.updateNotes) {
+            window.noteListApi.updateNotes(notes);
+        }
+    }
 
     // ========== Toast 代理方法 ==========
 

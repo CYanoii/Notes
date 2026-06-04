@@ -215,9 +215,7 @@ export class NoteTagCoordinator {
      */
     async refreshHomeTagFilter(tagStates = {}) {
         const tags = await this.tagService.getAllTags();
-        if (window.tagFilterApi?.updateTags) {
-            window.tagFilterApi.updateTags(tags, tagStates);
-        }
+        this.uiManager.tagFilter_render(tags, tagStates);
     }
 
     /**
@@ -225,9 +223,7 @@ export class NoteTagCoordinator {
      */
     async refreshHomeNotes() {
         const notes = await this.noteService.getAllNotes();
-        if (window.noteListApi?.updateNotes) {
-            window.noteListApi.updateNotes(notes);
-        }
+        this.uiManager.noteList_renderNotes(notes);
     }
 
     /**
