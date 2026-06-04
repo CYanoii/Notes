@@ -225,7 +225,9 @@ export class NoteTagCoordinator {
      */
     async refreshHomeNotes() {
         const notes = await this.noteService.getAllNotes();
-        this.uiManager.noteList_renderNotes(notes);
+        if (window.noteListApi?.updateNotes) {
+            window.noteListApi.updateNotes(notes);
+        }
     }
 
     /**

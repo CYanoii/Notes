@@ -4,7 +4,6 @@
  * 所有 eventBus 事件在此统一绑定
  */
 import { Editor } from './components/Editor.js';
-import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
 import { EventTypes } from '../core/EventTypes.js';
@@ -15,7 +14,6 @@ export class UIManager {
 
         // 统一创建所有 UI 组件实例
         this.editor = new Editor();
-        this.noteList = new NoteList();
         this.tabBar = new TabBar();
         this.leftSidebar = new LeftSidebar();
 
@@ -26,12 +24,6 @@ export class UIManager {
      * 绑定所有事件监听 - 统一在此管理
      */
     bindEvents() {
-        // NoteList 组件事件回调 - 将组件回调转发到 eventBus
-        this.noteList.setCallbacks(
-            (note) => this.eventBus.emit(EventTypes.NOTE.OPEN, note),
-            (noteId) => this.eventBus.emit(EventTypes.NOTE.DELETE, noteId)
-        );
-
         // Editor 组件事件回调 - 将编辑器输入事件转发到 eventBus
         this.editor.setCallbacks(
             (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
@@ -389,13 +381,6 @@ export class UIManager {
     }
 
     // ========== NoteList 代理方法 ==========
-
-    /**
-     * 渲染笔记列表
-     */
-    noteList_renderNotes(notes) {
-        this.noteList.renderNotes(notes);
-    }
 
     // ========== Toast 代理方法 ==========
 
