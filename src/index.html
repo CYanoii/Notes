@@ -48,14 +48,7 @@
             <!-- 顶部导航栏 -->
             <header class="header">
                 <div class="tab-bar" id="tabBar">
-                    <!-- 固定主页标签页 -->
-                    <div class="tab active" data-tab-id="home">
-                        <div class="tab-icon-title">
-                            <i class="fas fa-home"></i>
-                            <span class="tab-title">首页</span>
-                        </div>
-                    </div>
-                    <!-- 动态笔记标签页会在这里添加 -->
+                    <!-- 由 Vue TabBar 组件渲染 -->
                 </div>
 
                 <div class="header-actions">
@@ -107,6 +100,7 @@
     <script type="module" src="./vue/modal-entry.js"></script>
     <script type="module" src="./vue/tag-filter-entry.js"></script>
     <script type="module" src="./vue/note-list-entry.js"></script>
+    <script type="module" src="./vue/tab-bar-entry.js"></script>
     <script type="module" src="./renderer.js"></script>
 </body>
 </html>

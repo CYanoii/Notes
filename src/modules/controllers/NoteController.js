@@ -83,6 +83,17 @@ export class NoteController {
             this.handleTagFilterClear();
         });
 
+        // 标签页栏事件
+        this.eventBus.on(EventTypes.TAB_BAR.ORDER_CHANGE, (order) => {
+            // 标签页顺序变化，由 PageStateController 处理
+        });
+        this.eventBus.on(EventTypes.TAB_BAR.SWITCH_HOME, () => {
+            this.switchToHome();
+        });
+        this.eventBus.on(EventTypes.TAB_BAR.SWITCH_TAB, (tabId) => {
+            this.switchToNote(tabId);
+        });
+
         // 设置事件
         this.eventBus.on(EventTypes.SETTINGS.OPEN, () => {
             this.uiManager.modal_showSettingsPopover();

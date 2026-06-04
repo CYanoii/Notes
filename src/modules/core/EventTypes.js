@@ -67,7 +67,9 @@ export const EventTypes = {
 
   // 标签栏事件
   TAB_BAR: {
-    ORDER_CHANGE: 'tabBar:orderChange'
+    ORDER_CHANGE: 'tabBar:orderChange',
+    SWITCH_HOME: 'tabBar:switchHome',
+    SWITCH_TAB: 'tabBar:switchTab'
   }
 
 }

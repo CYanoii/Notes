@@ -77,23 +77,26 @@ CYanote/
     │       ├── formatters.js    # 日期格式化
     │       ├── validators.js    # 数据验证
     │       └── helpers.js       # 防抖、HTML 转义（防XSS）
-    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList）
+    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
         │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
         │   ├── ModalContainer.vue # Modal 容器组件
         │   ├── TagFilter.vue     # 标签筛选组件
-        │   └── NoteList.vue       # 笔记列表组件
+        │   ├── NoteList.vue       # 笔记列表组件
+        │   └── TabBar.vue         # 标签页栏组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
         │   ├── useModal.js     # Modal composable
         │   ├── useTagFilter.js # TagFilter composable
-        │   └── useNoteList.js  # NoteList composable
+        │   ├── useNoteList.js  # NoteList composable
+        │   └── useTabBar.js    # TabBar composable
         ├── toast-entry.js       # Toast Vue 应用入口
         ├── modal-entry.js       # Modal Vue 应用入口
         ├── tag-filter-entry.js  # TagFilter Vue 应用入口
-        └── note-list-entry.js  # NoteList Vue 应用入口
+        ├── note-list-entry.js  # NoteList Vue 应用入口
+        └── tab-bar-entry.js    # TabBar Vue 应用入口
 ```
 
 ### 架构设计
@@ -238,23 +241,26 @@ CYanote/
     │   ├── coordinators/   # 协调器层
     │   ├── views/          # 视图层
     │   └── utils/          # 工具函数
-    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList）
+    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
         │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
         │   ├── ModalContainer.vue # Modal 容器组件
         │   ├── TagFilter.vue     # 标签筛选组件
-        │   └── NoteList.vue       # 笔记列表组件
+        │   ├── NoteList.vue       # 笔记列表组件
+        │   └── TabBar.vue         # 标签页栏组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
         │   ├── useModal.js     # Modal composable
         │   ├── useTagFilter.js # TagFilter composable
-        │   └── useNoteList.js  # NoteList composable
+        │   ├── useNoteList.js  # NoteList composable
+        │   └── useTabBar.js    # TabBar composable
         ├── toast-entry.js       # Toast Vue 应用入口
         ├── modal-entry.js       # Modal Vue 应用入口
         ├── tag-filter-entry.js  # TagFilter Vue 应用入口
-        └── note-list-entry.js  # NoteList Vue 应用入口
+        ├── note-list-entry.js  # NoteList Vue 应用入口
+        └── tab-bar-entry.js    # TabBar Vue 应用入口
 ```
 
 ### 开发命令

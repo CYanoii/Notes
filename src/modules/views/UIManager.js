@@ -4,7 +4,6 @@
  * 所有 eventBus 事件在此统一绑定
  */
 import { Editor } from './components/Editor.js';
-import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
 import { EventTypes } from '../core/EventTypes.js';
 
@@ -14,7 +13,6 @@ export class UIManager {
 
         // 统一创建所有 UI 组件实例
         this.editor = new Editor();
-        this.tabBar = new TabBar();
         this.leftSidebar = new LeftSidebar();
 
         this.bindEvents();
@@ -30,11 +28,6 @@ export class UIManager {
             (noteId, excerpt) => this.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, excerpt),
             (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
         );
-
-        // TabBar 组件事件回调 - 将标签页顺序变化事件转发到 eventBus
-        this.tabBar.setOrderChangeCallback((order) => {
-            this.eventBus.emit(EventTypes.TAB_BAR.ORDER_CHANGE, order);
-        });
 
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
@@ -341,36 +334,46 @@ export class UIManager {
      * 创建笔记标签页
      */
     tabBar_createNoteTab(noteData) {
-        this.tabBar.createNoteTab(noteData);
+        if (window.tabBarApi?.createNoteTab) {
+            window.tabBarApi.createNoteTab(noteData);
+        }
     }
 
     /**
      * 切换到指定标签页
-     * @param {string|number} tabId 标签页ID，可以是笔记ID或'home'等特殊ID
      */
     tabBar_switchToTab(tabId) {
-        this.tabBar.switchToTab(tabId);
+        if (window.tabBarApi?.switchToTab) {
+            window.tabBarApi.switchToTab(tabId);
+        }
     }
 
     /**
      * 关闭指定标签页
      */
     tabBar_closeNoteTab(noteId) {
-        this.tabBar.closeNoteTab(noteId);
+        if (window.tabBarApi?.closeNoteTab) {
+            window.tabBarApi.closeNoteTab(noteId);
+        }
     }
 
     /**
      * 更新标签页标题
      */
     tabBar_updateTabTitle(noteId, newTitle) {
-        this.tabBar.updateTabTitle(noteId, newTitle);
+        if (window.tabBarApi?.updateTabTitle) {
+            window.tabBarApi.updateTabTitle(noteId, newTitle);
+        }
     }
 
     /**
      * 获取标签页顺序
      */
     tabBar_getTabOrder() {
-        return this.tabBar.getTabOrder();
+        if (window.tabBarApi?.getTabOrder) {
+            return window.tabBarApi.getTabOrder();
+        }
+        return [];
     }
 
     /**
