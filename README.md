@@ -14,6 +14,7 @@
 - **实时自动保存** - 编辑时自动保存，无需手动操作
 - **快速搜索** - 支持按标题、标签、内容全文搜索，搜索结果实时预览，标签高亮显示
 - **Toast 消息提示** - 操作反馈友好
+- **Modal 模态框** - 输入提示/确认对话框/标签选择/设置浮出
 - **系统托盘** - 支持最小化到托盘，托盘菜单包含显示窗口/退出选项
 
 ## 项目结构
@@ -71,19 +72,22 @@ CYanote/
     │   │       ├── Editor.js      # 编辑器创建、切换、内容管理
     │   │       ├── TabBar.js       # 标签页栏（拖拽排序）
     │   │       ├── TagFilter.js    # 标签筛选栏
-    │   │       ├── Modal.js        # 模态框组件（输入/确认/标签选择/设置）
     │   │       └── Toast.js        # Toast 提示组件
     │   └── utils/          # 工具函数
     │       ├── formatters.js    # 日期格式化
     │       ├── validators.js    # 数据验证
     │       └── helpers.js       # 防抖、HTML 转义（防XSS）
-    └── vue/                # Vue 组件（Toast 提示系统）
+    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
-        │   └── ToastContainer.vue # Toast 容器组件
+        │   ├── ToastContainer.vue # Toast 容器组件
+        │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
+        │   └── ModalContainer.vue # Modal 容器组件
         ├── composables/
-        │   └── useToast.js      # Toast composable
-        └── toast-entry.js       # Vue 应用入口
+        │   ├── useToast.js      # Toast composable
+        │   └── useModal.js     # Modal composable
+        ├── toast-entry.js       # Toast Vue 应用入口
+        └── modal-entry.js       # Modal Vue 应用入口
 ```
 
 ### 架构设计
@@ -143,8 +147,6 @@ CYanote/
 | `views/components/Editor.js` | 编辑器（创建/切换/内容管理，使用 Vditor） |
 | `views/components/TabBar.js` | 标签页栏（创建/切换/关闭/拖拽排序） |
 | `views/components/TagFilter.js` | 标签筛选栏（多选筛选） |
-| `views/components/Modal.js` | 通用模态框（输入提示/确认对话框/标签选择/设置浮出） |
-| `views/components/Toast.js` | Toast 提示（info/success/error/warning） |
 
 **工具层 (utils/)**
 
@@ -153,6 +155,17 @@ CYanote/
 | `utils/formatters.js` | 日期格式化 |
 | `utils/validators.js` | 数据验证 |
 | `utils/helpers.js` | HTML 转义（防XSS）、防抖 |
+
+**Vue 模块 (vue/)**
+
+| 模块 | 职责 |
+|------|------|
+| `vue/components/Toast.vue` | Toast 单个消息组件 |
+| `vue/components/ToastContainer.vue` | Toast 容器组件 |
+| `vue/components/Modal.vue` | Modal 组件（输入提示/确认对话框/标签选择/设置浮出） |
+| `vue/components/ModalContainer.vue` | Modal 容器组件 |
+| `vue/composables/useToast.js` | Toast 组合式函数 |
+| `vue/composables/useModal.js` | Modal 组合式函数 |
 
 ### 依赖规则与数据流
 
@@ -218,13 +231,17 @@ CYanote/
     │   ├── coordinators/   # 协调器层
     │   ├── views/          # 视图层
     │   └── utils/          # 工具函数
-    └── vue/                # Vue 组件（Toast 提示系统）
+    └── vue/                # Vue 模块（Toast 提示系统 + Modal 模态框）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
-        │   └── ToastContainer.vue # Toast 容器组件
+        │   ├── ToastContainer.vue # Toast 容器组件
+        │   ├── Modal.vue         # Modal 组件（prompt/confirm/tagSelection/settings）
+        │   └── ModalContainer.vue # Modal 容器组件
         ├── composables/
-        │   └── useToast.js      # Toast composable
-        └── toast-entry.js       # Vue 应用入口
+        │   ├── useToast.js      # Toast composable
+        │   └── useModal.js     # Modal composable
+        ├── toast-entry.js       # Toast Vue 应用入口
+        └── modal-entry.js       # Modal Vue 应用入口
 ```
 
 ### 开发命令

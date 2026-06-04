@@ -7,7 +7,6 @@ import { Editor } from './components/Editor.js';
 import { NoteList } from './components/NoteList.js';
 import { TabBar } from './components/TabBar.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
-import { Modal } from './components/Modal.js';
 import { TagFilter } from './components/TagFilter.js';
 import { EventTypes } from '../core/EventTypes.js';
 
@@ -20,7 +19,6 @@ export class UIManager {
         this.noteList = new NoteList();
         this.tabBar = new TabBar();
         this.leftSidebar = new LeftSidebar();
-        this.modal = new Modal();
         this.tagFilter = new TagFilter();
 
         this.bindEvents();
@@ -544,27 +542,43 @@ export class UIManager {
      * 显示输入提示模态框
      */
     modal_prompt(title, defaultValue = '') {
-        return this.modal.prompt(title, defaultValue);
+        if (window.modalApi?.prompt) {
+            return window.modalApi.prompt(title, defaultValue)
+        }
+        console.warn('[Modal] Vue Modal 未加载')
+        return Promise.resolve(null)
     }
 
     /**
      * 显示确认对话框
      */
     modal_confirm(message) {
-        return this.modal.confirm(message);
+        if (window.modalApi?.confirm) {
+            return window.modalApi.confirm(message)
+        }
+        console.warn('[Modal] Vue Modal 未加载')
+        return Promise.resolve(false)
     }
 
     /**
      * 显示标签选择模态框
      */
     modal_showTagSelection(allTags, currentTagIds) {
-        return this.modal.showTagSelection(allTags, currentTagIds);
+        if (window.modalApi?.showTagSelection) {
+            return window.modalApi.showTagSelection(allTags, currentTagIds)
+        }
+        console.warn('[Modal] Vue Modal 未加载')
+        return Promise.resolve(null)
     }
 
     /**
      * 显示设置浮出窗口
      */
     modal_showSettingsPopover() {
-        this.modal.showSettingsPopover();
+        if (window.modalApi?.showSettingsPopover) {
+            window.modalApi.showSettingsPopover()
+        } else {
+            console.warn('[Modal] Vue Modal 未加载')
+        }
     }
 }
