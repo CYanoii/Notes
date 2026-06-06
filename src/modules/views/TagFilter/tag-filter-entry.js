@@ -1,7 +1,7 @@
-// src/vue/tag-filter-entry.js
+// src/vue/views/TagFilter/tag-filter-entry.js
 import { createApp } from 'vue'
-import TagFilter from './components/TagFilter.vue'
-import { useTagFilter, tagFilterState } from './composables/useTagFilter.js'
+import TagFilter from './TagFilter.vue'
+import { useTagFilter, tagFilterState } from './useTagFilter.js'
 
 // 先暴露全局 API（在挂载之前）
 const { updateTags } = useTagFilter()

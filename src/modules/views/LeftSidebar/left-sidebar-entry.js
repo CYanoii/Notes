@@ -1,7 +1,7 @@
-// src/vue/left-sidebar-entry.js
+// src/vue/views/LeftSidebar/left-sidebar-entry.js
 import { createApp } from 'vue'
-import LeftSidebar from './components/LeftSidebar.vue'
-import { useLeftSidebar, leftSidebarState } from './composables/useLeftSidebar.js'
+import LeftSidebar from './LeftSidebar.vue'
+import { useLeftSidebar, leftSidebarState } from './useLeftSidebar.js'
 
 // 暴露全局 API（供 UIManager/Controller 调用）
 const { switchPanel, toggleCollapse, collapse, expand, startResize, endResize, getIsCollapsed, getActivePanelId, setWidth } = useLeftSidebar()

@@ -1,6 +1,6 @@
-// src/vue/toast-entry.js
+// src/vue/views/Toast/toast-entry.js
 import { createApp } from 'vue'
-import ToastContainer from './components/ToastContainer.vue'
+import ToastContainer from './ToastContainer.vue'
 
 // 挂载 Toast 容器到 DOM
 const container = document.createElement('div')
@@ -11,7 +11,7 @@ const app = createApp(ToastContainer)
 app.mount('#vue-toast-root')
 
 // 暴露全局 API（供 UIManager 调用）
-import { useToast } from './composables/useToast.js'
+import { useToast } from './useToast.js'
 const { show } = useToast()
 window.toastApi = { show }
 

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { useTagFilter } from '../composables/useTagFilter.js'
-import { EventTypes } from '../../modules/core/EventTypes.js'
+import { useTagFilter } from './useTagFilter.js'
+import { EventTypes } from '../../core/EventTypes.js'
 
 const { tags, tagStates, updateTagState, clearFilter, getNextState } = useTagFilter()
 

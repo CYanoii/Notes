@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { EventTypes } from '../../../modules/core/EventTypes.js'
+import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
   query: {

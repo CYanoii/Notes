@@ -1,7 +1,7 @@
 <script setup>
-import { formatDate } from '../../modules/utils/formatters.js'
-import { EventTypes } from '../../modules/core/EventTypes.js'
-import { useNoteList } from '../composables/useNoteList.js'
+import { formatDate } from '../../utils/formatters.js'
+import { EventTypes } from '../../core/EventTypes.js'
+import { useNoteList } from './useNoteList.js'
 
 const { notes } = useNoteList()
 

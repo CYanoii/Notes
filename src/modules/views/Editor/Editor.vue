@@ -1,8 +1,8 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick, onMounted } from 'vue'
-import { useEditor, editorState } from '../composables/useEditor.js'
-import { EventTypes } from '../../modules/core/EventTypes.js'
-import { escapeHtml } from '../../modules/utils/helpers.js'
+import { useEditor, editorState } from './useEditor.js'
+import { EventTypes } from '../../core/EventTypes.js'
+import { escapeHtml } from '../../utils/helpers.js'
 
 const {
   state,

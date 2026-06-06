@@ -1,7 +1,7 @@
-// src/vue/tab-bar-entry.js
+// src/vue/views/TabBar/tab-bar-entry.js
 import { createApp } from 'vue'
-import TabBar from './components/TabBar.vue'
-import { useTabBar, tabBarState } from './composables/useTabBar.js'
+import TabBar from './TabBar.vue'
+import { useTabBar, tabBarState } from './useTabBar.js'
 
 // 暴露全局 API（供 NoteController 调用）
 const { createNoteTab, switchToTab, closeNoteTab, updateTabTitle, getTabOrder } = useTabBar()

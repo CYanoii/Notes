@@ -1,7 +1,7 @@
-// src/vue/editor-entry.js
+// src/vue/views/Editor/editor-entry.js
 import { createApp } from 'vue'
-import Editor from './components/Editor.vue'
-import { useEditor, editorState } from './composables/useEditor.js'
+import Editor from './Editor.vue'
+import { useEditor, editorState } from './useEditor.js'
 
 const {
   createNoteEditor,

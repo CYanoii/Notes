@@ -1,7 +1,7 @@
-// src/vue/note-list-entry.js
+// src/vue/views/NoteList/note-list-entry.js
 import { createApp } from 'vue'
-import NoteList from './components/NoteList.vue'
-import { useNoteList, noteListState } from './composables/useNoteList.js'
+import NoteList from './NoteList.vue'
+import { useNoteList, noteListState } from './useNoteList.js'
 
 // 暴露全局 API（供 NoteController/NoteTagCoordinator 调用）
 const { updateNotes, clearNotes } = useNoteList()

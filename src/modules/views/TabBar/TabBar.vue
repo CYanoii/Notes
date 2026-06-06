@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { useTabBar } from '../composables/useTabBar.js'
-import { EventTypes } from '../../modules/core/EventTypes.js'
+import { useTabBar } from './useTabBar.js'
+import { EventTypes } from '../../core/EventTypes.js'
 
 const { tabs, activeTabId, createNoteTab, switchToTab, closeNoteTab, updateTabTitle, moveTab, getTabOrder } = useTabBar()
 

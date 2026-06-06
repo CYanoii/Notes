@@ -1,7 +1,7 @@
 <script setup>
 import { watch, onMounted, ref, reactive, computed } from 'vue'
-import { useLeftSidebar } from '../composables/useLeftSidebar.js'
-import { EventTypes } from '../../modules/core/EventTypes.js'
+import { useLeftSidebar } from './useLeftSidebar.js'
+import { EventTypes } from '../../core/EventTypes.js'
 import SearchPanel from './panels/SearchPanel.vue'
 import TagsPanel from './panels/TagsPanel.vue'
 import ArchivePanel from './panels/ArchivePanel.vue'

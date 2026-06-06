@@ -1,5 +1,5 @@
 <script setup>
-import { useModal } from '../composables/useModal.js'
+import { useModal } from './useModal.js'
 import Modal from './Modal.vue'
 
 const {
