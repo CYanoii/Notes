@@ -9,25 +9,8 @@
     width: 280px;
 }
 
-.left-sidebar.collapsed .sidebar-content {
-    display: none;
-    width: 0;
-    padding: 0;
-}
-
 .left-sidebar.collapsed {
     width: 50px !important;
-}
-
-/* 侧边内容区 */
-.sidebar-content {
-    height: 100%;
-    background: #2d3748;
-    overflow-y: auto;
-    padding: 10px;
-    transition: all 0.3s ease;
-    flex: 1;
-    min-width: 0;
 }
 
 /* 拉伸条 */

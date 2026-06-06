@@ -1,8 +1,4 @@
 /* ===== Vditor Markdown 编辑器样式适配 ===== */
-.vditor-container {
-    flex: 1;
-    min-height: 0;
-}
 
 /* Vditor 工具栏调整 */
 .vditor .vditor-toolbar {

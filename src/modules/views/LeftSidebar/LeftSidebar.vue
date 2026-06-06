@@ -66,9 +66,13 @@ function handleNavClick(item) {
 // 监听折叠状态变化，应用 CSS 类
 watch(() => state.isCollapsed, (collapsed) => {
   const container = document.querySelector('.left-sidebar')
+  const content = document.querySelector('.sidebar-content')
   if (container) {
     container.classList.toggle('collapsed', collapsed)
     container.classList.toggle('expanded', !collapsed)
+  }
+  if (content) {
+    content.classList.toggle('hidden', collapsed)
   }
   if (window.eventBus) {
     window.eventBus.emit(EventTypes.SIDEBAR.COLLAPSE_CHANGE, collapsed)
@@ -261,10 +265,16 @@ onMounted(() => {
 
 .sidebar-content {
     flex: 1;
-    overflow: hidden;
+    min-width: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     background: #2d3748;
     padding: 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-content.hidden {
+    display: none;
 }
 </style>
