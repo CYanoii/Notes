@@ -3,17 +3,16 @@
  * 整合管理所有 UI 组件，提供统一的全局 UI 接口
  * 所有 eventBus 事件在此统一绑定
  */
-import { LeftSidebar } from './components/LeftSidebar.js';
 import { EventTypes } from '../core/EventTypes.js';
 
 export class UIManager {
     constructor(eventBus) {
         this.eventBus = eventBus;
 
-        // 统一创建所有 UI 组件实例
-        // Editor 已迁移到 Vue，使用 window.editorApi
-        this.leftSidebar = new LeftSidebar();
-        this.leftSidebar.init(); // 显式初始化，Vue 挂载后执行
+        // UI 组件状态由 Vue 管理，通过 window.xxxApi 访问
+        // Editor: window.editorApi
+        // LeftSidebar: window.leftSidebarApi
+        // TabBar: window.tabBarApi
 
         this.bindEvents();
     }
@@ -125,7 +124,7 @@ export class UIManager {
         });
 
         // 左侧边栏内容容器事件委托（处理所有动态内容的点击事件）
-        this.leftSidebar.getContentContainer().addEventListener('click', (e) => {
+        document.querySelector('.sidebar-content').addEventListener('click', (e) => {
             // 新建标签按钮（标签面板）
             const addBtn = e.target.closest('.tags-panel .tag-add-btn');
             if (addBtn) {
@@ -192,9 +191,11 @@ export class UIManager {
                 const year = archiveYearHeader.dataset.year;
                 // 如果点击的是展开图标，不阻止冒泡
                 if (!e.target.closest('.archive-expand-icon')) {
-                    this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                    if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
+                        window.leftSidebarApi.toggleArchiveYearExpanded(parseInt(year));
+                    }
                     // 重新渲染，保持数据不变
-                    const currentPanel = this.leftSidebar.getActivePanelId();
+                    const currentPanel = window.leftSidebarApi?.getActivePanelId?.() || 'search';
                     if (currentPanel === 'archive') {
                         // 数据需要重新获取，NoteController 会处理
                         this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
@@ -208,9 +209,11 @@ export class UIManager {
             if (archiveExpandIcon) {
                 const yearHeader = archiveExpandIcon.closest('.archive-year-header');
                 const year = yearHeader.dataset.year;
-                this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
+                    window.leftSidebarApi.toggleArchiveYearExpanded(parseInt(year));
+                }
                 // 重新渲染，保持数据不变
-                const currentPanel = this.leftSidebar.getActivePanelId();
+                const currentPanel = window.leftSidebarApi?.getActivePanelId?.() || 'search';
                 if (currentPanel === 'archive') {
                     this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
                 }
@@ -429,7 +432,7 @@ export class UIManager {
         if (window.leftSidebarApi?.getIsCollapsed) {
             return window.leftSidebarApi.getIsCollapsed();
         }
-        return this.leftSidebar.getIsCollapsed();
+        return false;
     }
 
     /**
@@ -439,7 +442,7 @@ export class UIManager {
         if (window.leftSidebarApi?.getActivePanelId) {
             return window.leftSidebarApi.getActivePanelId();
         }
-        return this.leftSidebar.getActivePanelId();
+        return 'search';
     }
 
     /**
@@ -448,8 +451,6 @@ export class UIManager {
     leftSidebar_switchPanel(panelId) {
         if (window.leftSidebarApi?.switchPanel) {
             window.leftSidebarApi.switchPanel(panelId);
-        } else {
-            this.leftSidebar.switchPanel(panelId);
         }
     }
 
@@ -457,52 +458,63 @@ export class UIManager {
      * 渲染侧边栏面板内容
      */
     leftSidebar_renderPanelContent(panelId, data) {
-        this.leftSidebar.renderPanelContent(panelId, data);
+        if (window.leftSidebarApi?.renderPanelContent) {
+            window.leftSidebarApi.renderPanelContent(panelId, data);
+        }
     }
 
     /**
      * 更新搜索结果（不重新渲染输入框）
      */
     leftSidebar_updateSearchResults(results, query) {
-        const container = this.leftSidebar.getContentContainer();
-        this.leftSidebar.updateSearchResults(container, results, query);
+        if (window.leftSidebarApi?.updateSearchResults) {
+            window.leftSidebarApi.updateSearchResults(results, query);
+        }
     }
 
     /**
      * 刷新搜索结果选中状态
      */
     leftSidebar_refreshSearchResultSelection() {
-        const container = this.leftSidebar.getContentContainer();
-        this.leftSidebar.refreshSearchResultSelection(container);
+        if (window.leftSidebarApi?.refreshSearchResultSelection) {
+            window.leftSidebarApi.refreshSearchResultSelection();
+        }
     }
 
     /**
      * 清除搜索结果选中状态
      */
     leftSidebar_clearSearchResultSelection() {
-        const container = this.leftSidebar.getContentContainer();
-        this.leftSidebar.clearSearchResultSelection(container);
+        if (window.leftSidebarApi?.clearSearchResultSelection) {
+            window.leftSidebarApi.clearSearchResultSelection();
+        }
     }
 
     /**
      * 切换标签展开状态
      */
     leftSidebar_toggleTagExpanded(tagId) {
-        this.leftSidebar.toggleTagExpanded(tagId);
+        if (window.leftSidebarApi?.toggleTagExpanded) {
+            window.leftSidebarApi.toggleTagExpanded(tagId);
+        }
     }
 
     /**
      * 切换归档年份展开状态
      */
     leftSidebar_toggleArchiveYearExpanded(year) {
-        this.leftSidebar.toggleArchiveYearExpanded(year);
+        if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
+            window.leftSidebarApi.toggleArchiveYearExpanded(year);
+        }
     }
 
     /**
      * 设置当前激活的搜索结果
      */
     leftSidebar_setActiveSearchResult(noteId) {
-        this.leftSidebar.setActiveSearchResult(noteId);
+        if (window.leftSidebarApi?.setActiveSearchResult) {
+            window.leftSidebarApi.setActiveSearchResult(noteId);
+        }
     }
 
     /**
