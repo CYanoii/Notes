@@ -67,7 +67,7 @@ CYanote/
     │   ├── views/          # 视图层（UI 渲染与交互）
     │   │   ├── UIManager.js       # UI 组件统一管理入口，所有事件统一绑定
     │   │   └── components/        # 可复用 UI 组件
-    │   │       ├── LeftSidebar.js # 左侧边栏导航（面板切换、折叠、宽度调整）
+    │   │       ├── LeftSidebar.js # ~~左侧边栏导航（已迁移至 Vue）~~
     │   │       ├── NoteList.js    # ~~笔记列表渲染（已迁移至 Vue）~~
     │   │       ├── Editor.js      # 编辑器创建、切换、内容管理
     │   │       ├── TabBar.js       # 标签页栏（拖拽排序）
@@ -77,7 +77,7 @@ CYanote/
     │       ├── formatters.js    # 日期格式化
     │       ├── validators.js    # 数据验证
     │       └── helpers.js       # 防抖、HTML 转义（防XSS）
-    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar）
+    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar/LeftSidebar）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
@@ -85,18 +85,21 @@ CYanote/
         │   ├── ModalContainer.vue # Modal 容器组件
         │   ├── TagFilter.vue     # 标签筛选组件
         │   ├── NoteList.vue       # 笔记列表组件
-        │   └── TabBar.vue         # 标签页栏组件
+        │   ├── TabBar.vue         # 标签页栏组件
+        │   └── LeftSidebar.vue    # 左侧边栏导航组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
         │   ├── useModal.js     # Modal composable
         │   ├── useTagFilter.js # TagFilter composable
         │   ├── useNoteList.js  # NoteList composable
-        │   └── useTabBar.js    # TabBar composable
+        │   ├── useTabBar.js    # TabBar composable
+        │   └── useLeftSidebar.js # LeftSidebar composable
         ├── toast-entry.js       # Toast Vue 应用入口
         ├── modal-entry.js       # Modal Vue 应用入口
         ├── tag-filter-entry.js  # TagFilter Vue 应用入口
         ├── note-list-entry.js  # NoteList Vue 应用入口
-        └── tab-bar-entry.js    # TabBar Vue 应用入口
+        ├── tab-bar-entry.js    # TabBar Vue 应用入口
+        └── left-sidebar-entry.js # LeftSidebar Vue 应用入口
 ```
 
 ### 架构设计
@@ -151,7 +154,7 @@ CYanote/
 | 模块 | 职责 |
 |------|------|
 | `views/UIManager.js` | 整合管理所有 UI 组件，所有事件监听**统一在此绑定**，代理方法用 `组件_方法名` 命名 |
-| `views/components/LeftSidebar.js` | 左侧边栏（导航面板切换、折叠、宽度拖拽调整） |
+| `views/components/LeftSidebar.js` | ~~左侧边栏（已迁移至 Vue）~~ |
 | `views/components/NoteList.js` | ~~笔记列表（已迁移至 Vue）~~ |
 | `views/components/Editor.js` | 编辑器（创建/切换/内容管理，使用 Vditor） |
 | `views/components/TabBar.js` | 标签页栏（创建/切换/关闭/拖拽排序） |
@@ -241,7 +244,7 @@ CYanote/
     │   ├── coordinators/   # 协调器层
     │   ├── views/          # 视图层
     │   └── utils/          # 工具函数
-    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar）
+    └── vue/                # Vue 模块（Toast/Modal/TagFilter/NoteList/TabBar/LeftSidebar）
         ├── components/
         │   ├── Toast.vue         # Toast 单个消息组件
         │   ├── ToastContainer.vue # Toast 容器组件
@@ -249,18 +252,21 @@ CYanote/
         │   ├── ModalContainer.vue # Modal 容器组件
         │   ├── TagFilter.vue     # 标签筛选组件
         │   ├── NoteList.vue       # 笔记列表组件
-        │   └── TabBar.vue         # 标签页栏组件
+        │   ├── TabBar.vue         # 标签页栏组件
+        │   └── LeftSidebar.vue    # 左侧边栏导航组件
         ├── composables/
         │   ├── useToast.js      # Toast composable
         │   ├── useModal.js     # Modal composable
         │   ├── useTagFilter.js # TagFilter composable
         │   ├── useNoteList.js  # NoteList composable
-        │   └── useTabBar.js    # TabBar composable
+        │   ├── useTabBar.js    # TabBar composable
+        │   └── useLeftSidebar.js # LeftSidebar composable
         ├── toast-entry.js       # Toast Vue 应用入口
         ├── modal-entry.js       # Modal Vue 应用入口
         ├── tag-filter-entry.js  # TagFilter Vue 应用入口
         ├── note-list-entry.js  # NoteList Vue 应用入口
-        └── tab-bar-entry.js    # TabBar Vue 应用入口
+        ├── tab-bar-entry.js    # TabBar Vue 应用入口
+        └── left-sidebar-entry.js # LeftSidebar Vue 应用入口
 ```
 
 ### 开发命令

@@ -1,73 +1,34 @@
 /**
- * 左侧边栏组件
- * 分为图标导航区和内容展示区，支持切换不同功能面板
- * 再次点击已选中项可折叠/展开内容区
+ * 左侧边栏内容渲染组件
+ * 注意：UI状态（宽度、折叠）由 Vue useLeftSidebar 管理
+ * 本模块仅负责面板内容渲染
  */
 import { debounce } from '../../utils/helpers.js';
 import { EventTypes } from '../../core/EventTypes.js';
 
 export class LeftSidebar {
     constructor() {
-        // 当前激活的面板
         this.activePanel = 'search';
-
-        // 内容区是否折叠
-        this.isCollapsed = false;
-
-        // 收起时记录的上一次激活面板（用于恢复）
-        this.lastActivePanel = null;
-
-        // 定义菜单项
-        this.menuItems = [
-            { id: 'search', icon: 'fas fa-search', label: '搜索' },
-            { id: 'tags', icon: 'fas fa-tags', label: '所有标签' },
-            { id: 'archive', icon: 'fas fa-archive', label: '归档' },
-            { id: 'recent', icon: 'fas fa-history', label: '最近文件' },
-            { id: 'trash', icon: 'fas fa-trash-alt', label: '回收站' }
-        ];
-
-        // 底部功能按钮
-        this.bottomItems = [
-            { id: 'settings', icon: 'fas fa-cog', label: '设置' }
-        ];
-
-        // 拉伸配置
-        this.minExpandedWidth = 180;     // 展开状态最小宽度（包含导航栏）
-        this.collapseThreshold = 90;     // 超过最小宽度多少像素才触发收起
-        this.defaultWidth = 280;         // 默认宽度
-        this.maxWidth = 450;             // 最大宽度
-
-        // 拖拽状态
-        this.isResizing = false;
-        this.startX = 0;
-        this.startWidth = 0;
-
-        // 标签展开状态
-        this.expandedTags = new Set();  // 存储展开的标签ID
-
-        // 归档年份展开状态
-        this.expandedArchiveYears = new Set();  // 存储展开的年份
-
-        // 搜索状态
-        this.activeSearchResultId = null;  // 当前选中的搜索结果ID
-        this.lastSearchQuery = '';         // 上一次搜索关键词
-        this.lastSearchResults = [];       // 上一次搜索结果
-
-        // 回调函数
-        this.onPanelChange = null;
-        this.onCollapseChange = null;
-        this.onWidthChange = null;
-        this.onTagNoteClick = null;
-        this.onArchiveNoteClick = null;
-        this.onSettingsClick = null;
-
-        // DOM 元素引用
         this.container = null;
         this.navContainer = null;
         this.contentContainer = null;
         this.resizeHandle = null;
 
-        this.init();
+        // 标签展开状态
+        this.expandedTags = new Set();
+
+        // 归档年份展开状态
+        this.expandedArchiveYears = new Set();
+
+        // 搜索状态
+        this.activeSearchResultId = null;
+        this.lastSearchQuery = '';
+        this.lastSearchResults = [];
+
+        // 回调函数
+        this.onPanelChange = null;
+        this.onTagNoteClick = null;
+        this.onArchiveNoteClick = null;
     }
 
     /**
@@ -79,404 +40,80 @@ export class LeftSidebar {
         this.contentContainer = this.container.querySelector('.sidebar-content');
         this.resizeHandle = document.getElementById('resizeHandle');
 
-        // 使用默认宽度，由 PageStateController 恢复状态
-        this.setWidth(this.defaultWidth);
-
+        // UI状态由 Vue 管理，这里只设置默认值
         // 默认展开
         this.container.classList.add('expanded');
-
-        this.renderNav();
-        this.bindResizeEvents();
-    }
-
-    /**
-     * 渲染导航图标列表
-     */
-    renderNav() {
-        this.navContainer.innerHTML = '';
-
-        this.menuItems.forEach(item => {
-            const navItem = document.createElement('div');
-            navItem.className = `sidebar-nav-item ${item.id === this.activePanel ? 'active' : ''}`;
-            navItem.dataset.panelId = item.id;
-            navItem.title = item.label;
-
-            navItem.innerHTML = `<i class="${item.icon}"></i>`;
-
-            this.navContainer.appendChild(navItem);
-        });
-
-        // 渲染底部功能按钮
-        this.bottomItems.forEach(item => {
-            const navItem = document.createElement('div');
-            navItem.className = 'sidebar-nav-item sidebar-nav-bottom';
-            navItem.dataset.actionId = item.id;
-            navItem.title = item.label;
-
-            navItem.innerHTML = `<i class="${item.icon}"></i>`;
-
-            this.navContainer.appendChild(navItem);
-        });
-    }
-
-    /**
-     * 获取导航容器元素（用于外部绑定事件）
-     */
-    getNavContainer() {
-        return this.navContainer;
-    }
-
-    /**
-     * 绑定拖拽调整大小事件
-     * 封装所有拖拽事件绑定到组件内部
-     */
-    bindResizeEvents() {
-        if (!this.resizeHandle) return;
-
-        this.resizeHandle.addEventListener('mousedown', (e) => {
-            this.startResize(e);
-        });
-        document.addEventListener('mousemove', (e) => {
-            this.onResize(e);
-        });
-        document.addEventListener('mouseup', () => {
-            this.endResize();
-        });
-    }
-
-    /**
-     * 开始拖拽
-     */
-    startResize(e) {
-        this.isResizing = true;
-        this.startX = e.clientX;
-
-        // 如果当前是收起状态，准备拖拽拉出
-        if (this.isCollapsed) {
-            this.startWidth = 50; // 收起状态宽度是50px
-            // 不在这里展开，只在拖拽超过临界值后才展开
-        } else {
-            this.startWidth = this.container.getBoundingClientRect().width;
-        }
-
-        // 拖拽开始前移除过渡效果，实现即时响应
-        this.container.style.transition = 'none';
-        if (this.contentContainer) {
-            this.contentContainer.style.transition = 'none';
-        }
-
-        this.resizeHandle.classList.add('resizing');
-        document.body.classList.add('resizing');
-        e.preventDefault();
-    }
-
-    /**
-     * 拖拽中
-     */
-    onResize(e) {
-        if (!this.isResizing) return;
-
-        const dx = e.clientX - this.startX;
-        let newWidth = this.startWidth + dx;
-
-        // 限制最大宽度
-        newWidth = Math.min(newWidth, this.maxWidth);
-
-        // 计算触发收起/展开的临界值
-        const collapseWidth = this.minExpandedWidth - this.collapseThreshold;
-        const expandWidth = this.minExpandedWidth - this.collapseThreshold;
-
-        // 如果已经展开
-        if (!this.isCollapsed) {
-            // 如果宽度大于等于最小宽度，正常设置
-            if (newWidth >= this.minExpandedWidth) {
-                this.setWidth(newWidth);
-            }
-            // 如果在临界值和最小宽度之间，保持卡在最小宽度
-            else if (newWidth >= collapseWidth) {
-                this.setWidth(this.minExpandedWidth);
-            }
-            // 如果小于临界值，触发收起
-            else if (newWidth < collapseWidth) {
-                this.collapseByDrag();
-            }
-        }
-        // 如果已经收起，正在拖拽拉出
-        else {
-            // 如果拉过了临界值，才真正展开
-            if (newWidth > expandWidth) {
-                // 展开并卡在最小宽度
-                this.expandByDrag();
-                this.setWidth(Math.max(newWidth, this.minExpandedWidth));
-            }
-            // 还没到临界值，保持收起，更新宽度显示拖拽过程
-            else {
-                this.setWidth(newWidth);
-            }
-        }
-    }
-
-    /**
-     * 结束拖拽
-     */
-    endResize() {
-        if (!this.isResizing) return;
-
-        const currentWidth = this.getWidth();
-
-        // 如果是收起状态但拖拽宽度没超过临界值，恢复到收起宽度
-        if (this.isCollapsed && currentWidth <= (this.minExpandedWidth - this.collapseThreshold)) {
-            this.setWidth(50);
-        }
-
-        // 触发宽度变化回调
-        if (this.onWidthChange) {
-            this.onWidthChange(currentWidth);
-        }
-
-        // 恢复过渡效果
-        this.container.style.transition = '';
-        if (this.contentContainer) {
-            this.contentContainer.style.transition = '';
-        }
-
-        this.isResizing = false;
-        this.resizeHandle.classList.remove('resizing');
-        document.body.classList.remove('resizing');
-    }
-
-    /**
-     * 通过拖拽收起，处理选中状态
-     */
-    collapseByDrag() {
-        if (this.isCollapsed) return;
-
-        // 记录当前激活面板
-        this.lastActivePanel = this.activePanel;
-
-        // 取消所有选中
-        this.activePanel = null;
-        this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // 收起
-        this.isCollapsed = true;
-        this.container.classList.add('collapsed');
-        this.container.classList.remove('expanded');
-
-        if (this.onCollapseChange) {
-            this.onCollapseChange(this.isCollapsed);
-        }
-    }
-
-    /**
-     * 通过拖拽拉出，恢复选中状态
-     */
-    expandByDrag() {
-        if (!this.isCollapsed) return;
-
-        // 展开
-        this.isCollapsed = false;
-        this.container.classList.remove('collapsed');
-        this.container.classList.add('expanded');
-
-        // 恢复之前记录的激活面板
-        if (this.lastActivePanel) {
-            this.activePanel = this.lastActivePanel;
-            this.lastActivePanel = null;
-            this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.panelId === this.activePanel);
-            });
-        } else {
-            // 没有记录，默认选中搜索
-            this.activePanel = 'search';
-            this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.panelId === 'search');
-            });
-        }
-
-        if (this.onCollapseChange) {
-            this.onCollapseChange(this.isCollapsed);
-        }
-    }
-
-    /**
-     * 设置侧边栏宽度
-     */
-    setWidth(width) {
-        this.container.style.width = `${width}px`;
-    }
-
-    /**
-     * 获取当前侧边栏宽度
-     */
-    getWidth() {
-        return this.container.getBoundingClientRect().width;
-    }
-
-    /**
-     * 切换到指定面板
-     * 如果点击的是当前已激活面板，则切换折叠/展开状态
-     */
-    switchPanel(panelId) {
-        // 如果点击的是当前激活的面板且内容未折叠，点击后折叠内容并清除高亮
-        if (panelId === this.activePanel && !this.isCollapsed) {
-            this.toggleCollapse();
-            // 折叠时清除激活面板，移除高亮
-            this.lastActivePanel = this.activePanel;
-            this.activePanel = null;
-            this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            return;
-        }
-
-        // 如果当前是折叠状态且点击的就是之前记录的面板，展开它并恢复高亮
-        if (this.isCollapsed && panelId === this.lastActivePanel) {
-            this.toggleCollapse();
-            // 展开时恢复激活状态
-            this.activePanel = this.lastActivePanel;
-            this.lastActivePanel = null;
-            this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.panelId === this.activePanel);
-            });
-            // 触发面板变化回调
-            if (this.onPanelChange && this.activePanel) {
-                this.onPanelChange(this.activePanel);
-            }
-            return;
-        }
-
-        // 切换到新面板
-        this.activePanel = panelId;
-
-        // 确保内容区展开
-        if (this.isCollapsed) {
-            this.toggleCollapse();
-        }
-
-        // 更新导航项样式
-        this.navContainer.querySelectorAll('.sidebar-nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.panelId === panelId);
-        });
-
-        // 触发回调
-        if (this.onPanelChange) {
-            this.onPanelChange(panelId);
-        }
-    }
-
-    /**
-     * 切换折叠/展开状态
-     */
-    toggleCollapse() {
-        this.isCollapsed = !this.isCollapsed;
-        this.container.classList.toggle('collapsed', this.isCollapsed);
-        this.container.classList.toggle('expanded', !this.isCollapsed);
-
-        if (this.onCollapseChange) {
-            this.onCollapseChange(this.isCollapsed);
-        }
-    }
-
-    /**
-     * 折叠侧边栏
-     */
-    collapse() {
-        if (!this.isCollapsed) {
-            this.toggleCollapse();
-        }
-    }
-
-    /**
-     * 展开侧边栏
-     */
-    expand() {
-        if (this.isCollapsed) {
-            this.toggleCollapse();
-        }
-    }
-
-    /**
-     * 获取当前折叠状态
-     */
-    getIsCollapsed() {
-        return this.isCollapsed;
-    }
-
-    /**
-     * 设置面板切换回调
-     */
-    setPanelChangeCallback(callback) {
-        this.onPanelChange = callback;
-    }
-
-    /**
-     * 设置折叠状态变化回调
-     */
-    setCollapseChangeCallback(callback) {
-        this.onCollapseChange = callback;
-    }
-
-    /**
-     * 设置宽度变化回调
-     */
-    setWidthChangeCallback(callback) {
-        this.onWidthChange = callback;
-    }
-
-    /**
-     * 获取当前激活的面板 ID
-     */
-    getActivePanelId() {
-        return this.activePanel;
     }
 
     /**
      * 获取内容容器元素
-     * 用于后续渲染具体内容
      */
     getContentContainer() {
         return this.contentContainer;
     }
 
     /**
-     * 获取当前宽度
+     * 获取当前激活的面板 ID
      */
-    getCurrentWidth() {
-        return this.getWidth();
+    getActivePanelId() {
+        if (window.leftSidebarApi?.getActivePanelId) {
+            return window.leftSidebarApi.getActivePanelId();
+        }
+        return this.activePanel;
+    }
+
+    /**
+     * 获取当前折叠状态
+     */
+    getIsCollapsed() {
+        if (window.leftSidebarApi?.getIsCollapsed) {
+            return window.leftSidebarApi.getIsCollapsed();
+        }
+        return false;
+    }
+
+    /**
+     * 切换到指定面板
+     */
+    switchPanel(panelId) {
+        if (window.leftSidebarApi?.switchPanel) {
+            window.leftSidebarApi.switchPanel(panelId);
+        }
     }
 
     /**
      * 渲染面板内容
-     * @param {string} panelId 面板ID
-     * @param {any} data 面板需要的数据
+     */
+    getContentContainer() {
+        return this.contentContainer;
+    }
+
+    /**
+     * 渲染面板内容
      */
     renderPanelContent(panelId, data = null) {
-        const container = this.getContentContainer();
-        if (!container) return;
+        if (!this.contentContainer) return;
 
-        container.innerHTML = '';
+        this.contentContainer.innerHTML = '';
 
         switch (panelId) {
             case 'search':
-                this.renderSearchPanel(container, data);
+                this.renderSearchPanel(this.contentContainer, data);
                 break;
             case 'tags':
-                this.renderTagsPanel(container, data);
+                this.renderTagsPanel(this.contentContainer, data);
                 break;
             case 'archive':
-                this.renderArchivePanel(container, data);
+                this.renderArchivePanel(this.contentContainer, data);
                 break;
             case 'recent':
-                this.renderRecentPanel(container, data);
+                this.renderRecentPanel(this.contentContainer, data);
                 break;
             case 'trash':
-                this.renderTrashPanel(container, data);
+                this.renderTrashPanel(this.contentContainer, data);
                 break;
             default:
-                container.innerHTML = `
+                this.contentContainer.innerHTML = `
                     <div class="sidebar-panel">
                         <h3 class="panel-title">${panelId}</h3>
                         <div class="panel-content">
@@ -521,7 +158,7 @@ export class LeftSidebar {
     }
 
     /**
-     * HTML 转义工具
+     * HTML 转义
      */
     escapeHtml(text) {
         const div = document.createElement('div');
@@ -636,14 +273,7 @@ export class LeftSidebar {
     }
 
     /**
-     * 设置设置按钮点击回调
-     */
-    setSettingsClickCallback(callback) {
-        this.onSettingsClick = callback;
-    }
-
-    /**
-     * 渲染归档面板（按创建日期年-月分组）
+     * 渲染归档面板
      */
     renderArchivePanel(container, groupedNotes) {
         if (!groupedNotes || !groupedNotes.years || groupedNotes.years.length === 0) {
@@ -759,20 +389,18 @@ export class LeftSidebar {
 
     /**
      * 设置当前激活的搜索结果
-     * @param {string} noteId 笔记ID
      */
     setActiveSearchResult(noteId) {
         this.activeSearchResultId = noteId;
     }
 
     /**
-     * 更新搜索结果选中状态（重新渲染高亮）
+     * 更新搜索结果选中状态
      */
     refreshSearchResultSelection(container) {
         const resultsContainer = container.querySelector('.search-results-container');
         if (!resultsContainer) return;
 
-        // 移除所有active类
         resultsContainer.querySelectorAll('.search-result-card').forEach(card => {
             card.classList.toggle('active', card.dataset.noteId === this.activeSearchResultId);
         });
@@ -795,11 +423,9 @@ export class LeftSidebar {
      * 渲染搜索面板
      */
     renderSearchPanel(container, data) {
-        // 如果有保存的搜索状态，使用它（切换面板回来时恢复状态）
         let query = this.lastSearchQuery;
         let results = this.lastSearchResults;
 
-        // 如果没有保存的状态，才使用传入的数据
         if (!this.lastSearchQuery && data && data.query !== undefined) {
             query = data.query || '';
             results = data.results || [];
@@ -828,9 +454,7 @@ export class LeftSidebar {
             </div>
         `;
 
-        // 绑定输入事件实现动态搜索
         const searchInput = container.querySelector('.sidebar-search-input');
-        // 聚焦但不选中光标，保持用户之前的输入位置
         searchInput.focus();
         searchInput.addEventListener('input', debounce((e) => {
             const value = e.target.value.trim();
@@ -839,10 +463,9 @@ export class LeftSidebar {
     }
 
     /**
-     * 更新搜索结果（不重新渲染输入框，避免光标位置丢失）
+     * 更新搜索结果
      */
     updateSearchResults(container, results, query) {
-        // 保存搜索状态
         this.lastSearchQuery = query;
         this.lastSearchResults = results;
 
@@ -909,7 +532,7 @@ export class LeftSidebar {
     }
 
     /**
-     * 生成搜索预览片段，包含匹配关键词的上下文
+     * 生成搜索预览片段
      */
     generateSearchPreview(content, query) {
         if (!content || !query) return '';
@@ -919,27 +542,21 @@ export class LeftSidebar {
         const index = lowerContent.indexOf(lowerQuery);
 
         if (index === -1) {
-            // 内容中没有匹配，可能匹配在标题或标签，取前80字符
             const snippet = content.replace(/\s+/g, ' ').trim().slice(0, 80);
             if (!snippet) return '';
             return this.escapeHtml(snippet) + (content.length > 80 ? '...' : '');
         }
 
-        // 提取匹配位置周围的上下文：约25字符前，65字符后
         const start = Math.max(0, index - 20);
         const end = Math.min(content.length, index + query.length + 60);
         let snippet = content.slice(start, end);
-
-        // 清理多余空白
         snippet = snippet.replace(/\s+/g, ' ').trim();
 
-        // 转义并高亮
         return this.highlightMatch(this.escapeHtml(snippet), query);
     }
 
     /**
      * 高亮匹配的关键词
-     * 将所有匹配位置用<mark>标签包裹
      */
     highlightMatch(text, query) {
         if (!query || !text) return text;
@@ -951,16 +568,13 @@ export class LeftSidebar {
         let index = lowerText.indexOf(lowerQuery);
 
         while (index !== -1) {
-            // 添加匹配前的文本
             result += text.slice(lastIndex, index);
-            // 添加高亮的匹配部分
             result += `<mark>${text.slice(index, index + query.length)}</mark>`;
 
             lastIndex = index + query.length;
             index = lowerText.indexOf(lowerQuery, lastIndex);
         }
 
-        // 添加剩余文本
         result += text.slice(lastIndex);
 
         return result;

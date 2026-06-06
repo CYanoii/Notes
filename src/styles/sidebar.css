@@ -1,4 +1,4 @@
-/* 左侧边栏 */
+/* 左侧边栏 - 容器结构（由 Vue useLeftSidebar 管理状态） */
 .left-sidebar {
     display: flex;
     height: 100%;
@@ -17,47 +17,6 @@
 
 .left-sidebar.collapsed {
     width: 50px !important;
-}
-
-/* 侧边导航 - 图标区 */
-.sidebar-nav {
-    width: 50px;
-    height: 100%;
-    background: #1a202c;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 10px;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.sidebar-nav-item {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #a0aec0;
-    font-size: 18px;
-}
-
-.sidebar-nav-item:hover {
-    background: #2d3748;
-    color: #e2e8f0;
-}
-
-.sidebar-nav-item.active {
-    background: #4299e1;
-    color: white;
-}
-
-.sidebar-nav-bottom {
-    margin-top: auto;
-    margin-bottom: 10px;
 }
 
 /* 侧边内容区 */
@@ -111,7 +70,7 @@
     cursor: col-resize;
 }
 
-/* 侧边栏面板样式 */
+/* 侧边栏面板样式（由 LeftSidebar.js 渲染） */
 .sidebar-panel {
     color: white;
 }

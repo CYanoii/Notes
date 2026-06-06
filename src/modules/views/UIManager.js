@@ -14,6 +14,7 @@ export class UIManager {
         // 统一创建所有 UI 组件实例
         this.editor = new Editor();
         this.leftSidebar = new LeftSidebar();
+        this.leftSidebar.init(); // 显式初始化，Vue 挂载后执行
 
         this.bindEvents();
     }
@@ -85,36 +86,10 @@ export class UIManager {
             }
         });
 
-        // 左侧边栏导航点击事件（DOM 事件在 UIManager 绑定，转发到 EventBus）
-        const navContainer = this.leftSidebar.getNavContainer();
-        navContainer.addEventListener('click', (e) => {
-            const navItem = e.target.closest('.sidebar-nav-item');
-            if (navItem) {
-                const panelId = navItem.dataset.panelId;
-                const actionId = navItem.dataset.actionId;
-
-                if (actionId === 'settings') {
-                    this.eventBus.emit(EventTypes.SETTINGS.OPEN);
-                } else if (panelId) {
-                    this.eventBus.emit(EventTypes.SIDEBAR.NAV_CLICK, panelId);
-                }
-            }
-        });
-
-        // 左侧边栏面板切换后回调，转发到 EventBus
-        this.leftSidebar.setPanelChangeCallback((panelId) => {
-            this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, panelId);
-        });
+        // 左侧边栏面板切换由 Vue useLeftSidebar 管理
 
         // 左侧边栏折叠状态变化事件
-        this.leftSidebar.setCollapseChangeCallback((isCollapsed) => {
-            this.eventBus.emit(EventTypes.SIDEBAR.COLLAPSE_CHANGE, isCollapsed);
-        });
-
-        // 左侧边栏宽度变化事件
-        this.leftSidebar.setWidthChangeCallback((width) => {
-            this.eventBus.emit(EventTypes.SIDEBAR.WIDTH_CHANGE, width);
-        });
+        // 左侧边栏折叠/宽度变化由 Vue useLeftSidebar 管理
 
         // 笔记编辑器标签栏事件委托
         document.getElementById('notesContainer').addEventListener('click', (e) => {
@@ -428,6 +403,9 @@ export class UIManager {
      * 获取当前折叠状态
      */
     leftSidebar_getIsCollapsed() {
+        if (window.leftSidebarApi?.getIsCollapsed) {
+            return window.leftSidebarApi.getIsCollapsed();
+        }
         return this.leftSidebar.getIsCollapsed();
     }
 
@@ -435,6 +413,9 @@ export class UIManager {
      * 获取当前激活的面板 ID
      */
     leftSidebar_getActivePanelId() {
+        if (window.leftSidebarApi?.getActivePanelId) {
+            return window.leftSidebarApi.getActivePanelId();
+        }
         return this.leftSidebar.getActivePanelId();
     }
 
@@ -442,7 +423,11 @@ export class UIManager {
      * 切换到指定面板
      */
     leftSidebar_switchPanel(panelId) {
-        this.leftSidebar.switchPanel(panelId);
+        if (window.leftSidebarApi?.switchPanel) {
+            window.leftSidebarApi.switchPanel(panelId);
+        } else {
+            this.leftSidebar.switchPanel(panelId);
+        }
     }
 
     /**
@@ -501,21 +486,27 @@ export class UIManager {
      * 折叠侧边栏
      */
     leftSidebar_collapse() {
-        this.leftSidebar.collapse();
+        if (window.leftSidebarApi?.collapse) {
+            window.leftSidebarApi.collapse();
+        }
     }
 
     /**
      * 展开侧边栏
      */
     leftSidebar_expand() {
-        this.leftSidebar.expand();
+        if (window.leftSidebarApi?.expand) {
+            window.leftSidebarApi.expand();
+        }
     }
 
     /**
      * 设置侧边栏宽度
      */
     leftSidebar_setWidth(width) {
-        this.leftSidebar.setWidth(width);
+        if (window.leftSidebarApi?.setWidth) {
+            window.leftSidebarApi.setWidth(width);
+        }
     }
 
     // ========== Modal 代理方法 ==========
