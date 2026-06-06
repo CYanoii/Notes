@@ -1,6 +1,6 @@
 <script setup>
-import { ref, reactive, computed, watch, nextTick, onMounted } from 'vue'
-import { useEditor, editorState } from './useEditor.js'
+import { computed, watch, nextTick, onMounted } from 'vue'
+import { useEditor } from './useEditor.js'
 import { EventTypes } from '../../core/EventTypes.js'
 import { escapeHtml } from '../../utils/helpers.js'
 
@@ -16,31 +16,17 @@ const {
   updateEditorContent,
   updateNoteTags,
   setVditor,
-  getVditor,
   setFocused,
   getActiveNoteId,
-  hasEditor,
   getEditors
 } = useEditor()
-
-// 回调函数
-let onTitleChangeCallback = null
-let onExcerptChangeCallback = null
-let onContentChangeCallback = null
-
-// 设置回调 - 由 UIManager 调用
-function setCallbacks(onTitleChange, onExcerptChange, onContentChange) {
-  onTitleChangeCallback = onTitleChange
-  onExcerptChangeCallback = onExcerptChange
-  onContentChangeCallback = onContentChange
-}
 
 // 标题变化处理
 function handleTitleInput(noteId, event) {
   const newTitle = event.target.value
   updateEditorTitle(noteId, newTitle)
-  if (onTitleChangeCallback) {
-    onTitleChangeCallback(noteId, newTitle)
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, newTitle)
   }
 }
 
@@ -53,11 +39,11 @@ function handleTitleBlur(noteId, event) {
   }
 }
 
-// 摘要变化处理 - 使用 v-model 后不再需要
+// 摘要变化处理
 function handleExcerptInput(noteId, event) {
   const newExcerpt = event.target.value
-  if (onExcerptChangeCallback) {
-    onExcerptChangeCallback(noteId, newExcerpt)
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, newExcerpt)
   }
 }
 
@@ -220,8 +206,8 @@ function initVditor(noteId, container, noteData) {
       })
     },
     input: (value) => {
-      if (onContentChangeCallback) {
-        onContentChangeCallback(noteId, value)
+      if (window.eventBus) {
+        window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, value)
       }
     }
   })
@@ -276,8 +262,6 @@ const editorList = computed(() => {
 
 // 暴露方法给外部
 defineExpose({
-  state,
-  setCallbacks,
   createNoteEditor,
   switchToNoteEditor,
   switchToHomePage,

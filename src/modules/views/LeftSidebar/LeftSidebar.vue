@@ -1,5 +1,5 @@
 <script setup>
-import { watch, onMounted, ref, reactive, computed } from 'vue'
+import { watch, onMounted, computed } from 'vue'
 import { useLeftSidebar } from './useLeftSidebar.js'
 import { EventTypes } from '../../core/EventTypes.js'
 import SearchPanel from './panels/SearchPanel.vue'
@@ -8,7 +8,19 @@ import ArchivePanel from './panels/ArchivePanel.vue'
 import RecentPanel from './panels/RecentPanel.vue'
 import TrashPanel from './panels/TrashPanel.vue'
 
-const { state, switchPanel, setWidth, collapse, expand, startResize, endResize } = useLeftSidebar()
+const {
+  state,
+  panelData,
+  currentActiveNoteId,
+  switchPanel,
+  setWidth,
+  collapse,
+  expand,
+  startResize,
+  endResize,
+  updateSearchResults,
+  setActiveSearchResult
+} = useLeftSidebar()
 
 // 配置常量
 const MIN_WIDTH = 180
@@ -18,15 +30,6 @@ const MAX_WIDTH = 450
 // 拖拽状态
 let startX = 0
 let startWidth = 280
-
-// 面板数据
-const panelData = reactive({
-  search: { query: '', results: [] },
-  tags: { tags: [], tagCounts: {}, tagNotes: {} },
-  archive: { years: [] },
-  recent: { notes: [] },
-  trash: { notes: [] }
-})
 
 // 当前面板
 const currentPanel = computed(() => state.activePanel)
@@ -55,7 +58,6 @@ function handleNavClick(item) {
 
   switchPanel(item.id)
 
-  // 通知 Controller 面板变化
   if (window.eventBus) {
     window.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, item.id)
   }
@@ -68,7 +70,6 @@ watch(() => state.isCollapsed, (collapsed) => {
     container.classList.toggle('collapsed', collapsed)
     container.classList.toggle('expanded', !collapsed)
   }
-  // 通知 PageStateController 保存状态
   if (window.eventBus) {
     window.eventBus.emit(EventTypes.SIDEBAR.COLLAPSE_CHANGE, collapsed)
   }
@@ -80,23 +81,10 @@ watch(() => state.width, (width) => {
   if (container) {
     container.style.width = `${width}px`
   }
-  // 通知 PageStateController 保存状态
   if (window.eventBus) {
     window.eventBus.emit(EventTypes.SIDEBAR.WIDTH_CHANGE, width)
   }
 }, { immediate: true })
-
-// 渲染面板内容（由控制器调用，传入数据）
-function renderPanelContent(panelId, data) {
-  if (panelId && panelData[panelId] !== undefined) {
-    // 处理数组格式（如 recent、trash 面板）
-    if (Array.isArray(data)) {
-      panelData[panelId].notes = data
-    } else if (data) {
-      Object.assign(panelData[panelId], data)
-    }
-  }
-}
 
 // 处理拖拽开始
 function handleResizeStart(event) {
@@ -105,7 +93,6 @@ function handleResizeStart(event) {
   startX = event.clientX
   startWidth = state.isCollapsed ? 50 : state.width
 
-  // 移除过渡效果
   const container = document.querySelector('.left-sidebar')
   if (container) {
     container.style.transition = 'none'
@@ -123,26 +110,24 @@ function handleResizeMove(event) {
   const dx = event.clientX - startX
   let newWidth = startWidth + dx
 
-  // 限制最大宽度
   newWidth = Math.min(newWidth, MAX_WIDTH)
 
-  // 计算临界值
   const collapseWidth = MIN_WIDTH - COLLAPSE_THRESHOLD
 
   if (!state.isCollapsed) {
     if (newWidth >= MIN_WIDTH) {
-      setWidth(newWidth);
+      setWidth(newWidth)
     } else if (newWidth >= collapseWidth) {
-      setWidth(MIN_WIDTH);
+      setWidth(MIN_WIDTH)
     } else {
-      collapse();
+      collapse()
     }
   } else {
     if (newWidth > collapseWidth) {
-      setWidth(Math.max(newWidth, MIN_WIDTH));
-      expand();
+      setWidth(Math.max(newWidth, MIN_WIDTH))
+      expand()
     } else {
-      setWidth(newWidth);
+      setWidth(newWidth)
     }
   }
 }
@@ -156,7 +141,6 @@ function handleResizeEnd() {
   document.removeEventListener('mouseup', handleResizeEnd)
   document.body.classList.remove('resizing')
 
-  // 恢复过渡效果
   const container = document.querySelector('.left-sidebar')
   if (container) {
     container.style.transition = ''
@@ -170,51 +154,6 @@ onMounted(() => {
     resizeHandle.addEventListener('mousedown', handleResizeStart)
   }
 })
-
-// 暴露方法供外部调用
-defineExpose({
-  renderPanelContent,
-  updateSearchResults,
-  refreshSearchResultSelection,
-  clearSearchResultSelection,
-  setActiveSearchResult,
-  toggleTagExpanded,
-  toggleArchiveYearExpanded
-})
-
-// 更新搜索结果
-function updateSearchResults(results, query) {
-  panelData.search.results = results || []
-  panelData.search.query = query || ''
-}
-
-// 当前激活的笔记ID（用于搜索结果高亮）
-const currentActiveNoteId = ref(null)
-
-// 刷新搜索结果选中状态
-function refreshSearchResultSelection() {
-  // 选中状态由 SearchPanel 内部管理
-}
-
-// 清除搜索结果选中状态
-function clearSearchResultSelection() {
-  // 选中状态由 SearchPanel 内部管理
-}
-
-// 设置当前激活的搜索结果
-function setActiveSearchResult(noteId) {
-  currentActiveNoteId.value = noteId
-}
-
-// 切换标签展开状态
-function toggleTagExpanded(tagId) {
-  // 由 TagsPanel 内部管理
-}
-
-// 切换归档年份展开状态
-function toggleArchiveYearExpanded(year) {
-  // 由 ArchivePanel 内部管理
-}
 </script>
 
 <template>

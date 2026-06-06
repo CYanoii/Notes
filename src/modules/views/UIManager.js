@@ -4,15 +4,26 @@
  * 所有 eventBus 事件在此统一绑定
  */
 import { EventTypes } from '../core/EventTypes.js';
+import { useEditor } from './Editor/useEditor.js';
+import { useTabBar } from './TabBar/useTabBar.js';
+import { useTagFilter } from './TagFilter/useTagFilter.js';
+import { useNoteList } from './NoteList/useNoteList.js';
+import { useToast } from './Toast/useToast.js';
+import { useModal } from './Modal/useModal.js';
+import { useLeftSidebar } from './LeftSidebar/useLeftSidebar.js';
 
 export class UIManager {
     constructor(eventBus) {
         this.eventBus = eventBus;
 
-        // UI 组件状态由 Vue 管理，通过 window.xxxApi 访问
-        // Editor: window.editorApi
-        // LeftSidebar: window.leftSidebarApi
-        // TabBar: window.tabBarApi
+        // 直接调用 composables（单例状态，跨所有 Vue 实例共享）
+        this.editor = useEditor();
+        this.tabBar = useTabBar();
+        this.tagFilter = useTagFilter();
+        this.noteList = useNoteList();
+        this.toast = useToast();
+        this.modal = useModal();
+        this.leftSidebar = useLeftSidebar();
 
         this.bindEvents();
     }
@@ -21,16 +32,6 @@ export class UIManager {
      * 绑定所有事件监听 - 统一在此管理
      */
     bindEvents() {
-        // Editor 组件事件回调 - 通过 window.editorApi.setCallbacks 设置
-        // 等待 Vue 模块加载后设置
-        if (window.editorApi?.setCallbacks) {
-            window.editorApi.setCallbacks(
-                (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
-                (noteId, excerpt) => this.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, excerpt),
-                (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
-            )
-        }
-
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
         document.getElementById('newNoteBtn').addEventListener('click', () => {
@@ -86,11 +87,6 @@ export class UIManager {
                 }
             }
         });
-
-        // 左侧边栏面板切换由 Vue useLeftSidebar 管理
-
-        // 左侧边栏折叠状态变化事件
-        // 左侧边栏折叠/宽度变化由 Vue useLeftSidebar 管理
 
         // 笔记编辑器标签栏事件委托
         document.getElementById('notesContainer').addEventListener('click', (e) => {
@@ -191,13 +187,9 @@ export class UIManager {
                 const year = archiveYearHeader.dataset.year;
                 // 如果点击的是展开图标，不阻止冒泡
                 if (!e.target.closest('.archive-expand-icon')) {
-                    if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
-                        window.leftSidebarApi.toggleArchiveYearExpanded(parseInt(year));
-                    }
-                    // 重新渲染，保持数据不变
-                    const currentPanel = window.leftSidebarApi?.getActivePanelId?.() || 'search';
+                    this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                    const currentPanel = this.leftSidebar.getActivePanelId();
                     if (currentPanel === 'archive') {
-                        // 数据需要重新获取，NoteController 会处理
                         this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
                     }
                 }
@@ -209,11 +201,8 @@ export class UIManager {
             if (archiveExpandIcon) {
                 const yearHeader = archiveExpandIcon.closest('.archive-year-header');
                 const year = yearHeader.dataset.year;
-                if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
-                    window.leftSidebarApi.toggleArchiveYearExpanded(parseInt(year));
-                }
-                // 重新渲染，保持数据不变
-                const currentPanel = window.leftSidebarApi?.getActivePanelId?.() || 'search';
+                this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                const currentPanel = this.leftSidebar.getActivePanelId();
                 if (currentPanel === 'archive') {
                     this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
                 }
@@ -248,7 +237,6 @@ export class UIManager {
             // 回收站笔记项点击（打开查看）
             const trashNoteItem = e.target.closest('.trash-note-item');
             if (trashNoteItem) {
-                // 如果已经点击了操作按钮，上面已经处理，这里不会执行到
                 const noteId = trashNoteItem.dataset.noteId;
                 this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
                 return;
@@ -264,154 +252,74 @@ export class UIManager {
         });
     }
 
-    // ========== Editor 代理方法 (Vue) ==========
+    // ========== Editor 方法 ==========
 
-    /**
-     * 创建笔记编辑器（代理到 Vue Editor）
-     */
     editor_createNoteEditor(noteData) {
-        if (window.editorApi?.createNoteEditor) {
-            window.editorApi.createNoteEditor(noteData);
-        }
+        this.editor.createNoteEditor(noteData);
     }
 
-    /**
-     * 切换到指定笔记编辑器
-     */
     editor_switchToNoteEditor(noteId) {
-        if (window.editorApi?.switchToNoteEditor) {
-            window.editorApi.switchToNoteEditor(noteId);
-        }
+        this.editor.switchToNoteEditor(noteId);
     }
 
-    /**
-     * 切换到首页
-     */
     editor_switchToHomePage() {
-        if (window.editorApi?.switchToHomePage) {
-            window.editorApi.switchToHomePage();
-        }
+        this.editor.switchToHomePage();
     }
 
-    /**
-     * 关闭笔记编辑器
-     */
     editor_closeNoteEditor(noteId) {
-        if (window.editorApi?.closeNoteEditor) {
-            window.editorApi.closeNoteEditor(noteId);
-        }
+        this.editor.closeNoteEditor(noteId);
     }
 
-    /**
-     * 更新编辑器标题
-     */
     editor_updateEditorTitle(noteId, newTitle) {
-        if (window.editorApi?.updateEditorTitle) {
-            window.editorApi.updateEditorTitle(noteId, newTitle);
-        }
+        this.editor.updateEditorTitle(noteId, newTitle);
     }
 
-    /**
-     * 更新笔记标签显示
-     */
     editor_updateNoteTags(noteId, allTags, noteTagIds) {
-        if (window.editorApi?.updateNoteTags) {
-            window.editorApi.updateNoteTags(noteId, allTags, noteTagIds);
-        }
+        this.editor.updateNoteTags(noteId, allTags, noteTagIds);
     }
 
-    /**
-     * 更新编辑器内容
-     */
     editor_updateEditorContent(noteId, newContent) {
-        if (window.editorApi?.updateEditorContent) {
-            window.editorApi.updateEditorContent(noteId, newContent);
-        }
+        this.editor.updateEditorContent(noteId, newContent);
     }
 
-    // ========== TabBar 代理方法 ==========
+    // ========== TabBar 方法 ==========
 
-    /**
-     * 创建笔记标签页
-     */
     tabBar_createNoteTab(noteData) {
-        if (window.tabBarApi?.createNoteTab) {
-            window.tabBarApi.createNoteTab(noteData);
-        }
+        this.tabBar.createNoteTab(noteData);
     }
 
-    /**
-     * 切换到指定标签页
-     */
     tabBar_switchToTab(tabId) {
-        if (window.tabBarApi?.switchToTab) {
-            window.tabBarApi.switchToTab(tabId);
-        }
+        this.tabBar.switchToTab(tabId);
     }
 
-    /**
-     * 关闭指定标签页
-     */
     tabBar_closeNoteTab(noteId) {
-        if (window.tabBarApi?.closeNoteTab) {
-            window.tabBarApi.closeNoteTab(noteId);
-        }
+        this.tabBar.closeNoteTab(noteId);
     }
 
-    /**
-     * 更新标签页标题
-     */
     tabBar_updateTabTitle(noteId, newTitle) {
-        if (window.tabBarApi?.updateTabTitle) {
-            window.tabBarApi.updateTabTitle(noteId, newTitle);
-        }
+        this.tabBar.updateTabTitle(noteId, newTitle);
     }
 
-    /**
-     * 获取标签页顺序
-     */
     tabBar_getTabOrder() {
-        if (window.tabBarApi?.getTabOrder) {
-            return window.tabBarApi.getTabOrder();
-        }
-        return [];
+        return this.tabBar.getTabOrder();
     }
 
-    // ========== TagFilter 代理方法 ==========
+    // ========== TagFilter 方法 ==========
 
-    /**
-     * 渲染标签筛选栏
-     */
     tagFilter_render(tags, tagStates) {
-        if (window.tagFilterApi?.updateTags) {
-            window.tagFilterApi.updateTags(tags, tagStates);
-        }
+        this.tagFilter.updateTags(tags, tagStates);
     }
 
-    // ========== NoteList 代理方法 ==========
+    // ========== NoteList 方法 ==========
 
-    /**
-     * 渲染笔记列表
-     */
     noteList_renderNotes(notes) {
-        if (window.noteListApi?.updateNotes) {
-            window.noteListApi.updateNotes(notes);
-        }
+        this.noteList.updateNotes(notes);
     }
 
-    // ========== Toast 代理方法 ==========
+    // ========== Toast 方法 ==========
 
-    /**
-     * 显示Toast提示
-     * @param {string} message 提示内容
-     * @param {string} type 提示类型：info/success/error/warning
-     */
     toast_show(message, type = 'info') {
-        if (window.toastApi?.show) {
-            window.toastApi.show(message, type);
-        } else {
-            console.warn('[Toast] Vue Toast 未加载，消息：', message, type);
-        }
+        this.toast.show(message, type);
     }
 
     /**
@@ -420,173 +328,94 @@ export class UIManager {
      * @returns {Promise<boolean>} 用户是否确认
      */
     showConfirm(message) {
-        return this.modal_confirm(message);
+        return this.modal.confirm(message);
     }
 
-    // ========== LeftSidebar 代理方法 ==========
+    // ========== LeftSidebar 方法 ==========
 
-    /**
-     * 获取当前折叠状态
-     */
     leftSidebar_getIsCollapsed() {
-        if (window.leftSidebarApi?.getIsCollapsed) {
-            return window.leftSidebarApi.getIsCollapsed();
-        }
-        return false;
+        return this.leftSidebar.getIsCollapsed();
     }
 
-    /**
-     * 获取当前激活的面板 ID
-     */
     leftSidebar_getActivePanelId() {
-        if (window.leftSidebarApi?.getActivePanelId) {
-            return window.leftSidebarApi.getActivePanelId();
-        }
-        return 'search';
+        return this.leftSidebar.getActivePanelId();
     }
 
-    /**
-     * 切换到指定面板
-     */
     leftSidebar_switchPanel(panelId) {
-        if (window.leftSidebarApi?.switchPanel) {
-            window.leftSidebarApi.switchPanel(panelId);
-        }
+        this.leftSidebar.switchPanel(panelId);
     }
 
-    /**
-     * 渲染侧边栏面板内容
-     */
     leftSidebar_renderPanelContent(panelId, data) {
+        //面板内容由 LeftSidebar 组件通过 defineExpose 暴露的方法渲染
+        // UIManager 通过 window代理访问（临时方案，直到 App.vue 提供实例引用）
         if (window.leftSidebarApi?.renderPanelContent) {
             window.leftSidebarApi.renderPanelContent(panelId, data);
         }
     }
 
-    /**
-     * 更新搜索结果（不重新渲染输入框）
-     */
     leftSidebar_updateSearchResults(results, query) {
         if (window.leftSidebarApi?.updateSearchResults) {
             window.leftSidebarApi.updateSearchResults(results, query);
         }
     }
 
-    /**
-     * 刷新搜索结果选中状态
-     */
     leftSidebar_refreshSearchResultSelection() {
         if (window.leftSidebarApi?.refreshSearchResultSelection) {
             window.leftSidebarApi.refreshSearchResultSelection();
         }
     }
 
-    /**
-     * 清除搜索结果选中状态
-     */
     leftSidebar_clearSearchResultSelection() {
         if (window.leftSidebarApi?.clearSearchResultSelection) {
             window.leftSidebarApi.clearSearchResultSelection();
         }
     }
 
-    /**
-     * 切换标签展开状态
-     */
     leftSidebar_toggleTagExpanded(tagId) {
         if (window.leftSidebarApi?.toggleTagExpanded) {
             window.leftSidebarApi.toggleTagExpanded(tagId);
         }
     }
 
-    /**
-     * 切换归档年份展开状态
-     */
     leftSidebar_toggleArchiveYearExpanded(year) {
         if (window.leftSidebarApi?.toggleArchiveYearExpanded) {
             window.leftSidebarApi.toggleArchiveYearExpanded(year);
         }
     }
 
-    /**
-     * 设置当前激活的搜索结果
-     */
     leftSidebar_setActiveSearchResult(noteId) {
         if (window.leftSidebarApi?.setActiveSearchResult) {
             window.leftSidebarApi.setActiveSearchResult(noteId);
         }
     }
 
-    /**
-     * 折叠侧边栏
-     */
     leftSidebar_collapse() {
-        if (window.leftSidebarApi?.collapse) {
-            window.leftSidebarApi.collapse();
-        }
+        this.leftSidebar.collapse();
     }
 
-    /**
-     * 展开侧边栏
-     */
     leftSidebar_expand() {
-        if (window.leftSidebarApi?.expand) {
-            window.leftSidebarApi.expand();
-        }
+        this.leftSidebar.expand();
     }
 
-    /**
-     * 设置侧边栏宽度
-     */
     leftSidebar_setWidth(width) {
-        if (window.leftSidebarApi?.setWidth) {
-            window.leftSidebarApi.setWidth(width);
-        }
+        this.leftSidebar.setWidth(width);
     }
 
-    // ========== Modal 代理方法 ==========
+    // ========== Modal 方法 ==========
 
-    /**
-     * 显示输入提示模态框
-     */
     modal_prompt(title, defaultValue = '') {
-        if (window.modalApi?.prompt) {
-            return window.modalApi.prompt(title, defaultValue)
-        }
-        console.warn('[Modal] Vue Modal 未加载')
-        return Promise.resolve(null)
+        return this.modal.prompt(title, defaultValue);
     }
 
-    /**
-     * 显示确认对话框
-     */
     modal_confirm(message) {
-        if (window.modalApi?.confirm) {
-            return window.modalApi.confirm(message)
-        }
-        console.warn('[Modal] Vue Modal 未加载')
-        return Promise.resolve(false)
+        return this.modal.confirm(message);
     }
 
-    /**
-     * 显示标签选择模态框
-     */
     modal_showTagSelection(allTags, currentTagIds) {
-        if (window.modalApi?.showTagSelection) {
-            return window.modalApi.showTagSelection(allTags, currentTagIds)
-        }
-        console.warn('[Modal] Vue Modal 未加载')
-        return Promise.resolve(null)
+        return this.modal.showTagSelection(allTags, currentTagIds);
     }
 
-    /**
-     * 显示设置浮出窗口
-     */
     modal_showSettingsPopover() {
-        if (window.modalApi?.showSettingsPopover) {
-            window.modalApi.showSettingsPopover()
-        } else {
-            console.warn('[Modal] Vue Modal 未加载')
-        }
+        this.modal.showSettingsPopover();
     }
 }

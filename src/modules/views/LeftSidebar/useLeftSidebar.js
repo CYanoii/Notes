@@ -2,7 +2,7 @@
  * useLeftSidebar - 左侧边栏的组合式函数
  * 使用单例模式确保状态在模块级别共享
  */
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
 // 配置常量
 const MIN_WIDTH = 180
@@ -13,27 +13,36 @@ const state = reactive({
   isCollapsed: false,
   lastActivePanel: null,
   width: 280,
-  savedWidth: 280,  // 保存收起前的宽度
-  isResizing: false  // 标记是否正在拖拽调整大小
+  savedWidth: 280,
+  isResizing: false
 })
+
+// 面板数据 - 移到组合式函数中以便 UIManager 访问
+const panelData = reactive({
+  search: { query: '', results: [] },
+  tags: { tags: [], tagCounts: {}, tagNotes: {} },
+  archive: { years: [] },
+  recent: { notes: [] },
+  trash: { notes: [] }
+})
+
+// 当前激活的笔记ID（用于搜索结果高亮）
+const currentActiveNoteId = ref(null)
 
 export function useLeftSidebar() {
   /**
    * 切换到指定面板
    */
   function switchPanel(panelId) {
-    // 如果点击的是当前激活的面板且内容未折叠，折叠
     if (panelId === state.activePanel && !state.isCollapsed) {
       collapse()
       return
     }
 
-    // 如果当前是折叠状态，展开它
     if (state.isCollapsed) {
       expand()
     }
 
-    // 恢复之前的面板或切换到新面板
     if (state.lastActivePanel) {
       state.activePanel = state.lastActivePanel
       state.lastActivePanel = null
@@ -58,7 +67,6 @@ export function useLeftSidebar() {
    */
   function collapse() {
     if (!state.isCollapsed) {
-      // 只保存有效宽度（避免启动时默认值 280 被错误保存）
       if (state.width >= MIN_WIDTH) {
         state.savedWidth = state.width
       }
@@ -84,13 +92,10 @@ export function useLeftSidebar() {
 
   /**
    * 展开侧边栏
-   * 仅处理展开逻辑：恢复 isCollapsed 和 activePanel
-   * 宽度由 setWidth() 统一管理，expand 不涉及宽度逻辑
    */
   function expand() {
     state.isCollapsed = false
 
-    // 从折叠状态展开时，恢复之前的面板
     if (state.lastActivePanel) {
       state.activePanel = state.lastActivePanel
       state.lastActivePanel = null
@@ -119,14 +124,65 @@ export function useLeftSidebar() {
   }
 
   /**
-   * 获取宽度
+   * 渲染面板内容（由 UIManager 调用，传入数据）
    */
-  function getWidth() {
-    return state.width
+  function renderPanelContent(panelId, data) {
+    if (panelId && panelData[panelId] !== undefined) {
+      if (Array.isArray(data)) {
+        panelData[panelId].notes = data
+      } else if (data) {
+        Object.assign(panelData[panelId], data)
+      }
+    }
+  }
+
+  /**
+   * 更新搜索结果
+   */
+  function updateSearchResults(results, query) {
+    panelData.search.results = results || []
+    panelData.search.query = query || ''
+  }
+
+  /**
+   * 刷新搜索结果选中状态
+   */
+  function refreshSearchResultSelection() {
+    // 选中状态由 SearchPanel 内部管理
+  }
+
+  /**
+   * 清除搜索结果选中状态
+   */
+  function clearSearchResultSelection() {
+    // 选中状态由 SearchPanel 内部管理
+  }
+
+  /**
+   * 设置当前激活的搜索结果
+   */
+  function setActiveSearchResult(noteId) {
+    currentActiveNoteId.value = noteId
+  }
+
+  /**
+   * 切换标签展开状态
+   */
+  function toggleTagExpanded(tagId) {
+    // 由 TagsPanel 内部管理
+  }
+
+  /**
+   * 切换归档年份展开状态
+   */
+  function toggleArchiveYearExpanded(year) {
+    // 由 ArchivePanel 内部管理
   }
 
   return {
     state,
+    panelData,
+    currentActiveNoteId,
     activePanel: state.activePanel,
     isCollapsed: state.isCollapsed,
     switchPanel,
@@ -138,7 +194,13 @@ export function useLeftSidebar() {
     getIsCollapsed,
     getActivePanelId,
     setWidth,
-    getWidth
+    renderPanelContent,
+    updateSearchResults,
+    refreshSearchResultSelection,
+    clearSearchResultSelection,
+    setActiveSearchResult,
+    toggleTagExpanded,
+    toggleArchiveYearExpanded
   }
 }
 
