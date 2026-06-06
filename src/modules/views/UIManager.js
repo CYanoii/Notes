@@ -3,7 +3,6 @@
  * 整合管理所有 UI 组件，提供统一的全局 UI 接口
  * 所有 eventBus 事件在此统一绑定
  */
-import { Editor } from './components/Editor.js';
 import { LeftSidebar } from './components/LeftSidebar.js';
 import { EventTypes } from '../core/EventTypes.js';
 
@@ -12,7 +11,7 @@ export class UIManager {
         this.eventBus = eventBus;
 
         // 统一创建所有 UI 组件实例
-        this.editor = new Editor();
+        // Editor 已迁移到 Vue，使用 window.editorApi
         this.leftSidebar = new LeftSidebar();
         this.leftSidebar.init(); // 显式初始化，Vue 挂载后执行
 
@@ -23,12 +22,15 @@ export class UIManager {
      * 绑定所有事件监听 - 统一在此管理
      */
     bindEvents() {
-        // Editor 组件事件回调 - 将编辑器输入事件转发到 eventBus
-        this.editor.setCallbacks(
-            (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
-            (noteId, excerpt) => this.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, excerpt),
-            (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
-        );
+        // Editor 组件事件回调 - 通过 window.editorApi.setCallbacks 设置
+        // 等待 Vue 模块加载后设置
+        if (window.editorApi?.setCallbacks) {
+            window.editorApi.setCallbacks(
+                (noteId, title) => this.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, noteId, title),
+                (noteId, excerpt) => this.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, noteId, excerpt),
+                (noteId, content) => this.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, content)
+            )
+        }
 
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
@@ -259,48 +261,69 @@ export class UIManager {
         });
     }
 
-    // ========== Editor 代理方法 ==========
+    // ========== Editor 代理方法 (Vue) ==========
 
     /**
-     * 创建笔记编辑器（代理到 Editor 并绑定回调）
+     * 创建笔记编辑器（代理到 Vue Editor）
      */
     editor_createNoteEditor(noteData) {
-        this.editor.createNoteEditor(noteData);
+        if (window.editorApi?.createNoteEditor) {
+            window.editorApi.createNoteEditor(noteData);
+        }
     }
 
     /**
      * 切换到指定笔记编辑器
      */
     editor_switchToNoteEditor(noteId) {
-        this.editor.switchToNoteEditor(noteId);
+        if (window.editorApi?.switchToNoteEditor) {
+            window.editorApi.switchToNoteEditor(noteId);
+        }
     }
 
     /**
      * 切换到首页
      */
     editor_switchToHomePage() {
-        this.editor.switchToHomePage();
+        if (window.editorApi?.switchToHomePage) {
+            window.editorApi.switchToHomePage();
+        }
     }
 
     /**
      * 关闭笔记编辑器
      */
     editor_closeNoteEditor(noteId) {
-        this.editor.closeNoteEditor(noteId);
+        if (window.editorApi?.closeNoteEditor) {
+            window.editorApi.closeNoteEditor(noteId);
+        }
     }
 
     /**
      * 更新编辑器标题
      */
     editor_updateEditorTitle(noteId, newTitle) {
-        this.editor.updateEditorTitle(noteId, newTitle);
+        if (window.editorApi?.updateEditorTitle) {
+            window.editorApi.updateEditorTitle(noteId, newTitle);
+        }
     }
 
     /**
      * 更新笔记标签显示
      */
     editor_updateNoteTags(noteId, allTags, noteTagIds) {
-        this.editor.updateNoteTags(noteId, allTags, noteTagIds);
+        if (window.editorApi?.updateNoteTags) {
+            window.editorApi.updateNoteTags(noteId, allTags, noteTagIds);
+        }
+    }
+
+    /**
+     * 更新编辑器内容
+     */
+    editor_updateEditorContent(noteId, newContent) {
+        if (window.editorApi?.updateEditorContent) {
+            window.editorApi.updateEditorContent(noteId, newContent);
+        }
     }
 
     // ========== TabBar 代理方法 ==========
