@@ -71,26 +71,5 @@
 }
 
 /* 侧边栏面板样式（由 LeftSidebar.js 渲染） */
-.sidebar-panel {
-    color: white;
-}
-
-.panel-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #e2e8f0;
-}
-
-.panel-content {
-    font-size: 13px;
-}
-
-.panel-empty {
-    color: #a0aec0;
-    padding: 20px 0;
-    text-align: center;
-}
+/* 注意：.sidebar-panel, .panel-title, .panel-content, .panel-empty
+   样式已迁移到各 Vue 面板组件的 scoped CSS 中 */

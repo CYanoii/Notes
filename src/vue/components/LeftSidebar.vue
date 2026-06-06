@@ -1,12 +1,12 @@
 <script setup>
-import { watch, onMounted, ref, computed } from 'vue'
+import { watch, onMounted, ref, reactive, computed } from 'vue'
 import { useLeftSidebar } from '../composables/useLeftSidebar.js'
 import { EventTypes } from '../../modules/core/EventTypes.js'
-import { SearchPanel } from '../../modules/views/components/panels/SearchPanel.js'
-import { TagsPanel } from '../../modules/views/components/panels/TagsPanel.js'
-import { ArchivePanel } from '../../modules/views/components/panels/ArchivePanel.js'
-import { RecentPanel } from '../../modules/views/components/panels/RecentPanel.js'
-import { TrashPanel } from '../../modules/views/components/panels/TrashPanel.js'
+import SearchPanel from './panels/SearchPanel.vue'
+import TagsPanel from './panels/TagsPanel.vue'
+import ArchivePanel from './panels/ArchivePanel.vue'
+import RecentPanel from './panels/RecentPanel.vue'
+import TrashPanel from './panels/TrashPanel.vue'
 
 const { state, switchPanel, setWidth, collapse, expand, startResize, endResize } = useLeftSidebar()
 
@@ -19,14 +19,17 @@ const MAX_WIDTH = 450
 let startX = 0
 let startWidth = 280
 
-// 内容面板实例
-const panels = {
-  search: new SearchPanel(),
-  tags: new TagsPanel(),
-  archive: new ArchivePanel(),
-  recent: new RecentPanel(),
-  trash: new TrashPanel()
-}
+// 面板数据
+const panelData = reactive({
+  search: { query: '', results: [] },
+  tags: { tags: [], tagCounts: {}, tagNotes: {} },
+  archive: { years: [] },
+  recent: { notes: [] },
+  trash: { notes: [] }
+})
+
+// 当前面板
+const currentPanel = computed(() => state.activePanel)
 
 // 导航菜单项
 const menuItems = [
@@ -85,15 +88,13 @@ watch(() => state.width, (width) => {
 
 // 渲染面板内容（由控制器调用，传入数据）
 function renderPanelContent(panelId, data) {
-  const container = document.querySelector('.sidebar-content')
-  if (!container || !panelId) {
-    if (container) container.innerHTML = ''
-    return
-  }
-
-  const panel = panels[panelId]
-  if (panel && panel.render) {
-    panel.render(container, data)
+  if (panelId && panelData[panelId] !== undefined) {
+    // 处理数组格式（如 recent、trash 面板）
+    if (Array.isArray(data)) {
+      panelData[panelId].notes = data
+    } else if (data) {
+      Object.assign(panelData[panelId], data)
+    }
   }
 }
 
@@ -162,15 +163,11 @@ function handleResizeEnd() {
   }
 }
 
-// 挂载后绑定拖拽事件和初始化内容
+// 挂载后绑定拖拽事件
 onMounted(() => {
   const resizeHandle = document.getElementById('resizeHandle')
   if (resizeHandle) {
     resizeHandle.addEventListener('mousedown', handleResizeStart)
-  }
-  // 初始化内容渲染
-  if (state.activePanel) {
-    renderPanelContent(state.activePanel)
   }
 })
 
@@ -185,29 +182,38 @@ defineExpose({
   toggleArchiveYearExpanded
 })
 
-// 以下方法由 UIManager 代理调用
+// 更新搜索结果
 function updateSearchResults(results, query) {
-  panels.search.updateResults(document.querySelector('.sidebar-content'), results, query)
+  panelData.search.results = results || []
+  panelData.search.query = query || ''
 }
 
+// 当前激活的笔记ID（用于搜索结果高亮）
+const currentActiveNoteId = ref(null)
+
+// 刷新搜索结果选中状态
 function refreshSearchResultSelection() {
-  panels.search.refreshSelection(document.querySelector('.sidebar-content'))
+  // 选中状态由 SearchPanel 内部管理
 }
 
+// 清除搜索结果选中状态
 function clearSearchResultSelection() {
-  panels.search.clearSelection(document.querySelector('.sidebar-content'))
+  // 选中状态由 SearchPanel 内部管理
 }
 
+// 设置当前激活的搜索结果
 function setActiveSearchResult(noteId) {
-  panels.search.setActiveResult(noteId)
+  currentActiveNoteId.value = noteId
 }
 
+// 切换标签展开状态
 function toggleTagExpanded(tagId) {
-  panels.tags.toggleExpanded(tagId)
+  // 由 TagsPanel 内部管理
 }
 
+// 切换归档年份展开状态
 function toggleArchiveYearExpanded(year) {
-  panels.archive.toggleYearExpanded(year)
+  // 由 ArchivePanel 内部管理
 }
 </script>
 
@@ -240,7 +246,30 @@ function toggleArchiveYearExpanded(year) {
       </div>
     </div>
     <div class="sidebar-content">
-      <!-- 面板内容由 JS 渲染 -->
+      <SearchPanel
+        v-if="currentPanel === 'search'"
+        :query="panelData.search.query"
+        :results="panelData.search.results"
+        :active-note-id="currentActiveNoteId"
+      />
+      <TagsPanel
+        v-else-if="currentPanel === 'tags'"
+        :tags="panelData.tags.tags"
+        :tag-counts="panelData.tags.tagCounts"
+        :tag-notes="panelData.tags.tagNotes"
+      />
+      <ArchivePanel
+        v-else-if="currentPanel === 'archive'"
+        :years="panelData.archive.years"
+      />
+      <RecentPanel
+        v-else-if="currentPanel === 'recent'"
+        :notes="panelData.recent.notes"
+      />
+      <TrashPanel
+        v-else-if="currentPanel === 'trash'"
+        :notes="panelData.trash.notes"
+      />
     </div>
   </div>
 </template>
@@ -297,5 +326,6 @@ function toggleArchiveYearExpanded(year) {
     display: flex;
     flex-direction: column;
     background: #2d3748;
+    padding: 10px;
 }
 </style>
