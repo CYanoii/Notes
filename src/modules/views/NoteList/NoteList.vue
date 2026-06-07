@@ -27,24 +27,26 @@ function formatNoteDate(date) {
 </script>
 
 <template>
-  <div
-    v-for="note in notes"
-    :key="note.id"
-    class="note-card"
-    @click="handleNoteClick(note)"
-  >
-    <button
-      class="note-delete-btn"
-      :data-note-id="note.id"
-      @click="handleDelete(note.id, $event)"
+  <div class="notes-grid">
+    <div
+      v-for="note in notes"
+      :key="note.id"
+      class="note-card"
+      @click="handleNoteClick(note)"
     >
-      <i class="fas fa-trash"></i>
-    </button>
-    <h3>{{ note.title || '无标题' }}</h3>
-    <p class="note-excerpt">{{ note.excerpt || '无摘要' }}</p>
-    <div class="note-meta">
-      <span>{{ formatNoteDate(note.updatedAt) }}</span>
-      <span><i class="fas fa-calendar-alt"></i> 最后修改</span>
+      <button
+        class="note-delete-btn"
+        :data-note-id="note.id"
+        @click="handleDelete(note.id, $event)"
+      >
+        <i class="fas fa-trash"></i>
+      </button>
+      <h3>{{ note.title || '无标题' }}</h3>
+      <p class="note-excerpt">{{ note.excerpt || '无摘要' }}</p>
+      <div class="note-meta">
+        <span>{{ formatNoteDate(note.updatedAt) }}</span>
+        <span><i class="fas fa-calendar-alt"></i> 最后修改</span>
+      </div>
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { reactive } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
@@ -17,8 +17,8 @@ const props = defineProps({
   }
 })
 
-// 标签展开状态 - 使用普通 Set 而非 ref
-const expandedTagsSet = new Set()
+// 标签展开状态 - 使用 reactive Set 以便 Vue 检测变化
+const expandedTagsSet = reactive(new Set())
 
 // 检查标签是否展开
 function isTagExpanded(tagId) {

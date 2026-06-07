@@ -99,37 +99,10 @@ export class App {
     }
 
     /**
-     * 初始化标题栏
+     * 初始化标题栏（DOM 操作已移至 TitleBar.vue，保留以防 Electron 主进程需要）
      */
     async initTitleBar() {
-        // 设置初始标题（软件名 - 文件夹名）
-        const folderName = await window.electronAPI.getFolderName();
-        document.getElementById('titlebarTitle').textContent = `CYanote - ${folderName}`;
-
-        const minimizeBtn = document.getElementById('titlebarMinimize');
-        const maximizeBtn = document.getElementById('titlebarMaximize');
-        const closeBtn = document.getElementById('titlebarClose');
-
-        minimizeBtn.addEventListener('click', () => {
-            window.electronAPI.minimizeWindow();
-        });
-
-        maximizeBtn.addEventListener('click', async () => {
-            await window.electronAPI.maximizeWindow();
-            this.updateMaximizeButton();
-        });
-
-        closeBtn.addEventListener('click', () => {
-            window.electronAPI.closeWindow();
-        });
-
-        // 初始化最大化按钮状态
-        this.updateMaximizeButton();
-
-        // 监听窗口大小变化（如双击标题栏最大化）
-        window.addEventListener('resize', () => {
-            this.updateMaximizeButton();
-        });
+        // 标题栏已迁移到 TitleBar.vue，这里不做 DOM 操作
     }
 
     /**

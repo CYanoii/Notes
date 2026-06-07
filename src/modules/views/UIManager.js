@@ -24,7 +24,12 @@ export class UIManager {
         this.toast = useToast();
         this.modal = useModal();
         this.leftSidebar = useLeftSidebar();
+    }
 
+    /**
+     * 绑定所有 DOM 事件（需在 Vue 组件挂载后调用）
+     */
+    bindAll() {
         this.bindEvents();
     }
 

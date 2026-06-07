@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { reactive } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
@@ -10,14 +10,14 @@ const props = defineProps({
 })
 
 // 年份展开状态
-const expandedYears = ref(new Set())
+const expandedYears = reactive(new Set())
 
 // 切换年份展开状态
 function toggleYearExpanded(year) {
-  if (expandedYears.value.has(year)) {
-    expandedYears.value.delete(year)
+  if (expandedYears.has(year)) {
+    expandedYears.delete(year)
   } else {
-    expandedYears.value.add(year)
+    expandedYears.add(year)
   }
   // 通知外部状态变化
   if (window.eventBus) {

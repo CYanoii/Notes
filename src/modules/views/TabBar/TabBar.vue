@@ -76,44 +76,46 @@ function onDrop(event, index) {
 </script>
 
 <template>
-  <!-- 固定主页标签页 -->
-  <div
-    class="tab"
-    :class="{ active: activeTabId === 'home' }"
-    data-tab-id="home"
-    @click="handleTabClick('home')"
-  >
-    <div class="tab-icon-title">
-      <i class="fas fa-home"></i>
-      <span class="tab-title">首页</span>
+  <div class="tab-bar">
+    <!-- 固定主页标签页 -->
+    <div
+      class="tab"
+      :class="{ active: activeTabId === 'home' }"
+      data-tab-id="home"
+      @click="handleTabClick('home')"
+    >
+      <div class="tab-icon-title">
+        <i class="fas fa-home"></i>
+        <span class="tab-title">首页</span>
+      </div>
     </div>
-  </div>
 
-  <!-- 动态笔记标签页 -->
-  <div
-    v-for="(tab, index) in tabs"
-    :key="tab.id"
-    class="tab"
-    :class="{
-      active: activeTabId === tab.id,
-      dragging: draggedTabIndex === index,
-      'drag-over': dragOverTabIndex === index
-    }"
-    :data-tab-id="tab.id"
-    draggable="true"
-    @click="handleTabClick(tab.id)"
-    @dragstart="onDragStart($event, index)"
-    @dragend="onDragEnd"
-    @dragover="onDragOver($event, index)"
-    @drop="onDrop($event, index)"
-  >
-    <div class="tab-icon-title">
-      <i class="fas fa-file-alt"></i>
-      <span class="tab-title">{{ tab.title }}</span>
+    <!-- 动态笔记标签页 -->
+    <div
+      v-for="(tab, index) in tabs"
+      :key="tab.id"
+      class="tab"
+      :class="{
+        active: activeTabId === tab.id,
+        dragging: draggedTabIndex === index,
+        'drag-over': dragOverTabIndex === index
+      }"
+      :data-tab-id="tab.id"
+      draggable="true"
+      @click="handleTabClick(tab.id)"
+      @dragstart="onDragStart($event, index)"
+      @dragend="onDragEnd"
+      @dragover="onDragOver($event, index)"
+      @drop="onDrop($event, index)"
+    >
+      <div class="tab-icon-title">
+        <i class="fas fa-file-alt"></i>
+        <span class="tab-title">{{ tab.title }}</span>
+      </div>
+      <span class="tab-close" @click="handleClose($event, tab.id)">
+        <i class="fas fa-times"></i>
+      </span>
     </div>
-    <span class="tab-close" @click="handleClose($event, tab.id)">
-      <i class="fas fa-times"></i>
-    </span>
   </div>
 </template>
 
