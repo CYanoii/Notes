@@ -13,6 +13,10 @@ function handleClose(id, result) {
   close(id, result)
 }
 
+function handleConfirm(id, result) {
+  close(id, result)
+}
+
 function handleTagToggle(id, tagId) {
   toggleTagSelection(id, tagId)
 }
@@ -28,6 +32,7 @@ function handleUpdatePath(id, path) {
     :key="modal.id"
     :modal="modal"
     @close="handleClose"
+    @confirm="handleConfirm"
     @tagToggle="handleTagToggle"
     @updatePath="handleUpdatePath"
   />
