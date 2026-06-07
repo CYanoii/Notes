@@ -205,4 +205,14 @@ function onDrop(event, index) {
     background: rgba(0,0,0,0.1);
     border-radius: 50%;
 }
+
+.tab-bar {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+    margin-right: 20px;
+    align-items: flex-end;
+    height: 100%;
+    font-size: 12px;
+}
 </style>

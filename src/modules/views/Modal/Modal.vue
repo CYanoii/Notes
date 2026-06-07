@@ -358,14 +358,22 @@ function handleClearPath() {
 
 /* Settings Popover */
 .settings-popover {
+  position: relative;
+  width: 800px;
+  height: 600px;
   background: white;
   border-radius: 8px;
-  min-width: 450px;
-  max-width: 1000px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 10001;
+  overflow: hidden;
+  animation: popoverFadeIn 0.2s ease;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .settings-popover-header {

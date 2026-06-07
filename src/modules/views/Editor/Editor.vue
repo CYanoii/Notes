@@ -491,11 +491,120 @@ defineExpose({
     overflow: auto;
 }
 
-/* Vditor 只读模式样式 */
+/* Vditor 只读模式样式 - 从 vditor.css 移入 */
+:deep(.vditor) .vditor-toolbar {
+    border-radius: 6px 6px 0 0;
+}
+
+:deep(.vditor) .vditor-content {
+    border-radius: 0 0 6px 6px;
+}
+
 :deep(.vditor-readonly) {
-    padding: 20px;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #4a5568;
+    flex: 1;
+    padding: 10px 35px;
+    background: #f8fafc;
+    border-radius: 8px;
+    overflow-y: auto;
+    height: calc(100vh - 220px);
+    line-height: 1.7;
+}
+
+:deep(.vditor-readonly h1),
+:deep(.vditor-readonly h2),
+:deep(.vditor-readonly h3),
+:deep(.vditor-readonly h4),
+:deep(.vditor-readonly h5),
+:deep(.vditor-readonly h6) {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+:deep(.vditor-readonly h1) { font-size: 2em; }
+:deep(.vditor-readonly h2) { font-size: 1.5em; }
+:deep(.vditor-readonly h3) { font-size: 1.25em; }
+:deep(.vditor-readonly h4) { font-size: 1.1em; }
+
+:deep(.vditor-readonly p) {
+    margin-bottom: 1em;
+}
+
+:deep(.vditor-readonly pre) {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+:deep(.vditor-readonly code) {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+:deep(.vditor-readonly pre code) {
+    background: transparent;
+    padding: 0;
+}
+
+:deep(.vditor-readonly blockquote) {
+    border-left: 4px solid #4299e1;
+    padding-left: 16px;
+    margin: 1em 0;
+    color: #718096;
+}
+
+:deep(.vditor-readonly ul),
+:deep(.vditor-readonly ol) {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+:deep(.vditor-readonly li) {
+    margin: 0.25em 0;
+}
+
+:deep(.vditor-readonly table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+:deep(.vditor-readonly th),
+:deep(.vditor-readonly td) {
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+:deep(.vditor-readonly th) {
+    background: #f7fafc;
+    font-weight: 600;
+}
+
+:deep(.vditor-readonly img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+:deep(.vditor-readonly a) {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+:deep(.vditor-readonly a:hover) {
+    text-decoration: underline;
+}
+
+:deep(.vditor-readonly hr) {
+    border: none;
+    border-top: 2px solid #e2e8f0;
+    margin: 2em 0;
 }
 </style>

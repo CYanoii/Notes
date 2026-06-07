@@ -98,6 +98,44 @@ onMounted(async () => {
   display: flex;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  background: #2d3748;
+  color: white;
+  height: 35px;
+  padding: 0 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  height: 100%;
+}
+
+.btn-new-note {
+  background: #4299e1;
+  color: white;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+  font-size: 13px;
+}
+
+.btn-new-note:hover {
+  background: #3182ce;
+}
+
+.btn-new-note i {
+  margin-right: 5px;
+}
+
 .left-sidebar {
   display: flex;
   height: 100%;
@@ -106,6 +144,10 @@ onMounted(async () => {
   overflow: hidden;
   transition: width 0.3s ease;
   width: 280px;
+}
+
+.left-sidebar.collapsed {
+  width: 50px !important;
 }
 
 .resize-handle {
