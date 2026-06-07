@@ -63,18 +63,17 @@ onMounted(async () => {
       <div class="main-container">
         <header class="header">
           <TabBar class="tab-bar" />
-
-          <div class="header-actions">
-            <button class="btn-new-note" id="newNoteBtn" @click="handleNewNote">
-              <i class="fas fa-plus"></i> 新建笔记
-            </button>
-          </div>
         </header>
 
         <main class="main-content">
           <HomePage class="home-view" />
           <Editor class="notes-container" />
         </main>
+
+        <!-- 悬浮新建笔记按钮 -->
+        <button class="fab-new-note" id="fabNewNote" @click="handleNewNote" title="新建笔记">
+          <i class="fas fa-plus"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -114,26 +113,6 @@ onMounted(async () => {
   align-items: center;
   gap: 15px;
   height: 100%;
-}
-
-.btn-new-note {
-  background: #4299e1;
-  color: white;
-  border: none;
-  padding: 5px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
-  font-size: 13px;
-}
-
-.btn-new-note:hover {
-  background: #3182ce;
-}
-
-.btn-new-note i {
-  margin-right: 5px;
 }
 
 .left-sidebar {
@@ -215,5 +194,36 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+/* 悬浮新建笔记按钮 (FAB) */
+.fab-new-note {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #4299e1;
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.fab-new-note:hover {
+  background: #3182ce;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(66, 153, 225, 0.6);
+}
+
+.fab-new-note:active {
+  transform: scale(0.95);
 }
 </style>
