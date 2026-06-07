@@ -73,7 +73,7 @@ function handleNewNote() {
   min-height: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding-top: 40px;
+  padding: 40px 20px 0;
 }
 
 .search-box {
