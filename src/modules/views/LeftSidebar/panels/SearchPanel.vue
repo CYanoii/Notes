@@ -3,13 +3,13 @@ import { ref, computed, watch } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
-  query: {
+  panelId: {
     type: String,
-    default: ''
+    required: true
   },
-  results: {
-    type: Array,
-    default: () => []
+  data: {
+    type: Object,
+    default: () => ({ query: '', results: [] })
   },
   activeNoteId: {
     type: String,
@@ -17,9 +17,13 @@ const props = defineProps({
   }
 })
 
+// 从 data 中提取搜索相关属性
+const query = computed(() => props.data?.query || '')
+const results = computed(() => props.data?.results || [])
+
 // 搜索状态
 const activeSearchResultId = ref(null)
-const localQuery = ref(props.query || '')
+const localQuery = ref('')
 
 // 监听外部 activeNoteId 变化
 watch(() => props.activeNoteId, (newId) => {
@@ -29,11 +33,11 @@ watch(() => props.activeNoteId, (newId) => {
 }, { immediate: true })
 
 // 计算属性
-const displayResults = computed(() => props.results || [])
-const displayQuery = computed(() => props.query || localQuery.value)
+const displayResults = computed(() => results.value || [])
+const displayQuery = computed(() => query.value || localQuery.value)
 
 // 同步外部 query 变化到本地
-watch(() => props.query, (newQuery) => {
+watch(() => query.value, (newQuery) => {
   if (newQuery !== localQuery.value) {
     localQuery.value = newQuery
   }

@@ -2,6 +2,7 @@
  * 笔记-标签协调器
  * 处理同时涉及笔记和标签的交叉业务逻辑
  */
+import { setVisibilityFromConfig } from '../views/LeftSidebar/panelRegistry.js';
 
 export class NoteTagCoordinator {
     constructor(noteService, tagService, uiManager) {
@@ -233,5 +234,15 @@ export class NoteTagCoordinator {
     async refreshTagRelatedHomeDisplay(tagStates = {}) {
         await this.refreshHomeTagFilter(tagStates);
         await this.refreshHomeNotes();
+    }
+
+    /**
+     * 从配置设置面板可见性
+     * @param {Object} config 配置对象
+     */
+    setVisibilityFromConfig(config) {
+        if (config && config.sidebarPanels) {
+            setVisibilityFromConfig(config);
+        }
     }
 }

@@ -63,6 +63,16 @@ export class App {
      * 初始化应用
      */
     async init() {
+        // 0. 从配置加载面板可见性设置
+        try {
+            const config = await window.electronAPI.getConfig();
+            if (config && config.sidebarPanels) {
+                this.noteTagCoordinator.setVisibilityFromConfig(config);
+            }
+        } catch (err) {
+            console.warn('[App] Failed to load panel visibility config:', err);
+        }
+
         // 0. 初始化标题栏
         this.initTitleBar();
 

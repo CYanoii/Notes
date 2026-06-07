@@ -1,17 +1,14 @@
 <script setup>
-import { watch, onMounted, computed } from 'vue'
+import { watch, onMounted, computed, shallowRef } from 'vue'
 import { useLeftSidebar } from './useLeftSidebar.js'
 import { EventTypes } from '../../core/EventTypes.js'
-import SearchPanel from './panels/SearchPanel.vue'
-import TagsPanel from './panels/TagsPanel.vue'
-import ArchivePanel from './panels/ArchivePanel.vue'
-import RecentPanel from './panels/RecentPanel.vue'
-import TrashPanel from './panels/TrashPanel.vue'
+import { getVisiblePanels, getPanel } from './panelRegistry.js'
 
 const {
   state,
   panelData,
   currentActiveNoteId,
+  menuItems,
   switchPanel,
   setWidth,
   collapse,
@@ -19,7 +16,8 @@ const {
   startResize,
   endResize,
   updateSearchResults,
-  setActiveSearchResult
+  setActiveSearchResult,
+  getPanelProps
 } = useLeftSidebar()
 
 // 配置常量
@@ -34,14 +32,47 @@ let startWidth = 280
 // 当前面板
 const currentPanel = computed(() => state.activePanel)
 
-// 导航菜单项
-const menuItems = [
-  { id: "search", icon: "fas fa-search", label: "搜索" },
-  { id: "tags", icon: "fas fa-tags", label: "所有标签" },
-  { id: "archive", icon: "fas fa-archive", label: "归档" },
-  { id: "recent", icon: "fas fa-history", label: "最近文件" },
-  { id: "trash", icon: "fas fa-trash-alt", label: "回收站" }
-]
+// 动态面板组件映射
+const panelComponents = shallowRef({})
+
+// 加载面板组件
+async function loadPanelComponents() {
+  const panels = getVisiblePanels()
+  const components = {}
+
+  for (const panel of panels) {
+    if (panel.component) {
+      try {
+        const module = await panel.component()
+        components[panel.id] = module.default
+      } catch (e) {
+        console.error(`[LeftSidebar] Failed to load panel ${panel.id}:`, e)
+      }
+    }
+  }
+  panelComponents.value = components
+}
+
+// 获取当前活动面板组件
+const activePanelComponent = computed(() => {
+  if (!currentPanel.value || !panelComponents.value[currentPanel.value]) {
+    return null
+  }
+  return panelComponents.value[currentPanel.value]
+})
+
+// 获取当前面板的 props
+const currentPanelProps = computed(() => {
+  if (!currentPanel.value) return {}
+  return {
+    panelId: currentPanel.value,
+    data: getPanelProps(currentPanel.value),
+    activeNoteId: currentActiveNoteId.value
+  }
+})
+
+// 导航菜单项 - 使用 composable 中的动态计算值
+const navMenuItems = computed(() => menuItems.value)
 
 const bottomItems = [
   { id: "settings", icon: "fas fa-cog", label: "设置" }
@@ -151,8 +182,10 @@ function handleResizeEnd() {
   }
 }
 
-// 挂载后绑定拖拽事件
-onMounted(() => {
+// 挂载后加载面板组件并绑定拖拽事件
+onMounted(async () => {
+  await loadPanelComponents()
+
   const resizeHandle = document.getElementById('resizeHandle')
   if (resizeHandle) {
     resizeHandle.addEventListener('mousedown', handleResizeStart)
@@ -163,9 +196,9 @@ onMounted(() => {
 <template>
   <div class="sidebar-wrapper">
     <div class="sidebar-nav">
-      <!-- 导航图标 -->
+      <!-- 导航图标 - 动态从注册表获取 -->
       <div
-        v-for="item in menuItems"
+        v-for="item in navMenuItems"
         :key="item.id"
         class="sidebar-nav-item"
         :class="{ active: state.activePanel === item.id }"
@@ -189,29 +222,11 @@ onMounted(() => {
       </div>
     </div>
     <div class="sidebar-content">
-      <SearchPanel
-        v-if="currentPanel === 'search'"
-        :query="panelData.search.query"
-        :results="panelData.search.results"
-        :active-note-id="currentActiveNoteId"
-      />
-      <TagsPanel
-        v-else-if="currentPanel === 'tags'"
-        :tags="panelData.tags.tags"
-        :tag-counts="panelData.tags.tagCounts"
-        :tag-notes="panelData.tags.tagNotes"
-      />
-      <ArchivePanel
-        v-else-if="currentPanel === 'archive'"
-        :years="panelData.archive.years"
-      />
-      <RecentPanel
-        v-else-if="currentPanel === 'recent'"
-        :notes="panelData.recent.notes"
-      />
-      <TrashPanel
-        v-else-if="currentPanel === 'trash'"
-        :notes="panelData.trash.notes"
+      <!-- 动态面板渲染 -->
+      <component
+        v-if="activePanelComponent"
+        :is="activePanelComponent"
+        v-bind="currentPanelProps"
       />
     </div>
   </div>

@@ -1,15 +1,29 @@
 <script setup>
+import { reactive } from 'vue'
+import { getAllPanels, getVisibilitySettings, isPanelVisible } from '../../LeftSidebar/panelRegistry.js'
+
 const props = defineProps({
   modal: { type: Object, required: true }
 })
 
 const emit = defineEmits(['close', 'updatePath', 'selectFolder', 'clearPath'])
 
+// 面板可见性临时设置 - 仅在点击应用后生效
+const availablePanels = getAllPanels()
+const tempPanelVisibility = reactive({ ...getVisibilitySettings() })
+
+function handlePanelVisibilityChange(panelId, event) {
+  tempPanelVisibility[panelId] = event.target.checked
+}
+
 function handleCancel() {
   emit('close', props.modal.id)
 }
 
 function handleApply() {
+  // 保存面板可见性设置到配置
+  window.electronAPI.setConfig('sidebarPanels', { ...tempPanelVisibility })
+  // 应用数据目录更改
   window.electronAPI.applyConfigAndReload('dataRootPath', props.modal.tempDataRootPath)
   emit('close', props.modal.id)
   window.location.reload()
@@ -36,6 +50,7 @@ function handleClearPath() {
       </button>
     </div>
     <div class="settings-popover-body">
+      <!-- 数据目录设置 -->
       <div class="settings-item" v-if="modal.config">
         <label class="settings-label">数据目录</label>
         <div class="settings-path-row">
@@ -51,6 +66,31 @@ function handleClearPath() {
         </div>
       </div>
       <div v-else class="settings-loading">加载中...</div>
+
+      <!-- 侧边栏面板可见性设置 -->
+      <div class="settings-item settings-panels-item">
+        <label class="settings-label">侧边栏面板</label>
+        <div class="settings-toggles">
+          <div
+            v-for="panel in availablePanels"
+            :key="panel.id"
+            class="settings-toggle-row"
+          >
+            <span class="toggle-label">
+              <i :class="panel.icon"></i>
+              {{ panel.label }}
+            </span>
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                :checked="tempPanelVisibility[panel.id] !== false"
+                @change="handlePanelVisibilityChange(panel.id, $event)"
+              >
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="settings-popover-footer">
       <button class="btn btn-primary settings-apply-btn" @click="handleApply">应用</button>
@@ -201,5 +241,89 @@ function handleClearPath() {
 
 .btn-primary:hover {
   background: #3182ce;
+}
+
+/* 面板可见性设置样式 */
+.settings-panels-item {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.settings-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+}
+
+.settings-toggle-row:hover {
+  background: #edf2f7;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.toggle-label i {
+  width: 16px;
+  color: #718096;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #4299e1;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
 }
 </style>

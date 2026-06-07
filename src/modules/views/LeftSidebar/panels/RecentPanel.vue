@@ -3,18 +3,30 @@ import { computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
-  notes: {
-    type: Array,
-    default: () => []
+  panelId: {
+    type: String,
+    required: true
+  },
+  data: {
+    type: Object,
+    default: () => ({ notes: [] })
+  },
+  activeNoteId: {
+    type: String,
+    default: null
   }
 })
 
+// 从 data 中提取笔记
+const notesData = computed(() => props.data?.notes || [])
+
 // 处理数组格式（直接传入数组）和对象格式（{ notes: [] }）
 const displayNotes = computed(() => {
-  if (Array.isArray(props.notes)) {
-    return props.notes
+  const notes = notesData.value
+  if (Array.isArray(notes)) {
+    return notes
   }
-  return props.notes?.notes || []
+  return notes?.notes || []
 })
 
 // 处理笔记点击

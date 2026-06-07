@@ -21,7 +21,14 @@ class ConfigManager {
       // 文件不存在或解析失败，使用默认配置
       this.config = {
         dataRootPath: '',
-        version: 1
+        version: 1,
+        sidebarPanels: {
+          search: true,
+          tags: true,
+          archive: true,
+          recent: true,
+          trash: true
+        }
       };
       await this.save();
     }

@@ -1,13 +1,24 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
-  years: {
-    type: Array,
-    default: () => []
+  panelId: {
+    type: String,
+    required: true
+  },
+  data: {
+    type: Object,
+    default: () => ({ years: [] })
+  },
+  activeNoteId: {
+    type: String,
+    default: null
   }
 })
+
+// 从 data 中提取归档相关属性
+const years = computed(() => props.data?.years || [])
 
 // 年份展开状态
 const expandedYears = reactive(new Set())

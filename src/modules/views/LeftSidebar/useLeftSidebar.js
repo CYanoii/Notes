@@ -2,7 +2,12 @@
  * useLeftSidebar - 左侧边栏的组合式函数
  * 使用单例模式确保状态在模块级别共享
  */
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
+import {
+  getVisiblePanels,
+  setVisibilityFromConfig,
+  getVisibilitySettings
+} from './panelRegistry.js'
 
 // 配置常量
 const MIN_WIDTH = 180
@@ -28,6 +33,15 @@ const panelData = reactive({
 
 // 当前激活的笔记ID（用于搜索结果高亮）
 const currentActiveNoteId = ref(null)
+
+// 菜单项 - 从注册表动态获取（仅可见面板）
+const menuItems = computed(() => {
+  return getVisiblePanels().map(panel => ({
+    id: panel.id,
+    icon: panel.icon,
+    label: panel.label
+  }))
+})
 
 export function useLeftSidebar() {
   /**
@@ -179,10 +193,58 @@ export function useLeftSidebar() {
     // 由 ArchivePanel 内部管理
   }
 
+  /**
+   * 获取面板的 props 数据
+   * @param {string} panelId - 面板 ID
+   * @returns {Object} 面板数据
+   */
+  function getPanelProps(panelId) {
+    return panelData[panelId] || {}
+  }
+
+  /**
+   * 从设置初始化面板可见性
+   * @param {Object} config - 设置对象
+   */
+  function initFromConfig(config) {
+    setVisibilityFromConfig(config)
+    // 确保当前激活面板是可见的
+    ensureActivePanelVisible()
+  }
+
+  /**
+   * 确保当前激活面板是可见的，如果不可见则切换到第一个可见面板
+   */
+  function ensureActivePanelVisible() {
+    const visiblePanels = getVisiblePanels()
+    const visibleIds = visiblePanels.map(p => p.id)
+
+    // 如果当前面板不在可见列表中，切换到第一个可见面板
+    if (!visibleIds.includes(state.activePanel)) {
+      if (visibleIds.length > 0) {
+        state.activePanel = visibleIds[0]
+      } else {
+        // 没有可见面板，折叠侧边栏
+        collapse()
+      }
+    }
+  }
+
+  /**
+   * 检查面板是否可见
+   * @param {string} panelId - 面板 ID
+   * @returns {boolean}
+   */
+  function isPanelVisibleCheck(panelId) {
+    const visiblePanels = getVisiblePanels()
+    return visiblePanels.some(p => p.id === panelId)
+  }
+
   return {
     state,
     panelData,
     currentActiveNoteId,
+    menuItems,
     activePanel: state.activePanel,
     isCollapsed: state.isCollapsed,
     switchPanel,
@@ -200,7 +262,11 @@ export function useLeftSidebar() {
     clearSearchResultSelection,
     setActiveSearchResult,
     toggleTagExpanded,
-    toggleArchiveYearExpanded
+    toggleArchiveYearExpanded,
+    getPanelProps,
+    initFromConfig,
+    ensureActivePanelVisible,
+    isPanelVisibleCheck
   }
 }
 

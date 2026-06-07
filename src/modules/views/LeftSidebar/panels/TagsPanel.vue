@@ -1,21 +1,26 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
-  tags: {
-    type: Array,
-    default: () => []
+  panelId: {
+    type: String,
+    required: true
   },
-  tagCounts: {
+  data: {
     type: Object,
-    default: () => ({})
+    default: () => ({ tags: [], tagCounts: {}, tagNotes: {} })
   },
-  tagNotes: {
-    type: Object,
-    default: () => ({})
+  activeNoteId: {
+    type: String,
+    default: null
   }
 })
+
+// 从 data 中提取标签相关属性
+const tags = computed(() => props.data?.tags || [])
+const tagCounts = computed(() => props.data?.tagCounts || {})
+const tagNotes = computed(() => props.data?.tagNotes || {})
 
 // 标签展开状态 - 使用 reactive Set 以便 Vue 检测变化
 const expandedTagsSet = reactive(new Set())

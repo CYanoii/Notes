@@ -158,17 +158,27 @@ export class PageStateController {
      * 按照指定顺序重新排列标签页
      */
     reorderTabs(order) {
-        const tabBar = document.getElementById('tabBar');
-        const homeTab = tabBar.querySelector('.tab[data-tab-id="home"]');
-
-        // 从后往前插入，确保位置正确
-        for (let i = order.length - 1; i >= 0; i--) {
-            const noteId = order[i];
-            const tab = tabBar.querySelector(`.tab[data-tab-id="${noteId}"]`);
-            if (tab) {
-                // 插入到home之后
-                tabBar.insertBefore(tab, homeTab.nextSibling);
+        // 如果 tabBar 还没挂载，等待一下再重试
+        const tryReorder = (retries = 3) => {
+            const tabBar = document.getElementById('tabBar');
+            if (!tabBar) {
+                if (retries > 0) {
+                    setTimeout(() => tryReorder(retries - 1), 100);
+                }
+                return;
             }
-        }
+            const homeTab = tabBar.querySelector('.tab[data-tab-id="home"]');
+
+            // 从后往前插入，确保位置正确
+            for (let i = order.length - 1; i >= 0; i--) {
+                const noteId = order[i];
+                const tab = tabBar.querySelector(`.tab[data-tab-id="${noteId}"]`);
+                if (tab) {
+                    tabBar.insertBefore(tab, homeTab.nextSibling);
+                }
+            }
+        };
+
+        tryReorder();
     }
 }
