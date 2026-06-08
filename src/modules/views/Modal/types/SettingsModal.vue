@@ -12,7 +12,12 @@ const emit = defineEmits(['close', 'updatePath', 'selectFolder', 'clearPath'])
 const availablePanels = getAllPanels()
 const tempPanelVisibility = reactive({ ...getVisibilitySettings() })
 
-function handlePanelVisibilityChange(panelId, event) {
+function handlePanelVisibilityChange(panelId, event, cannotHide) {
+  if (cannotHide) {
+    // 强制保持开启状态
+    event.target.checked = true
+    return
+  }
   tempPanelVisibility[panelId] = event.target.checked
 }
 
@@ -71,20 +76,23 @@ function handleClearPath() {
       <div class="settings-item settings-panels-item">
         <label class="settings-label">侧边栏面板</label>
         <div class="settings-toggles">
-          <div
+                    <div
             v-for="panel in availablePanels"
             :key="panel.id"
             class="settings-toggle-row"
+            :class="{ 'cannot-hide-row': panel.cannotHide }"
           >
             <span class="toggle-label">
               <i :class="panel.icon"></i>
               {{ panel.label }}
+              <i v-if="panel.cannotHide" class="fas fa-lock lock-icon" title="无法隐藏"></i>
             </span>
-            <label class="toggle-switch">
+            <label class="toggle-switch" :class="{ 'cannot-hide': panel.cannotHide }">
               <input
                 type="checkbox"
                 :checked="tempPanelVisibility[panel.id] !== false"
-                @change="handlePanelVisibilityChange(panel.id, $event)"
+                :disabled="panel.cannotHide"
+                @change="handlePanelVisibilityChange(panel.id, $event, panel.cannotHide)"
               >
               <span class="toggle-slider"></span>
             </label>
@@ -282,6 +290,12 @@ function handleClearPath() {
   color: #718096;
 }
 
+.toggle-label .lock-icon {
+  margin-left: 4px;
+  color: #a0aec0;
+  font-size: 12px;
+}
+
 .toggle-switch {
   position: relative;
   width: 44px;
@@ -325,5 +339,20 @@ function handleClearPath() {
 
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(20px);
+}
+
+/* 无法隐藏的面板样式 */
+.toggle-switch.cannot-hide .toggle-slider {
+  background-color: #4299e1;
+  cursor: not-allowed;
+}
+
+.toggle-switch.cannot-hide .toggle-slider:before {
+  background-color: #bee3f8;
+}
+
+.settings-toggle-row.cannot-hide-row {
+  opacity: 0.7;
+  background: #f0f7ff;
 }
 </style>

@@ -14,14 +14,16 @@ const DEFAULT_PANELS = {
     label: '搜索',
     icon: 'fas fa-search',
     component: () => import('./panels/SearchPanel.vue'),
-    defaultVisible: true
+    defaultVisible: true,
+    cannotHide: true
   },
   tags: {
     id: 'tags',
     label: '所有标签',
     icon: 'fas fa-tags',
     component: () => import('./panels/TagsPanel.vue'),
-    defaultVisible: true
+    defaultVisible: true,
+    cannotHide: true
   },
   archive: {
     id: 'archive',
@@ -42,7 +44,8 @@ const DEFAULT_PANELS = {
     label: '回收站',
     icon: 'fas fa-trash-alt',
     component: () => import('./panels/TrashPanel.vue'),
-    defaultVisible: true
+    defaultVisible: true,
+    cannotHide: true
   }
 }
 
