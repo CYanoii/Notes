@@ -34,6 +34,8 @@ const iconMap = {
 
 <style scoped>
 .toast {
+  position: fixed;
+  right: 20px;
   background: white;
   padding: 12px 20px;
   border-radius: 8px;
@@ -44,7 +46,7 @@ const iconMap = {
   font-size: 14px;
   z-index: 9999;
   opacity: 0;
-  transform: translateX(120%);
+  transform: translateX(calc(100vw + 100%));
   transition: opacity 0.3s, transform 0.3s;
 }
 .toast.show {
