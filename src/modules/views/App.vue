@@ -179,21 +179,19 @@ onMounted(async () => {
 .main-content {
   flex: 1;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden;
   background: #f5f5f5;
 }
 
 .home-view {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
-.notes-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.home-view::-webkit-scrollbar {
+  display: none;
 }
 
 /* 悬浮新建笔记按钮 (FAB) */
