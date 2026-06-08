@@ -359,6 +359,7 @@ defineExpose({
 .note-editor.active {
     display: flex;
     flex-direction: column;
+    z-index: 1;
 }
 
 /* 聚焦 Vditor 时隐藏标题/摘要/标签栏 */
@@ -483,7 +484,7 @@ defineExpose({
 
 /* 只读编辑器样式 */
 .note-editor.read-only {
-    position: relative;
+    position: absolute;
 }
 
 .vditor-container {
