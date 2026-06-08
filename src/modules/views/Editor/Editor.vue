@@ -315,17 +315,18 @@ defineExpose({
 
 <template>
   <!-- 动态笔记编辑器 -->
-  <div
-    v-for="editor in editorList"
-    :key="editor.id"
-    :id="`note-${editor.id}`"
-    class="note-editor"
-    :class="{
-      active: activeNoteId === editor.id,
-      'read-only': editor.noteData?.status === 'trashed',
-      'editor-focused': isFocused && activeNoteId === editor.id
-    }"
-  >
+  <div class="editor-root" v-bind="$attrs">
+    <div
+      v-for="editor in editorList"
+      :key="editor.id"
+      :id="`note-${editor.id}`"
+      class="note-editor"
+      :class="{
+        active: activeNoteId === editor.id,
+        'read-only': editor.noteData?.status === 'trashed',
+        'editor-focused': isFocused && activeNoteId === editor.id
+      }"
+    >
     <!-- 标题输入 -->
     <input
       type="text"
@@ -383,10 +384,21 @@ defineExpose({
       class="vditor-container"
       :id="`vditor-${editor.id}`"
     ></div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.editor-root {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.editor-root > * {
+    pointer-events: auto;
+}
+
 .note-editor {
     position: absolute;
     top: 0;
