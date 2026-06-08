@@ -179,7 +179,7 @@ onMounted(async () => {
 .main-content {
   flex: 1;
   position: relative;
-  overflow: visible;
+  overflow-y: auto;
   background: #f5f5f5;
 }
 
