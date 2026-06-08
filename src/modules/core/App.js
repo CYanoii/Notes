@@ -63,14 +63,21 @@ export class App {
      * 初始化应用
      */
     async init() {
-        // 0. 从配置加载面板可见性设置
+               // 0. 从配置加载面板可见性设置和编辑器样式
         try {
             const config = await window.electronAPI.getConfig();
-            if (config && config.sidebarPanels) {
-                this.noteTagCoordinator.setVisibilityFromConfig(config);
+            if (config) {
+                if (config.sidebarPanels) {
+                    this.noteTagCoordinator.setVisibilityFromConfig(config);
+                }
+                if (config.editorStyle) {
+                    //暴露到 window 以供 Editor.vue访问
+                    window.editorStyleConfig = config.editorStyle;
+                    this.applyEditorStyle(config.editorStyle);
+                }
             }
         } catch (err) {
-            console.warn('[App] Failed to load panel visibility config:', err);
+            console.warn('[App] Failed to load config:', err);
         }
 
         // 0. 初始化标题栏
@@ -135,5 +142,97 @@ export class App {
     exposeToGlobal() {
         window.app = this;
         window.eventBus = this.eventBus;
+    }
+
+    /**
+     * 应用编辑器样式设置
+     * @param {Object} style - 样式配置对象
+     */
+    applyEditorStyle(style) {
+        if (!style) return;
+
+        const root = document.documentElement;
+        if (style.fontFamily) {
+            root.style.setProperty('--editor-font-family', style.fontFamily);
+        }
+        if (style.fontSize) {
+            root.style.setProperty('--editor-font-size', style.fontSize + 'px');
+        }
+        if (style.lineHeight) {
+            root.style.setProperty('--editor-line-height', style.lineHeight);
+        }
+        if (style.paragraphSpacing) {
+            root.style.setProperty('--editor-paragraph-spacing', style.paragraphSpacing + 'px');
+        }
+
+        // 直接应用到已有的 Vditor 实例
+        this.applyStyleToVditors(style);
+
+        // 监听新的 Vditor 创建
+        this.observeVditorCreation(style);
+    }
+
+    /**
+     * 应用样式到已有的 Vditor 实例
+     */
+    applyStyleToVditors(style) {
+        const vditors = document.querySelectorAll('div.vditor');
+        vditors.forEach(vditor => {
+            const content = vditor.querySelector('.vditor-reset');
+            if (content) {
+                if (style.fontFamily) {
+                    content.style.fontFamily = style.fontFamily;
+                }
+                if (style.fontSize) {
+                    content.style.fontSize = style.fontSize + 'px';
+                }
+                if (style.lineHeight) {
+                    content.style.lineHeight = style.lineHeight;
+                }
+            }
+            // 段落间距
+            const paragraphs = vditor.querySelectorAll('.vditor-reset p');
+            paragraphs.forEach(p => {
+                if (style.paragraphSpacing) {
+                    p.style.marginBottom = style.paragraphSpacing + 'px';
+                }
+            });
+        });
+    }
+
+    /**
+     * 监听 Vditor 创建以应用样式
+     */
+    observeVditorCreation(style) {
+        // 清除之前的观察者
+        if (this.vditorObserver) {
+            this.vditorObserver.disconnect();
+        }
+
+        const applyToNewVditor = (mutations) => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('vditor')) {
+                        setTimeout(() => {
+                            const content = node.querySelector('.vditor-reset');
+                            if (content) {
+                                if (style.fontFamily) content.style.fontFamily = style.fontFamily;
+                                if (style.fontSize) content.style.fontSize = style.fontSize + 'px';
+                                if (style.lineHeight) content.style.lineHeight = style.lineHeight;
+                            }
+                            const paragraphs = node.querySelectorAll('.vditor-reset p');
+                            paragraphs.forEach(p => {
+                                if (style.paragraphSpacing) {
+                                    p.style.marginBottom = style.paragraphSpacing + 'px';
+                                }
+                            });
+                        }, 100);
+                    }
+                });
+            });
+        };
+
+        this.vditorObserver = new MutationObserver(applyToNewVditor);
+        this.vditorObserver.observe(document.body, { childList: true, subtree: true });
     }
 }

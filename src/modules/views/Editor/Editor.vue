@@ -172,6 +172,9 @@ function initVditor(noteId, container, noteData) {
       }
     },
     after: () => {
+      // 应用编辑器样式
+      applyEditorStyleToVditor(container)
+
       // 点击 Vditor 编辑区域时隐藏顶部栏
       container.addEventListener('click', (e) => {
         if (e.target.closest('.vditor-content')) {
@@ -213,6 +216,44 @@ function initVditor(noteId, container, noteData) {
   })
 
   return vditor
+}
+
+// 应用编辑器样式到 Vditor 实例
+function applyEditorStyleToVditor(container) {
+  const config = window.editorStyleConfig || {}
+
+  const applyStyle = () => {
+    // container 就是 vditor 根元素
+    const vditorEl = container.classList.contains('vditor') ? container : container.querySelector('.vditor')
+    if (!vditorEl) return false
+
+    let styleEl = vditorEl.querySelector('.vditor-custom-style')
+    if (!styleEl) {
+      styleEl = document.createElement('style')
+      styleEl.className = 'vditor-custom-style'
+      vditorEl.appendChild(styleEl)
+    }
+
+    styleEl.textContent = `
+      .vditor-reset {
+        ${config.fontFamily ? `font-family: ${config.fontFamily} !important;` : ''}
+        ${config.fontSize ? `font-size: ${config.fontSize}px !important;` : ''}
+        ${config.lineHeight ? `line-height: ${config.lineHeight} !important;` : ''}
+      }
+      .vditor-reset p {
+        ${config.paragraphSpacing ? `margin-bottom: ${config.paragraphSpacing}px !important;` : ''}
+      }
+      .vditor-reset > p:last-child {
+        margin-bottom: 0 !important;
+      }
+    `
+    return true
+  }
+
+  // 如果 vditor 还没创建完成，延迟重试
+  if (!applyStyle()) {
+    setTimeout(() => applyStyle(), 200)
+  }
 }
 
 // 初始化所有已存在的编辑器

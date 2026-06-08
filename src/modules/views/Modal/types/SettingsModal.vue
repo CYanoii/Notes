@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import { getAllPanels, getVisibilitySettings, isPanelVisible } from '../../LeftSidebar/panelRegistry.js'
 
 const props = defineProps({
@@ -11,6 +11,36 @@ const emit = defineEmits(['close', 'updatePath', 'selectFolder', 'clearPath'])
 // 面板可见性临时设置 - 仅在点击应用后生效
 const availablePanels = getAllPanels()
 const tempPanelVisibility = reactive({ ...getVisibilitySettings() })
+
+// 字体样式设置
+const fontOptions = [
+  { value: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif', label: '系统默认' },
+  { value: '"Source Han Sans SC", "Noto Sans SC", sans-serif', label: '思源黑体' },
+  { value: '"Microsoft YaHei", "微软雅黑", sans-serif', label: '微软雅黑' },
+  { value: 'KaiTi, "楷体", serif', label: '楷体' },
+  { value: '"Courier New", Consolas, monospace', label: '等宽字体' },
+  { value: '"Noto Serif SC", Songti SC, serif', label: '思源宋体' }
+]
+
+const defaultEditorStyle = {
+  fontFamily: fontOptions[0].value,
+  fontSize: 16,
+  lineHeight: 1.8,
+  paragraphSpacing: 16
+}
+
+const tempEditorStyle = reactive({ ...defaultEditorStyle })
+
+// 监听 config 加载完成，更新编辑器样式值
+watch(() => props.modal.config, (config) => {
+  if (config) {
+    const savedStyle = config.editorStyle || {}
+    tempEditorStyle.fontFamily = savedStyle.fontFamily || defaultEditorStyle.fontFamily
+    tempEditorStyle.fontSize = savedStyle.fontSize || defaultEditorStyle.fontSize
+    tempEditorStyle.lineHeight = savedStyle.lineHeight || defaultEditorStyle.lineHeight
+    tempEditorStyle.paragraphSpacing = savedStyle.paragraphSpacing || defaultEditorStyle.paragraphSpacing
+  }
+}, { immediate: true })
 
 function handlePanelVisibilityChange(panelId, event, cannotHide) {
   if (cannotHide) {
@@ -25,13 +55,18 @@ function handleCancel() {
   emit('close', props.modal.id)
 }
 
-function handleApply() {
-  // 保存面板可见性设置到配置
-  window.electronAPI.setConfig('sidebarPanels', { ...tempPanelVisibility })
-  // 应用数据目录更改
-  window.electronAPI.applyConfigAndReload('dataRootPath', props.modal.tempDataRootPath)
+async function handleApply() {
+  // 依次保存所有设置，确保每个都完成后再执行下一个
+  await window.electronAPI.setConfig('sidebarPanels', { ...tempPanelVisibility })
+  await window.electronAPI.setConfig('editorStyle', { ...tempEditorStyle })
+  await window.electronAPI.applyConfigAndReload('dataRootPath', props.modal.tempDataRootPath)
   emit('close', props.modal.id)
+  // 数据目录变更后需要重新加载以使用新路径
   window.location.reload()
+}
+
+function handleRestoreDefaults() {
+  Object.assign(tempEditorStyle, defaultEditorStyle)
 }
 
 async function handleSelectFolder() {
@@ -96,6 +131,72 @@ function handleClearPath() {
               >
               <span class="toggle-slider"></span>
             </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 编辑器样式设置 -->
+      <div class="settings-item settings-editor-style-item">
+         <div class="style-settings">
+          <div class="style-header">
+            <span class="style-section-title">编辑器样式</span>
+            <button class="btn btn-restore-small" @click="handleRestoreDefaults" title="恢复默认">
+              <i class="fas fa-undo"></i> 恢复默认
+            </button>
+          </div>
+          <!-- 字体选择 -->
+          <div class="style-row">
+            <span class="style-label">字体</span>
+            <select v-model="tempEditorStyle.fontFamily" class="style-select" @click.stop>
+              <option v-for="font in fontOptions" :key="font.value" :value="font.value">
+                {{ font.label }}
+              </option>
+            </select>
+          </div>
+          <!-- 字号 -->
+          <div class="style-row">
+            <span class="style-label">字号</span>
+            <div class="style-range-group">
+              <input
+                type="range"
+                v-model.number="tempEditorStyle.fontSize"
+                min="10"
+                max="30"
+                step="4"
+                class="style-range"
+              >
+              <span class="style-value">{{ tempEditorStyle.fontSize }}px</span>
+            </div>
+          </div>
+          <!-- 行高 -->
+          <div class="style-row">
+            <span class="style-label">行高</span>
+            <div class="style-range-group">
+              <input
+                type="range"
+                v-model.number="tempEditorStyle.lineHeight"
+                min="1"
+                max="3"
+                step="0.4"
+                class="style-range"
+              >
+              <span class="style-value">{{ tempEditorStyle.lineHeight }}</span>
+            </div>
+          </div>
+          <!-- 段落间距 -->
+          <div class="style-row">
+            <span class="style-label">段落间距</span>
+            <div class="style-range-group">
+              <input
+                type="range"
+                v-model.number="tempEditorStyle.paragraphSpacing"
+                min="10"
+                max="30"
+                step="4"
+                class="style-range"
+              >
+               <span class="style-value">{{ tempEditorStyle.paragraphSpacing }}px</span>
+            </div>
           </div>
         </div>
       </div>
@@ -354,5 +455,117 @@ function handleClearPath() {
 .settings-toggle-row.cannot-hide-row {
   opacity: 0.7;
   background: #f0f7ff;
+}
+
+/* 编辑器样式设置 */
+.settings-editor-style-item {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.style-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f7fafc;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.style-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.style-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.style-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.style-label {
+  font-size: 14px;
+  color: #4a5568;
+  min-width: 80px;
+}
+
+.style-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #4a5568;
+  background: white;
+  min-width: 160px;
+  cursor: pointer;
+}
+
+.style-select:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.style-range-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.style-range {
+  width: 180px;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.style-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4299e1;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.style-value {
+  font-size: 13px;
+  color: #718096;
+  min-width: 45px;
+  text-align: right;
+}
+
+.btn-restore-small {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #718096;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-restore-small:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+  color: #4a5568;
+}
+
+.btn-restore-small i {
+  font-size: 11px;
 }
 </style>
