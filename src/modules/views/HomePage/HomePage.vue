@@ -79,16 +79,16 @@ function handleNewNote() {
 .search-box {
   display: flex;
   align-items: center;
-  background: white;
+  background: var(--search-box-bg);
+  border: 1px solid var(--search-box-border);
   border-radius: 12px;
   padding: 0 20px;
   height: 60px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 40px;
 }
 
 .search-box i {
-  color: #a0aec0;
+  color: var(--text-muted);
   margin-right: 15px;
   font-size: 18px;
 }
@@ -98,16 +98,16 @@ function handleNewNote() {
   border: none;
   outline: none;
   font-size: 16px;
-  color: #2d3748;
+  color: var(--text-primary);
   background: transparent;
 }
 
 .search-box input::placeholder {
-  color: #a0aec0;
+  color: var(--text-muted);
 }
 
 .btn-search {
-  background: #4299e1;
+  background: var(--accent);
   border: none;
   width: 40px;
   height: 40px;
@@ -127,12 +127,12 @@ function handleNewNote() {
 }
 
 .btn-search.disabled {
-  background: #e2e8f0;
+  background: var(--panel-border);
   cursor: not-allowed;
 }
 
 .btn-search:not(.disabled):hover {
-  background: #3182ce;
+  background: var(--accent-hover);
 }
 
 .btn-search:not(.disabled):active {
@@ -141,12 +141,12 @@ function handleNewNote() {
 
 .all-notes h2 {
   margin-bottom: 20px;
-  color: #2d3748;
+  color: var(--home-title-color);
   font-weight: 600;
 }
 
 .all-notes h2 i {
   margin-right: 10px;
-  color: #4299e1;
+  color: var(--accent);
 }
 </style>

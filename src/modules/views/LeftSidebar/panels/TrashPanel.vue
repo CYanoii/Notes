@@ -112,12 +112,12 @@ function escapeHtml(text) {
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 12px;
 }
 
 .panel-title i {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .panel-content {
@@ -140,10 +140,11 @@ function escapeHtml(text) {
   cursor: pointer;
   transition: background-color 0.2s;
   margin-bottom: 8px;
+  border: 1px solid var(--sidebar-card-border);
 }
 
 .trash-note-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .trash-note-info {
@@ -155,13 +156,13 @@ function escapeHtml(text) {
 }
 
 .trash-note-info i {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .trash-note-title {
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -177,7 +178,7 @@ function escapeHtml(text) {
 .trash-action-btn {
   background: transparent;
   border: none;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-secondary);
   cursor: pointer;
   padding: 4px 8px;
   font-size: 12px;
@@ -186,7 +187,7 @@ function escapeHtml(text) {
 }
 
 .trash-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .restore-btn:hover {
@@ -199,7 +200,7 @@ function escapeHtml(text) {
 
 .panel-empty {
   text-align: center;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

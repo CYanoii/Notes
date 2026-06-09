@@ -78,12 +78,12 @@ function escapeHtml(text) {
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 12px;
 }
 
 .panel-title i {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .panel-content {
@@ -104,17 +104,19 @@ function escapeHtml(text) {
   padding: 8px;
   border-radius: 6px;
   cursor: pointer;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   font-size: 13px;
   transition: background-color 0.2s;
+  border: 1px solid var(--sidebar-card-border);
+  margin-bottom: 4px;
 }
 
 .recent-note-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .recent-note-item i {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 12px;
 }
 
@@ -126,7 +128,7 @@ function escapeHtml(text) {
 
 .panel-empty {
   text-align: center;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

@@ -126,7 +126,7 @@ function onDrop(event, index) {
     padding-left: 8px;
     padding-right: 8px;
     height: 30px;
-    background: #4a5568;
+    background: var(--tab-bg);
     border-radius: 6px 6px 0 0;
     cursor: pointer;
     transition: all 0.2s;
@@ -135,30 +135,30 @@ function onDrop(event, index) {
 }
 
 .tab:hover {
-    background: #5a6578;
+    background: var(--tab-hover-bg);
 }
 
 .tab.active {
-    background: #f7fafc;
-    color: #2d3748;
+    background: var(--tab-active-bg);
+    color: var(--tab-active-color);
     font-weight: 500;
 }
 
 .tab.active .tab-title {
-    color: #2d3748;
+    color: var(--tab-active-color);
 }
 
 .tab.active .tab-icon-title i {
-    color: #4299e1;
+    color: var(--tab-active-icon-color);
 }
 
 .tab.dragging {
     opacity: 0.5;
-    background: #3182ce;
+    background: var(--accent-hover);
 }
 
 .tab.drag-over {
-    border-left: 2px solid #4299e1;
+    border-left: 2px solid var(--accent);
     padding-left: 6px;
 }
 
@@ -176,7 +176,7 @@ function onDrop(event, index) {
 }
 
 .tab-icon-title i {
-    color: #a0aec0;
+    color: var(--tab-color);
 }
 
 .tab-title {
@@ -184,7 +184,7 @@ function onDrop(event, index) {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-left: 6px;
-    color: #e2e8f0;
+    color: var(--tab-title-color);
     font-size: 12px;
 }
 

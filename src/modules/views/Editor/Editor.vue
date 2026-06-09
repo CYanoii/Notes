@@ -90,6 +90,11 @@ function renderMarkdown(content) {
   return escapeHtml(content)
 }
 
+// 获取当前主题
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'light'
+}
+
 // 初始化 Vditor
 function initVditor(noteId, container, noteData) {
   if (noteData.status === 'trashed') {
@@ -107,6 +112,7 @@ function initVditor(noteId, container, noteData) {
     cache: {
       enable: false
     },
+    theme: getCurrentTheme(),
     toolbar: [
       { name: 'emoji', tipPosition: 'se' },
       { name: 'headings', tipPosition: 'se' },
@@ -256,6 +262,28 @@ function applyEditorStyleToVditor(container) {
   }
 }
 
+// 更新所有 Vditor 实例的主题
+function updateVditorTheme() {
+  const theme = getCurrentTheme()
+  state.editors.forEach((editor, noteId) => {
+    if (editor.vditor && editor.vditor.vditor) {
+      editor.vditor.vditor.getElement().setAttribute('data-theme', theme)
+    }
+  })
+}
+
+// 监听主题变化
+function observeThemeChanges() {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'data-theme') {
+        updateVditorTheme()
+      }
+    })
+  })
+  observer.observe(document.documentElement, { attributes: true })
+}
+
 // 初始化所有已存在的编辑器
 function initializeExistingEditors() {
   nextTick(() => {
@@ -294,6 +322,7 @@ watch(
 // 组件挂载时初始化已存在的编辑器
 onMounted(() => {
   initializeExistingEditors()
+  observeThemeChanges()
 })
 
 // 获取笔记列表
@@ -408,7 +437,7 @@ defineExpose({
     left: 0;
     width: 100%;
     height: 100%;
-    background: white;
+    background: var(--editor-bg);
     display: none;
 }
 
@@ -430,19 +459,20 @@ defineExpose({
     outline: none;
     font-size: 24px;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--editor-title-color);
     padding-bottom: 5px;
     margin: 20px 20px 10px 20px;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid var(--editor-title-border);
+    background: transparent;
 }
 
 .note-title-input:focus {
-    border-bottom-color: #4299e1;
+    border-bottom-color: var(--accent);
 }
 
 .note-title-input:disabled {
-    background-color: #f7fafc;
-    color: #718096;
+    background-color: var(--editor-tags-bg);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -450,24 +480,24 @@ defineExpose({
     border: none;
     outline: none;
     font-size: 14px;
-    color: #718096;
+    color: var(--editor-excerpt-color);
     background: transparent;
     padding-bottom: 5px;
     margin: 0 20px 10px 20px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--editor-title-border);
 }
 
 .note-excerpt-input::placeholder {
-    color: #a0aec0;
+    color: var(--text-muted);
 }
 
 .note-excerpt-input:focus {
-    border-bottom-color: #4299e1;
+    border-bottom-color: var(--accent);
 }
 
 .note-excerpt-input:disabled {
-    background-color: #f7fafc;
-    color: #718096;
+    background-color: var(--editor-tags-bg);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -493,16 +523,16 @@ defineExpose({
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    background: #f7fafc;
+    background: var(--editor-tags-bg);
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--editor-tags-border);
 }
 
 .note-tag-item:hover {
-    background: #edf2f7;
-    border-color: #cbd5e0;
+    background: var(--editor-tags-hover-bg);
+    border-color: var(--text-muted);
 }
 
 .note-tag-color {
@@ -514,7 +544,7 @@ defineExpose({
 
 .note-tag-name {
     font-size: 12px;
-    color: #2d3748;
+    color: var(--text-primary);
 }
 
 .btn-add-tag {
@@ -522,8 +552,8 @@ defineExpose({
     align-items: center;
     gap: 4px;
     background: transparent;
-    border: 1px dashed #a0aec0;
-    color: #718096;
+    border: 1px dashed var(--editor-add-tag-border);
+    color: var(--editor-add-tag-color);
     padding: 4px 12px;
     border-radius: 16px;
     cursor: pointer;
@@ -533,9 +563,9 @@ defineExpose({
 }
 
 .btn-add-tag:hover {
-    border-color: #4299e1;
-    color: #4299e1;
-    background: #f0f7ff;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--editor-tags-hover-bg);
 }
 
 /* 只读编辑器样式 */
@@ -548,19 +578,66 @@ defineExpose({
     overflow: auto;
 }
 
-/* Vditor 只读模式样式 - 从 vditor.css 移入 */
-:deep(.vditor) .vditor-toolbar {
-    border-radius: 6px 6px 0 0;
+/* 移除 Vditor 最外层边框和圆角 */
+:deep(.vditor) {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* 取消选中时背景加深效果 */
+:deep(.vditor-container) {
+    --textarea-background-color: var(--editor-bg) !important;
 }
 
 :deep(.vditor) .vditor-content {
-    border-radius: 0 0 6px 6px;
+    background: var(--editor-bg) !important;
+}
+
+/* Vditor 边框颜色一致 */
+:deep(.vditor) {
+    --border-color: var(--editor-title-border) !important;
+    --textarea-bg-color: var(--editor-bg) !important;
+    --textarea-color: var(--text-primary) !important;
+}
+
+/* toolbar 添加上方边框 */
+:deep(.vditor) .vditor-toolbar {
+    border-top: 1px solid var(--editor-title-border);
+}
+
+/* 修复深色模式下文字颜色和背景 */
+:deep(.vditor) .vditor-content .vditor-reset {
+    color: var(--text-primary) !important;
+    background: var(--editor-bg) !important;
+}
+
+:deep(.vditor) .vditor-content .vditor-reset:focus {
+    background: var(--editor-bg) !important;
+}
+
+:deep(.vditor) textarea {
+    color: var(--text-primary) !important;
+    background: var(--editor-bg) !important;
+}
+
+:deep(.vditor) .vditor-reset pre {
+    background: var(--sidebar-content-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Vditor 只读模式样式 - 从 vditor.css 移入 */
+:deep(.vditor) .vditor-toolbar {
+    border-radius: 0;
+}
+
+:deep(.vditor) .vditor-content {
+    border-radius: 0;
 }
 
 :deep(.vditor-readonly) {
     flex: 1;
     padding: 10px 35px;
-    background: #f8fafc;
+    background: var(--editor-readonly-bg);
     border-radius: 8px;
     overflow-y: auto;
     height: calc(100vh - 220px);
@@ -576,7 +653,7 @@ defineExpose({
     margin-top: 1em;
     margin-bottom: 0.5em;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--text-primary);
 }
 
 :deep(.vditor-readonly h1) { font-size: 2em; }
@@ -589,8 +666,8 @@ defineExpose({
 }
 
 :deep(.vditor-readonly pre) {
-    background: #2d3748;
-    color: #e2e8f0;
+    background: var(--sidebar-content-bg);
+    color: var(--text-secondary);
     padding: 12px 16px;
     border-radius: 6px;
     overflow-x: auto;
@@ -598,7 +675,7 @@ defineExpose({
 }
 
 :deep(.vditor-readonly code) {
-    background: #e2e8f0;
+    background: var(--editor-tags-bg);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -610,10 +687,10 @@ defineExpose({
 }
 
 :deep(.vditor-readonly blockquote) {
-    border-left: 4px solid #4299e1;
+    border-left: 4px solid var(--accent);
     padding-left: 16px;
     margin: 1em 0;
-    color: #718096;
+    color: var(--text-muted);
 }
 
 :deep(.vditor-readonly ul),
@@ -634,13 +711,13 @@ defineExpose({
 
 :deep(.vditor-readonly th),
 :deep(.vditor-readonly td) {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--panel-border);
     padding: 8px 12px;
     text-align: left;
 }
 
 :deep(.vditor-readonly th) {
-    background: #f7fafc;
+    background: var(--editor-tags-bg);
     font-weight: 600;
 }
 
@@ -651,7 +728,7 @@ defineExpose({
 }
 
 :deep(.vditor-readonly a) {
-    color: #4299e1;
+    color: var(--accent);
     text-decoration: none;
 }
 
@@ -661,7 +738,7 @@ defineExpose({
 
 :deep(.vditor-readonly hr) {
     border: none;
-    border-top: 2px solid #e2e8f0;
+    border-top: 2px solid var(--panel-border);
     margin: 2em 0;
 }
 </style>

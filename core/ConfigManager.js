@@ -22,6 +22,7 @@ class ConfigManager {
       this.config = {
         dataRootPath: '',
         version: 1,
+        theme: 'light',
         sidebarPanels: {
           search: true,
           tags: true,

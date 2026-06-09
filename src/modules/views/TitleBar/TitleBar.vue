@@ -61,8 +61,8 @@ async function updateMaximizeIcon() {
   justify-content: space-between;
   align-items: center;
   height: 32px;
-  background: #1a202c;
-  color: white;
+  background: var(--titlebar-bg);
+  color: var(--titlebar-color);
   -webkit-app-region: drag;
   user-select: none;
 }
@@ -107,7 +107,7 @@ async function updateMaximizeIcon() {
   justify-content: center;
   background: transparent;
   border: none;
-  color: white;
+  color: var(--titlebar-color);
   cursor: pointer;
   transition: background 0.15s;
 }

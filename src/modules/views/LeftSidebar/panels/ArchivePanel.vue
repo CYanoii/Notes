@@ -121,12 +121,12 @@ defineExpose({
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 12px;
 }
 
 .panel-title i {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .panel-content {
@@ -151,17 +151,18 @@ defineExpose({
   padding: 8px;
   border-radius: 6px;
   cursor: pointer;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   font-size: 13px;
   transition: background-color 0.2s;
+  border: 1px solid var(--sidebar-card-border);
 }
 
 .archive-year-header:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .archive-expand-icon {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 10px;
 }
 
@@ -170,7 +171,7 @@ defineExpose({
 }
 
 .archive-year-count {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 12px;
   margin-left: auto;
 }
@@ -190,12 +191,12 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 6px 8px;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-secondary);
   font-size: 12px;
 }
 
 .archive-month-count {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 11px;
 }
 
@@ -212,19 +213,19 @@ defineExpose({
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-secondary);
   font-size: 12px;
   transition: background-color 0.2s;
 }
 
 .archive-note-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
+  background: var(--sidebar-card-hover-bg);
+  color: var(--sidebar-content-text);
 }
 
 .archive-note-item i {
   font-size: 10px;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
 }
 
 .archive-note-title {
@@ -235,7 +236,7 @@ defineExpose({
 
 .panel-empty {
   text-align: center;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

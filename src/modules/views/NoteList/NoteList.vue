@@ -62,12 +62,12 @@ function formatNoteDate(date) {
 
 .note-card {
     position: relative;
-    background: white;
+    background: var(--note-card-bg);
     border-radius: 10px;
     padding: 20px;
     cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--note-card-border);
     box-sizing: border-box;
 }
 
@@ -82,7 +82,7 @@ function formatNoteDate(date) {
     right: 12px;
     background: none;
     border: none;
-    color: #a0aec0;
+    color: var(--note-card-meta-color);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 4px;
@@ -95,15 +95,15 @@ function formatNoteDate(date) {
 }
 
 .note-delete-btn:hover {
-    background: #fff5f5;
-    color: #e53e3e;
+    background: var(--tag-filter-blocked-bg);
+    color: var(--tag-filter-blocked-color);
 }
 
 .note-card h3 {
     margin: 0 0 8px 0;
     font-size: 16px;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--note-card-title-color);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -112,7 +112,7 @@ function formatNoteDate(date) {
 .note-excerpt {
     margin: 0 0 12px 0;
     font-size: 13px;
-    color: #718096;
+    color: var(--note-card-excerpt-color);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -124,6 +124,6 @@ function formatNoteDate(date) {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    color: #a0aec0;
+    color: var(--note-card-meta-color);
 }
 </style>

@@ -50,7 +50,7 @@ function handleTagToggle(tagId) {
 
 <style scoped>
 .modal-container {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
@@ -62,13 +62,14 @@ function handleTagToggle(tagId) {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--modal-border);
 }
 
 .modal-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+  color: var(--modal-text);
 }
 
 .modal-close-btn {
@@ -76,11 +77,11 @@ function handleTagToggle(tagId) {
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #666;
+  color: var(--modal-text-secondary);
 }
 
 .modal-close-btn:hover {
-  color: #333;
+  color: var(--modal-text);
 }
 
 .modal-body {
@@ -92,7 +93,7 @@ function handleTagToggle(tagId) {
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--modal-border);
 }
 
 .btn {
@@ -104,21 +105,21 @@ function handleTagToggle(tagId) {
 }
 
 .btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
+  background: var(--tag-filter-item-bg);
+  color: var(--modal-text-secondary);
 }
 
 .btn-secondary:hover {
-  background: #cbd5e0;
+  background: var(--tag-filter-item-hover-bg);
 }
 
 .btn-primary {
-  background: #4299e1;
+  background: var(--accent);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #3182ce;
+  background: var(--accent-hover);
 }
 
 /* Tag Selection */
@@ -138,20 +139,21 @@ function handleTagToggle(tagId) {
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
+  color: var(--modal-text-secondary);
 }
 
 .tag-select-item:hover {
-  background: #f7fafc;
+  background: var(--tag-filter-item-hover-bg);
 }
 
 .tag-select-item.selected {
-  background: #ebf8ff;
+  background: var(--tag-filter-selected-bg);
 }
 
 .tag-select-check {
   width: 18px;
   height: 18px;
-  border: 2px solid #cbd5e0;
+  border: 2px solid var(--tag-filter-item-border);
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -159,8 +161,8 @@ function handleTagToggle(tagId) {
 }
 
 .tag-select-item.selected .tag-select-check {
-  background: #4299e1;
-  border-color: #4299e1;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .tag-select-item.selected .tag-select-check::after {
@@ -177,6 +179,6 @@ function handleTagToggle(tagId) {
 
 .tag-select-name {
   font-size: 14px;
-  color: #333;
+  color: var(--modal-text);
 }
 </style>

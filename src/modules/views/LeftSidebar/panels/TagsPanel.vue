@@ -161,7 +161,7 @@ defineExpose({
   justify-content: space-between;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 12px;
 }
 
@@ -172,13 +172,13 @@ defineExpose({
 }
 
 .panel-title i {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .tag-add-btn {
   background: transparent;
   border: none;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-muted);
   cursor: pointer;
   padding: 4px;
   font-size: 12px;
@@ -186,7 +186,7 @@ defineExpose({
 }
 
 .tag-add-btn:hover {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .panel-content {
@@ -208,16 +208,18 @@ defineExpose({
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   font-size: 13px;
+  border: 1px solid var(--sidebar-card-border);
+  margin-bottom: 4px;
 }
 
 .tag-main-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .tag-main-item i {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 10px;
   width: 12px;
 }
@@ -237,7 +239,7 @@ defineExpose({
 }
 
 .tag-count {
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 12px;
 }
 
@@ -255,7 +257,7 @@ defineExpose({
 .tag-action-btn {
   background: transparent;
   border: none;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-muted);
   cursor: pointer;
   padding: 4px;
   font-size: 10px;
@@ -263,7 +265,7 @@ defineExpose({
 }
 
 .tag-action-btn:hover {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .tag-action-btn.delete-btn:hover {
@@ -283,19 +285,21 @@ defineExpose({
   padding: 6px 8px;
   border-radius: 4px;
   cursor: pointer;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-secondary);
   font-size: 12px;
   transition: background-color 0.2s;
+  border: 1px solid var(--sidebar-card-border);
+  margin-bottom: 2px;
 }
 
 .tag-note-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
+  background: var(--sidebar-card-hover-bg);
+  color: var(--sidebar-content-text);
 }
 
 .tag-note-item i {
   font-size: 10px;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
 }
 
 .tag-note-title {
@@ -306,7 +310,7 @@ defineExpose({
 
 .panel-empty {
   text-align: center;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

@@ -36,7 +36,8 @@ const iconMap = {
 .toast {
   position: fixed;
   right: 20px;
-  background: white;
+  background: var(--toast-bg);
+  color: var(--toast-text);
   padding: 12px 20px;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -53,12 +54,12 @@ const iconMap = {
   opacity: 1;
   transform: translateX(0);
 }
-.toast-success { border-left: 4px solid #48bb78; }
-.toast-success i { color: #48bb78; }
-.toast-error { border-left: 4px solid #e53e3e; }
-.toast-error i { color: #e53e3e; }
-.toast-warning { border-left: 4px solid #ed8936; }
-.toast-warning i { color: #ed8936; }
-.toast-info { border-left: 4px solid #4299e1; }
-.toast-info i { color: #4299e1; }
+.toast-success { border-left: 4px solid var(--toast-success-color); }
+.toast-success i { color: var(--toast-success-color); }
+.toast-error { border-left: 4px solid var(--toast-error-color); }
+.toast-error i { color: var(--toast-error-color); }
+.toast-warning { border-left: 4px solid var(--toast-warning-color); }
+.toast-warning i { color: var(--toast-warning-color); }
+.toast-info { border-left: 4px solid var(--toast-info-color); }
+.toast-info i { color: var(--toast-info-color); }
 </style>

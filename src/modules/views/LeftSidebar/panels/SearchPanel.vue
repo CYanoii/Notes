@@ -203,12 +203,12 @@ defineExpose({
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 12px;
 }
 
 .panel-title i {
-  color: #4299e1;
+  color: var(--accent);
 }
 
 .panel-content {
@@ -226,21 +226,21 @@ defineExpose({
 .sidebar-search-input {
   width: 100%;
   padding: 8px 12px 8px 32px;
-  background: #4a5568;
-  border: 1px solid #1a202c;
+  background: var(--sidebar-input-bg);
+  border: 1px solid var(--sidebar-input-border);
   border-radius: 4px;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   font-size: 13px;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .sidebar-search-input:focus {
-  border-color: #4299e1;
+  border-color: var(--accent);
 }
 
 .sidebar-search-input::placeholder {
-  color: #a0aec0;
+  color: var(--sidebar-content-text-muted);
 }
 
 .search-icon {
@@ -248,7 +248,7 @@ defineExpose({
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #a0aec0;
+  color: var(--sidebar-content-text-muted);
   font-size: 12px;
   pointer-events: none;
 }
@@ -269,26 +269,26 @@ defineExpose({
 
 .search-result-card {
   padding: 10px 12px;
-  background: #4a5568;
+  background: var(--sidebar-card-bg);
+  border: 1px solid var(--sidebar-card-border);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  border: 2px solid transparent;
 }
 
 .search-result-card:hover {
-  background: #5a6779;
+  background: var(--sidebar-card-hover-bg);
 }
 
 .search-result-card.active {
-  border-color: #4299e1;
-  background: #5a6779;
+  border-color: var(--accent);
+  background: var(--sidebar-card-hover-bg);
 }
 
 .search-result-title {
   font-size: 13px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--sidebar-content-text);
   margin-bottom: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -297,7 +297,7 @@ defineExpose({
 
 .search-result-preview {
   font-size: 12px;
-  color: #a0aec0;
+  color: var(--sidebar-content-text-muted);
   line-height: 1.4;
   overflow: hidden;
   display: -webkit-box;
@@ -318,14 +318,14 @@ defineExpose({
   padding: 1px 6px;
   border: 1px solid;
   border-radius: 10px;
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--sidebar-content-text);
+  background: var(--sidebar-card-hover-bg);
   line-height: 1.2;
 }
 
 .panel-empty {
   text-align: center;
-  color: #718096;
+  color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

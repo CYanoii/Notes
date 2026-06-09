@@ -242,7 +242,8 @@ onMounted(async () => {
 .sidebar-nav {
     width: 50px;
     height: 100%;
-    background: #1a202c;
+    background: var(--sidebar-nav-bg);
+    border-right: 1px solid var(--sidebar-nav-border);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -259,18 +260,18 @@ onMounted(async () => {
     justify-content: center;
     border-radius: 8px;
     cursor: pointer;
-    color: #a0aec0;
+    color: var(--sidebar-nav-color);
     transition: all 0.2s;
 }
 
 .sidebar-nav-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    background: var(--sidebar-nav-hover-bg);
+    color: var(--sidebar-nav-hover-color);
 }
 
 .sidebar-nav-item.active {
-    background: #4299e1;
-    color: white;
+    background: var(--sidebar-nav-active-bg);
+    color: var(--sidebar-nav-active-color);
 }
 
 .sidebar-nav-bottom {
@@ -284,7 +285,7 @@ onMounted(async () => {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background: #2d3748;
+    background: var(--sidebar-content-bg);
     padding: 10px;
     transition: all 0.3s ease;
 }

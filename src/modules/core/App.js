@@ -75,6 +75,9 @@ export class App {
                     window.editorStyleConfig = config.editorStyle;
                     this.applyEditorStyle(config.editorStyle);
                 }
+                if (config.theme) {
+                    this.applyTheme(config.theme);
+                }
             }
         } catch (err) {
             console.warn('[App] Failed to load config:', err);
@@ -234,5 +237,14 @@ export class App {
 
         this.vditorObserver = new MutationObserver(applyToNewVditor);
         this.vditorObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    /**
+     * 应用主题设置
+     * @param {string} theme -主题名称 ('light' 或 'dark')
+     */
+    applyTheme(theme) {
+        if (!theme) return;
+        document.documentElement.setAttribute('data-theme', theme);
     }
 }

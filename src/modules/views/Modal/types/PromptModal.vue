@@ -46,7 +46,7 @@ function handleCancel() {
 
 <style scoped>
 .modal-container {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
@@ -58,13 +58,14 @@ function handleCancel() {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--modal-border);
 }
 
 .modal-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+  color: var(--modal-text);
 }
 
 .modal-close-btn {
@@ -72,11 +73,11 @@ function handleCancel() {
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #666;
+  color: var(--modal-text-secondary);
 }
 
 .modal-close-btn:hover {
-  color: #333;
+  color: var(--modal-text);
 }
 
 .modal-body {
@@ -86,15 +87,17 @@ function handleCancel() {
 .modal-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--modal-border);
   border-radius: 4px;
   font-size: 14px;
   box-sizing: border-box;
+  background: var(--tag-filter-item-bg);
+  color: var(--modal-text);
 }
 
 .modal-input:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: var(--accent);
 }
 
 .modal-footer {
@@ -102,7 +105,7 @@ function handleCancel() {
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--modal-border);
 }
 
 .btn {
@@ -114,20 +117,20 @@ function handleCancel() {
 }
 
 .btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
+  background: var(--tag-filter-item-bg);
+  color: var(--modal-text-secondary);
 }
 
 .btn-secondary:hover {
-  background: #cbd5e0;
+  background: var(--tag-filter-item-hover-bg);
 }
 
 .btn-primary {
-  background: #4299e1;
+  background: var(--accent);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #3182ce;
+  background: var(--accent-hover);
 }
 </style>

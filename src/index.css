@@ -4,10 +4,202 @@
     box-sizing: border-box;
 }
 
+/* 浅色主题变量 */
+:root {
+  --titlebar-bg: #e8ecf0;
+  --titlebar-color: #2d3748;
+  --titlebar-border: #e2e8f0;
+  --sidebar-nav-bg: #edf2f7;
+  --sidebar-nav-border: transparent;
+  --sidebar-nav-color: #4a5568;
+  --sidebar-nav-hover-bg: #e2e8f0;
+  --sidebar-nav-hover-color: #2d3748;
+  --sidebar-nav-active-bg: #4299e1;
+  --sidebar-nav-active-color: #ffffff;
+  --sidebar-content-bg: #f7fafc;
+  --sidebar-content-border: #e2e8f0;
+  --sidebar-content-text: #2d3748;
+  --sidebar-content-text-secondary: #4a5568;
+  --sidebar-content-text-muted: #718096;
+  --sidebar-input-bg: #f7fafc;
+  --sidebar-input-border: #e2e8f0;
+  --sidebar-input-hover-border: #a0aec0;
+  --sidebar-card-bg: #f7fafc;
+  --sidebar-card-hover-bg: #e2e8f0;
+  --sidebar-card-border: #e2e8f0;
+  --header-bg: #f5f7f9;
+  --header-border: transparent;
+  --tab-bg: #e8ecf0;
+  --tab-color: #718096;
+  --tab-title-color: #4a5568;
+  --tab-hover-bg: #d8dfe6;
+  --tab-active-bg: #ffffff;
+  --tab-active-color: #1a202c;
+  --tab-active-icon-color: #4299e1;
+  --tab-border: #e0e0e0;
+  --body-bg: #ffffff;
+  --panel-bg: #ffffff;
+  --panel-border: #e2e8f0;
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --accent: #4299e1;
+  --accent-hover: #3182ce;
+  --editor-bg: #ffffff;
+  --editor-title-color: #2d3748;
+  --editor-title-border: #e2e8f0;
+  --editor-excerpt-color: #718096;
+  --editor-tags-bg: #f7fafc;
+  --editor-tags-border: #e2e8f0;
+  --editor-tags-hover-bg: #edf2f7;
+  --editor-readonly-bg: #f8fafc;
+  --editor-add-tag-border: #a0aec0;
+  --editor-add-tag-color: #718096;
+  --search-box-bg: #ffffff;
+  --search-box-border: #e2e8f0;
+  --home-title-color: #2d3748;
+  --fab-bg: #4299e1;
+  --fab-hover-bg: #3182ce;
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+  /* 首页标签筛选 */
+  --tag-filter-bg: #ffffff;
+  --tag-filter-empty-color: #a0aec0;
+  --tag-filter-item-bg: #f7fafc;
+  --tag-filter-item-border: #e2e8f0;
+  --tag-filter-item-color: #4a5568;
+  --tag-filter-item-hover-bg: #edf2f7;
+  --tag-filter-item-hover-border: #cbd5e0;
+  --tag-filter-selected-bg: #ebf8ff;
+  --tag-filter-selected-border: #4299e1;
+  --tag-filter-selected-color: #2d3748;
+  --tag-filter-blocked-bg: #fff5f5;
+  --tag-filter-blocked-border: #fc8181;
+  --tag-filter-blocked-color: #c53030;
+  /* 首页笔记列表 */
+  --note-card-bg: #ffffff;
+  --note-card-border: #e2e8f0;
+  --note-card-title-color: #2d3748;
+  --note-card-excerpt-color: #718096;
+  --note-card-meta-color: #a0aec0;
+  /* Modal */
+  --modal-overlay-bg: rgba(0, 0, 0, 0.5);
+  --modal-bg: #ffffff;
+  --modal-header-bg: #f7fafc;
+  --modal-border: #e2e8f0;
+  --modal-text: #2d3748;
+  --modal-text-secondary: #4a5568;
+  --modal-text-muted: #718096;
+  /* Toast */
+  --toast-bg: #ffffff;
+  --toast-text: #2d3748;
+  --toast-success-color: #48bb78;
+  --toast-error-color: #e53e3e;
+  --toast-warning-color: #ed8936;
+  --toast-info-color: #4299e1;
+}
+
+/* 深色主题变量 */
+:root[data-theme="dark"] {
+  --titlebar-bg: #323232;
+  --titlebar-color: #f7fafc;
+  --titlebar-border: #323232;
+  --sidebar-nav-bg: #222222;
+  --sidebar-nav-border: transparent;
+  --sidebar-nav-color: #a0aec0;
+  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-nav-hover-color: #e2e8f0;
+  --sidebar-nav-active-bg: #4299e1;
+  --sidebar-nav-active-color: #ffffff;
+  --sidebar-content-bg: #2a2a2a;
+  --sidebar-content-border: #4a5568;
+  --sidebar-content-text: #e2e8f0;
+  --sidebar-content-text-secondary: #a0aec0;
+  --sidebar-content-text-muted: #718096;
+  --sidebar-input-bg: #323232;
+  --sidebar-input-border: #4a5568;
+  --sidebar-input-hover-border: #4299e1;
+  --sidebar-card-bg: #323232;
+  --sidebar-card-hover-bg: #3d3d3d;
+  --sidebar-card-border: #4a5568;
+  --header-bg: #282828;
+  --header-border: transparent;
+  --tab-bg: #3a3a3a;
+  --tab-color: #a0aec0;
+  --tab-title-color: #e2e8f0;
+  --tab-hover-bg: #484848;
+  --tab-active-bg: #1e1e1e;
+  --tab-active-color: #e2e8f0;
+  --tab-active-icon-color: #4299e1;
+  --tab-border: #4a5568;
+  --body-bg: #1e1e1e;
+  --panel-bg: #3a3a3a;
+  --panel-border: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #a0aec0;
+  --accent: #4299e1;
+  --accent-hover: #3182ce;
+  --editor-bg: #1e1e1e;
+  --editor-title-color: #f7fafc;
+  --editor-title-border: #4a5568;
+  --editor-excerpt-color: #a0aec0;
+  --editor-tags-bg: #323232;
+  --editor-tags-border: #4a5568;
+  --editor-tags-hover-bg: #3d3d3d;
+  --editor-readonly-bg: #1e1e1e;
+  --editor-add-tag-border: #718096;
+  --editor-add-tag-color: #a0aec0;
+  --search-box-bg: #2d3339;
+  --search-box-border: #4a5568;
+  --home-title-color: #f7fafc;
+  --fab-bg: #4299e1;
+  --fab-hover-bg: #3182ce;
+  --scrollbar-track: #2d3339;
+  --scrollbar-thumb: #4a5568;
+  --scrollbar-thumb-hover: #718096;
+  /* 首页标签筛选 */
+  --tag-filter-bg: #2a2a2a;
+  --tag-filter-empty-color: #a0aec0;
+  --tag-filter-item-bg: #323232;
+  --tag-filter-item-border: #4a5568;
+  --tag-filter-item-color: #e2e8f0;
+  --tag-filter-item-hover-bg: #3a3a3a;
+  --tag-filter-item-hover-border: #5a6578;
+  --tag-filter-selected-bg: #1e3a5f;
+  --tag-filter-selected-border: #4299e1;
+  --tag-filter-selected-color: #e2e8f0;
+  --tag-filter-blocked-bg: #3d1f1f;
+  --tag-filter-blocked-border: #fc8181;
+  --tag-filter-blocked-color: #fc8181;
+  /* 首页笔记列表 */
+  --note-card-bg: #2a2a2a;
+  --note-card-border: #4a5568;
+  --note-card-title-color: #e2e8f0;
+  --note-card-excerpt-color: #a0aec0;
+  --note-card-meta-color: #718096;
+  /* Modal */
+  --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+  --modal-bg: #2a2a2a;
+  --modal-header-bg: #323232;
+  --modal-border: #4a5568;
+  --modal-text: #e2e8f0;
+  --modal-text-secondary: #a0aec0;
+  --modal-text-muted: #718096;
+  /* Toast */
+  --toast-bg: #2a2a2a;
+  --toast-text: #e2e8f0;
+  --toast-success-color: #48bb78;
+  --toast-error-color: #e53e3e;
+  --toast-warning-color: #ed8936;
+  --toast-info-color: #4299e1;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    background: #f5f5f5;
-    color: #333;
+    background: var(--body-bg);
+    color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
     margin: 0;
@@ -33,17 +225,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--scrollbar-track);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: var(--scrollbar-thumb-hover);
 }
 
 /* 拖拽时禁止选中文本 */

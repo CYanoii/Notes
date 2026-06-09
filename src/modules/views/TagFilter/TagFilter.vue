@@ -67,13 +67,13 @@ function handleClear() {
     gap: 10px;
     margin-bottom: 30px;
     padding: 15px 20px;
-    background: white;
+    background: var(--tag-filter-bg);
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .tag-filter-empty {
-    color: #a0aec0;
+    color: var(--tag-filter-empty-color);
     font-size: 13px;
     font-style: italic;
 }
@@ -107,38 +107,38 @@ function handleClear() {
 
 /* 未选中状态 */
 .tag-filter-item.unselected {
-    background: #f7fafc;
-    border-color: #e2e8f0;
-    color: #4a5568;
+    background: var(--tag-filter-item-bg);
+    border-color: var(--tag-filter-item-border);
+    color: var(--tag-filter-item-color);
 }
 
 .tag-filter-item.unselected:hover {
-    background: #edf2f7;
-    border-color: #cbd5e0;
+    background: var(--tag-filter-item-hover-bg);
+    border-color: var(--tag-filter-item-hover-border);
 }
 
 /* 选中状态 */
 .tag-filter-item.selected {
-    background: #ebf8ff;
-    border-color: #4299e1;
-    color: #2d3748;
+    background: var(--tag-filter-selected-bg);
+    border-color: var(--tag-filter-selected-border);
+    color: var(--tag-filter-selected-color);
 }
 
 .tag-filter-item.selected:hover {
-    background: #e6f3ff;
+    background: var(--tag-filter-selected-bg);
 }
 
 /* 屏蔽状态 */
 .tag-filter-item.blocked {
-    background: #fff5f5;
-    border-color: #fc8181;
-    color: #c53030;
+    background: var(--tag-filter-blocked-bg);
+    border-color: var(--tag-filter-blocked-border);
+    color: var(--tag-filter-blocked-color);
     text-decoration: line-through;
     opacity: 0.8;
 }
 
 .tag-filter-item.blocked:hover {
-    background: #fed7d7;
+    background: var(--tag-filter-blocked-bg);
 }
 
 /* 清除筛选按钮 */
@@ -151,13 +151,13 @@ function handleClear() {
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
-    background: #f7fafc;
-    border: 1px dashed #cbd5e0;
-    color: #718096;
+    background: var(--tag-filter-item-bg);
+    border: 1px dashed var(--tag-filter-item-border);
+    color: var(--text-muted);
 }
 
 .tag-filter-clear:hover {
-    background: #edf2f7;
-    border-color: #a0aec0;
+    background: var(--tag-filter-item-hover-bg);
+    border-color: var(--tag-filter-item-hover-border);
 }
 </style>

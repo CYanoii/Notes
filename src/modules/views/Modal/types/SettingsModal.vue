@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, computed, watch } from 'vue'
+import { reactive, computed, watch, ref } from 'vue'
 import { getAllPanels, getVisibilitySettings, isPanelVisible } from '../../LeftSidebar/panelRegistry.js'
 
 const props = defineProps({
@@ -31,6 +31,17 @@ const defaultEditorStyle = {
 
 const tempEditorStyle = reactive({ ...defaultEditorStyle })
 
+// 主题设置
+const defaultTheme = 'light'
+const tempTheme = ref(defaultTheme)
+
+// 监听 config 加载完成，更新主题值
+watch(() => props.modal.config, (config) => {
+  if (config) {
+    tempTheme.value = config.theme || defaultTheme
+  }
+}, { immediate: true })
+
 // 监听 config 加载完成，更新编辑器样式值
 watch(() => props.modal.config, (config) => {
   if (config) {
@@ -59,6 +70,7 @@ async function handleApply() {
   // 依次保存所有设置，确保每个都完成后再执行下一个
   await window.electronAPI.setConfig('sidebarPanels', { ...tempPanelVisibility })
   await window.electronAPI.setConfig('editorStyle', { ...tempEditorStyle })
+  await window.electronAPI.setConfig('theme', tempTheme.value)
   await window.electronAPI.applyConfigAndReload('dataRootPath', props.modal.tempDataRootPath)
   emit('close', props.modal.id)
   // 数据目录变更后需要重新加载以使用新路径
@@ -90,6 +102,31 @@ function handleClearPath() {
       </button>
     </div>
     <div class="settings-popover-body">
+      <!-- 主题设置 -->
+      <div class="settings-item settings-theme-item">
+        <label class="settings-label">主题</label>
+        <div class="theme-options">
+          <label class="theme-option" :class="{ active: tempTheme === 'light' }">
+            <input type="radio" v-model="tempTheme" value="light" />
+            <div class="theme-preview theme-preview-light">
+              <div class="preview-titlebar"></div>
+              <div class="preview-sidebar"></div>
+              <div class="preview-editor"></div>
+            </div>
+            <span class="theme-name">浅色主题</span>
+          </label>
+          <label class="theme-option" :class="{ active: tempTheme === 'dark' }">
+            <input type="radio" v-model="tempTheme" value="dark" />
+            <div class="theme-preview theme-preview-dark">
+              <div class="preview-titlebar"></div>
+              <div class="preview-sidebar"></div>
+              <div class="preview-editor"></div>
+            </div>
+            <span class="theme-name">深色主题</span>
+          </label>
+        </div>
+      </div>
+
       <!-- 数据目录设置 -->
       <div class="settings-item" v-if="modal.config">
         <label class="settings-label">数据目录</label>
@@ -212,7 +249,7 @@ function handleClearPath() {
   position: relative;
   width: 800px;
   height: 600px;
-  background: white;
+  background: var(--modal-bg);
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   z-index: 10001;
@@ -232,13 +269,15 @@ function handleClearPath() {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  background: var(--modal-header-bg);
+  border-bottom: 1px solid var(--modal-border);
 }
 
 .settings-popover-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+  color: var(--modal-text);
 }
 
 .settings-popover-close {
@@ -246,11 +285,11 @@ function handleClearPath() {
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #666;
+  color: var(--modal-text-secondary);
 }
 
 .settings-popover-close:hover {
-  color: #333;
+  color: var(--modal-text);
 }
 
 .settings-popover-body {
@@ -268,7 +307,7 @@ function handleClearPath() {
 .settings-label {
   font-size: 14px;
   font-weight: 500;
-  color: #4a5568;
+  color: var(--modal-text-secondary);
   margin-bottom: 8px;
   display: block;
 }
@@ -281,25 +320,25 @@ function handleClearPath() {
 .settings-path-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--modal-border);
   border-radius: 4px;
   font-size: 14px;
-  color: #4a5568;
-  background: #f7fafc;
+  color: var(--modal-text-secondary);
+  background: var(--tag-filter-item-bg);
 }
 
 .settings-select-btn {
   padding: 8px 16px;
-  border: 1px solid #4299e1;
+  border: 1px solid var(--accent);
   border-radius: 4px;
-  background: #ebf8ff;
-  color: #2b6cb0;
+  background: var(--tag-filter-selected-bg);
+  color: var(--accent);
   cursor: pointer;
   font-size: 14px;
 }
 
 .settings-select-btn:hover {
-  background: #bee3f8;
+  background: var(--tag-filter-item-hover-bg);
 }
 
 .settings-clear-btn {
@@ -309,30 +348,30 @@ function handleClearPath() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e53e3e;
+  border: 1px solid var(--tag-filter-blocked-color);
   border-radius: 4px;
-  background: white;
-  color: #e53e3e;
+  background: var(--tag-filter-blocked-bg);
+  color: var(--tag-filter-blocked-color);
   cursor: pointer;
   font-size: 18px;
   font-weight: bold;
 }
 
 .settings-clear-btn:hover {
-  background: #fff5f5;
+  background: var(--tag-filter-blocked-bg);
 }
 
 .settings-popover-footer {
   display: flex;
   justify-content: flex-end;
   padding: 16px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--modal-border);
 }
 
 .settings-loading {
   text-align: center;
   padding: 20px;
-  color: #666;
+  color: var(--modal-text-muted);
 }
 
 .btn {
@@ -344,19 +383,19 @@ function handleClearPath() {
 }
 
 .btn-primary {
-  background: #4299e1;
+  background: var(--accent);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #3182ce;
+  background: var(--accent-hover);
 }
 
 /* 面板可见性设置样式 */
 .settings-panels-item {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--modal-border);
 }
 
 .settings-toggles {
@@ -370,12 +409,12 @@ function handleClearPath() {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: #f7fafc;
+  background: var(--tag-filter-item-bg);
   border-radius: 6px;
 }
 
 .settings-toggle-row:hover {
-  background: #edf2f7;
+  background: var(--tag-filter-item-hover-bg);
 }
 
 .toggle-label {
@@ -383,17 +422,17 @@ function handleClearPath() {
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #4a5568;
+  color: var(--modal-text-secondary);
 }
 
 .toggle-label i {
   width: 16px;
-  color: #718096;
+  color: var(--modal-text-muted);
 }
 
 .toggle-label .lock-icon {
   margin-left: 4px;
-  color: #a0aec0;
+  color: var(--modal-text-muted);
   font-size: 12px;
 }
 
@@ -417,7 +456,7 @@ function handleClearPath() {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--modal-text-muted);
   transition: 0.3s;
   border-radius: 24px;
 }
@@ -435,7 +474,7 @@ function handleClearPath() {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #4299e1;
+  background-color: var(--accent);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -444,31 +483,31 @@ function handleClearPath() {
 
 /* 无法隐藏的面板样式 */
 .toggle-switch.cannot-hide .toggle-slider {
-  background-color: #4299e1;
+  background-color: var(--accent);
   cursor: not-allowed;
 }
 
 .toggle-switch.cannot-hide .toggle-slider:before {
-  background-color: #bee3f8;
+  background-color: var(--tag-filter-selected-bg);
 }
 
 .settings-toggle-row.cannot-hide-row {
   opacity: 0.7;
-  background: #f0f7ff;
+  background: var(--tag-filter-selected-bg);
 }
 
 /* 编辑器样式设置 */
 .settings-editor-style-item {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--modal-border);
 }
 
 .style-settings {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: #f7fafc;
+  background: var(--tag-filter-bg);
   padding: 16px;
   border-radius: 8px;
 }
@@ -483,7 +522,7 @@ function handleClearPath() {
 .style-section-title {
   font-size: 14px;
   font-weight: 500;
-  color: #4a5568;
+  color: var(--modal-text-secondary);
 }
 
 .style-row {
@@ -494,24 +533,24 @@ function handleClearPath() {
 
 .style-label {
   font-size: 14px;
-  color: #4a5568;
+  color: var(--modal-text-secondary);
   min-width: 80px;
 }
 
 .style-select {
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--modal-border);
   border-radius: 4px;
   font-size: 14px;
-  color: #4a5568;
-  background: white;
+  color: var(--modal-text);
+  background: var(--modal-bg);
   min-width: 160px;
   cursor: pointer;
 }
 
 .style-select:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: var(--accent);
 }
 
 .style-range-group {
@@ -524,7 +563,7 @@ function handleClearPath() {
   width: 180px;
   height: 6px;
   border-radius: 3px;
-  background: #e2e8f0;
+  background: var(--modal-border);
   cursor: pointer;
   -webkit-appearance: none;
 }
@@ -534,22 +573,22 @@ function handleClearPath() {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #4299e1;
+  background: var(--accent);
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .style-value {
   font-size: 13px;
-  color: #718096;
+  color: var(--modal-text-muted);
   min-width: 45px;
   text-align: right;
 }
 
 .btn-restore-small {
   background: transparent;
-  border: 1px solid #e2e8f0;
-  color: #718096;
+  border: 1px solid var(--modal-border);
+  color: var(--modal-text-muted);
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
@@ -560,12 +599,106 @@ function handleClearPath() {
 }
 
 .btn-restore-small:hover {
-  background: #edf2f7;
-  border-color: #cbd5e0;
-  color: #4a5568;
+  background: var(--tag-filter-item-hover-bg);
+  border-color: var(--tag-filter-item-hover-border);
+  color: var(--modal-text);
 }
 
 .btn-restore-small i {
   font-size: 11px;
+}
+
+/* 主题设置样式 */
+.settings-theme-item {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--modal-border);
+}
+
+.theme-options {
+  display: flex;
+  gap: 16px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.theme-option input {
+  display: none;
+}
+
+.theme-preview {
+  width: 120px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--modal-border);
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.theme-preview-light {
+  background: #f7fafc;
+}
+
+.theme-preview-light .preview-titlebar {
+  height: 10px;
+  background: #e8ecf0;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.theme-preview-light .preview-sidebar {
+  width: 30px;
+  background: #edf2f7;
+  flex: 1;
+  border-right: 1px solid #d0d7de;
+}
+
+.theme-preview-light .preview-content {
+  flex: 2;
+  background: #ffffff;
+}
+
+.theme-preview-dark {
+  background: #1e1e1e;
+}
+
+.theme-preview-dark .preview-titlebar {
+  height: 10px;
+  background: #323232;
+  border-bottom: 1px solid #4a5568;
+}
+
+.theme-preview-dark .preview-sidebar {
+  width: 30px;
+  background: #222222;
+  flex: 1;
+  border-right: 1px solid #4a5568;
+}
+
+.theme-preview-dark .preview-content {
+  flex: 2;
+  background: #1e1e1e;
+}
+
+.theme-option.active .theme-preview {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+}
+
+.theme-name {
+  font-size: 13px;
+  color: var(--modal-text-secondary);
+}
+
+.theme-option.active .theme-name {
+  color: var(--accent);
+  font-weight: 500;
 }
 </style>

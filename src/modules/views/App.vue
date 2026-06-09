@@ -100,11 +100,10 @@ onMounted(async () => {
 .header {
   display: flex;
   justify-content: space-between;
-  background: #2d3748;
-  color: white;
+  background: var(--header-bg);
+  color: var(--titlebar-color);
   height: 35px;
   padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   flex-shrink: 0;
 }
 
@@ -118,7 +117,8 @@ onMounted(async () => {
 .left-sidebar {
   display: flex;
   height: 100%;
-  background: #2d3748;
+  background: var(--sidebar-content-bg);
+  border-right: 1px solid var(--sidebar-content-border);
   flex-shrink: 0;
   overflow: hidden;
   transition: width 0.3s ease;
@@ -147,7 +147,7 @@ onMounted(async () => {
   transform: translateX(-50%);
   width: 0;
   height: 100%;
-  background: #4299e1;
+  background: var(--accent);
   transition: width 0.2s;
   z-index: 10;
 }
@@ -180,7 +180,7 @@ onMounted(async () => {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--body-bg);
 }
 
 .home-view {
@@ -202,7 +202,7 @@ onMounted(async () => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #4299e1;
+  background: var(--fab-bg);
   color: white;
   border: none;
   cursor: pointer;
@@ -216,7 +216,7 @@ onMounted(async () => {
 }
 
 .fab-new-note:hover {
-  background: #3182ce;
+  background: var(--fab-hover-bg);
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(66, 153, 225, 0.6);
 }
