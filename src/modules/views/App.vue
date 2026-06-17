@@ -1,8 +1,7 @@
 <script setup>
-import { createApp, onMounted, computed } from 'vue'
+import { createApp, onMounted, computed, ref } from 'vue'
 import ToastContainer from './Toast/ToastContainer.vue'
 import ModalContainer from './Modal/ModalContainer.vue'
-import TitleBar from './TitleBar/TitleBar.vue'
 import LeftSidebar from './LeftSidebar/LeftSidebar.vue'
 import TabBar from './TabBar/TabBar.vue'
 import Editor from './Editor/Editor.vue'
@@ -37,7 +36,24 @@ const isOnHomePage = computed(() => {
   return window.editorApi?.getActiveNoteId() === null
 })
 
+// 文件夹名
+const folderName = ref('CYanote')
+
+// 窗口最大化状态
+const isMaximized = ref(false)
+
+// 初始化获取文件夹名和最大化状态
 onMounted(async () => {
+  try {
+    const name = await window.electronAPI.getFolderName()
+    if (name) {
+      folderName.value = name
+    }
+  } catch (e) {
+    console.warn('[App] 获取文件夹名失败:', e)
+  }
+  isMaximized.value = await window.electronAPI.isWindowMaximized()
+
   // Toast 和 Modal 使用 <Teleport> 到 body，需单独挂载
   const toastRoot = document.getElementById('vue-toast-root')
   if (toastRoot) {
@@ -54,20 +70,50 @@ onMounted(async () => {
     window.uiManager.bindAll()
   }
 })
+
+// 窗口控制函数
+function handleMinimize() {
+  window.electronAPI.minimizeWindow()
+}
+
+async function handleMaximize() {
+  await window.electronAPI.maximizeWindow()
+  isMaximized.value = await window.electronAPI.isWindowMaximized()
+}
+
+function handleClose() {
+  window.electronAPI.closeWindow()
+}
+
+// 双击标题栏区域最大化/还原窗口
+function handleHeaderDoubleClick() {
+  handleMaximize()
+}
 </script>
 
 <template>
   <div class="app-root">
-    <TitleBar />
-
     <div class="app-container">
       <LeftSidebar class="left-sidebar" />
 
       <div class="resize-handle" id="resizeHandle"></div>
 
       <div class="main-container">
-        <header class="header">
-          <TabBar class="tab-bar" />
+        <header class="header" @dblclick="handleHeaderDoubleClick">
+          <div class="tab-bar-wrapper">
+            <TabBar class="tab-bar" />
+          </div>
+          <div class="window-controls">
+            <button class="window-btn minimize" @click="handleMinimize">
+              <i class="fas fa-minus"></i>
+            </button>
+            <button class="window-btn maximize" @click="handleMaximize">
+              <i :class="isMaximized ? 'far fa-clone' : 'far fa-square'"></i>
+            </button>
+            <button class="window-btn close" @click="handleClose">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </header>
 
         <main class="main-content">
@@ -95,7 +141,7 @@ onMounted(async () => {
 
 .app-container {
   position: absolute;
-  top: 32px;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
@@ -105,11 +151,59 @@ onMounted(async () => {
 .header {
   display: flex;
   justify-content: space-between;
-  background: var(--header-bg);
+  align-items: center;
+  background: var(--titlebar-bg);
   color: var(--titlebar-color);
   height: 35px;
-  padding: 0 20px;
+  padding: 0;
   flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.window-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.tab-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  background: var(--titlebar-bg);
+  padding-right: 10px;
+  min-width: 0;
+}
+
+.window-btn {
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--titlebar-color);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.window-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.window-btn.close:hover {
+  background: #e53e3e;
+}
+
+.window-btn i {
+  font-size: 12px;
+}
+
+.window-btn.maximize i {
+  font-size: 11px;
 }
 
 .header-actions {

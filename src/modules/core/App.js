@@ -83,9 +83,6 @@ export class App {
             console.warn('[App] Failed to load config:', err);
         }
 
-        // 0. 初始化标题栏
-        this.initTitleBar();
-
         // 1. 基础初始化：加载标签筛选栏、笔记列表、渲染初始面板
         // 加载标签筛选栏
         await this.noteController.refreshTagFilter();
@@ -116,27 +113,6 @@ export class App {
         }
 
         console.log('App started');
-    }
-
-    /**
-     * 初始化标题栏（DOM 操作已移至 TitleBar.vue，保留以防 Electron 主进程需要）
-     */
-    async initTitleBar() {
-        // 标题栏已迁移到 TitleBar.vue，这里不做 DOM 操作
-    }
-
-    /**
-     * 更新最大化按钮图标
-     */
-    async updateMaximizeButton() {
-        const maximizeBtn = document.getElementById('titlebarMaximize');
-        const isMaximized = await window.electronAPI.isWindowMaximized();
-        const icon = maximizeBtn.querySelector('i');
-        if (isMaximized) {
-            icon.className = 'far fa-clone';
-        } else {
-            icon.className = 'far fa-square';
-        }
     }
 
     /**

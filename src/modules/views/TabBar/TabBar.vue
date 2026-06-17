@@ -126,12 +126,14 @@ function onDrop(event, index) {
     padding-left: 8px;
     padding-right: 8px;
     height: 30px;
-    background: var(--tab-bg);
+    background: var(--titlebar-bg);
     border-radius: 6px 6px 0 0;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 34px;
+    min-width: 0;
+    flex-shrink: 1;
     user-select: none;
+    -webkit-app-region: no-drag;
 }
 
 .tab:hover {
@@ -198,6 +200,7 @@ function onDrop(event, index) {
     align-items: center;
     justify-content: center;
     margin-left: 4px;
+    -webkit-app-region: no-drag;
 }
 
 .tab-close:hover {
@@ -210,9 +213,10 @@ function onDrop(event, index) {
     display: flex;
     flex: 1;
     overflow-x: auto;
-    margin-right: 20px;
+    overflow-y: hidden;
     align-items: flex-end;
     height: 100%;
     font-size: 12px;
+    min-width: 0;
 }
 </style>
