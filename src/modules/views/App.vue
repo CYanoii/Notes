@@ -1,5 +1,5 @@
 <script setup>
-import { createApp, onMounted } from 'vue'
+import { createApp, onMounted, computed } from 'vue'
 import ToastContainer from './Toast/ToastContainer.vue'
 import ModalContainer from './Modal/ModalContainer.vue'
 import TitleBar from './TitleBar/TitleBar.vue'
@@ -31,6 +31,11 @@ function handleNewNote() {
     window.eventBus.emit(EventTypes.NOTE.CREATE)
   }
 }
+
+// 计算是否在首页（无激活笔记时）
+const isOnHomePage = computed(() => {
+  return window.editorApi?.getActiveNoteId() === null
+})
 
 onMounted(async () => {
   // Toast 和 Modal 使用 <Teleport> 到 body，需单独挂载
@@ -70,8 +75,8 @@ onMounted(async () => {
           <Editor class="notes-container" />
         </main>
 
-        <!-- 悬浮新建笔记按钮 -->
-        <button class="fab-new-note" id="fabNewNote" @click="handleNewNote" title="新建笔记">
+        <!-- 悬浮新建笔记按钮（仅首页显示） -->
+        <button v-if="isOnHomePage" class="fab-new-note" id="fabNewNote" @click="handleNewNote" title="新建笔记">
           <i class="fas fa-plus"></i>
         </button>
       </div>
