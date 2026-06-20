@@ -39,222 +39,236 @@ export class UIManager {
     bindEvents() {
         // 绑定 DOM 全局事件监听
         // 新建笔记按钮
-        document.getElementById('newNoteBtn').addEventListener('click', () => {
-            this.eventBus.emit(EventTypes.NOTE.CREATE);
-        });
+        const newNoteBtn = document.getElementById('newNoteBtn');
+        if (newNoteBtn) {
+            newNoteBtn.addEventListener('click', () => {
+                this.eventBus.emit(EventTypes.NOTE.CREATE);
+            });
+        }
 
         // 搜索框事件
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.querySelector('.btn-search');
 
-        const updateSearchBtnState = () => {
-            const value = searchInput.value.trim();
-            if (value) {
-                searchBtn.classList.remove('disabled');
-                searchBtn.disabled = false;
-            } else {
-                searchBtn.classList.add('disabled');
-                searchBtn.disabled = true;
-            }
-        };
+        if (searchInput && searchBtn) {
+            const updateSearchBtnState = () => {
+                const value = searchInput.value.trim();
+                if (value) {
+                    searchBtn.classList.remove('disabled');
+                    searchBtn.disabled = false;
+                } else {
+                    searchBtn.classList.add('disabled');
+                    searchBtn.disabled = true;
+                }
+            };
 
-        // 初始化按钮状态
-        updateSearchBtnState();
+            // 初始化按钮状态
+            updateSearchBtnState();
 
-        searchInput.addEventListener('input', updateSearchBtnState);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && searchInput.value.trim()) {
-                this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
-            }
-        });
+            searchInput.addEventListener('input', updateSearchBtnState);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && searchInput.value.trim()) {
+                    this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
+                }
+            });
 
-        searchBtn.addEventListener('click', () => {
-            if (!searchBtn.disabled) {
-                this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
-            }
-        });
+            searchBtn.addEventListener('click', () => {
+                if (!searchBtn.disabled) {
+                    this.eventBus.emit(EventTypes.SEARCH.HOME_SEARCH, searchInput.value.trim());
+                }
+            });
+        }
 
         // 标签栏事件委托（处理标签切换和关闭）
-        document.querySelector('.tab-bar').addEventListener('click', (e) => {
-            const tab = e.target.closest('.tab');
-            if (tab) {
-                const tabId = tab.dataset.tabId;
-                this.eventBus.emit(EventTypes.EDITOR.TAB_SWITCH, tabId);
-            }
-
-            // 关闭按钮
-            const closeBtn = e.target.closest('.tab-close');
-            if (closeBtn) {
-                const tab = closeBtn.closest('.tab');
-                const noteId = tab.dataset.tabId;
-                if (noteId !== 'home') {
-                    this.eventBus.emit(EventTypes.NOTE.CLOSE, noteId);
+        const tabBar = document.querySelector('.tab-bar');
+        if (tabBar) {
+            tabBar.addEventListener('click', (e) => {
+                const tab = e.target.closest('.tab');
+                if (tab) {
+                    const tabId = tab.dataset.tabId;
+                    this.eventBus.emit(EventTypes.EDITOR.TAB_SWITCH, tabId);
                 }
-            }
-        });
+
+                // 关闭按钮
+                const closeBtn = e.target.closest('.tab-close');
+                if (closeBtn) {
+                    const tab = closeBtn.closest('.tab');
+                    const noteId = tab.dataset.tabId;
+                    if (noteId !== 'home') {
+                        this.eventBus.emit(EventTypes.NOTE.CLOSE, noteId);
+                    }
+                }
+            });
+        }
 
         // 笔记编辑器标签栏事件委托
-        document.getElementById('notesContainer').addEventListener('click', (e) => {
-            // 添加标签按钮
-            const addBtn = e.target.closest('.btn-add-tag');
-            if (addBtn) {
-                const editor = addBtn.closest('.note-editor');
-                // 如果是回收站只读笔记，不允许操作
-                if (editor && editor.classList.contains('read-only')) {
+        const notesContainer = document.getElementById('notesContainer');
+        if (notesContainer) {
+            notesContainer.addEventListener('click', (e) => {
+                // 添加标签按钮
+                const addBtn = e.target.closest('.btn-add-tag');
+                if (addBtn) {
+                    const editor = addBtn.closest('.note-editor');
+                    // 如果是回收站只读笔记，不允许操作
+                    if (editor && editor.classList.contains('read-only')) {
+                        return;
+                    }
+                    const tagsBar = addBtn.closest('.note-tags-bar');
+                    const noteId = tagsBar.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
                     return;
                 }
-                const tagsBar = addBtn.closest('.note-tags-bar');
-                const noteId = tagsBar.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
-                return;
-            }
 
-            // 已有标签点击 - 打开选择弹窗修改
-            const tagItem = e.target.closest('.note-tag-item');
-            if (tagItem) {
-                const editor = tagItem.closest('.note-editor');
-                // 如果是回收站只读笔记，不允许操作
-                if (editor && editor.classList.contains('read-only')) {
+                // 已有标签点击 - 打开选择弹窗修改
+                const tagItem = e.target.closest('.note-tag-item');
+                if (tagItem) {
+                    const editor = tagItem.closest('.note-editor');
+                    // 如果是回收站只读笔记，不允许操作
+                    if (editor && editor.classList.contains('read-only')) {
+                        return;
+                    }
+                    const tagsBar = e.target.closest('.note-tags-bar');
+                    const noteId = tagsBar.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
                     return;
                 }
-                const tagsBar = e.target.closest('.note-tags-bar');
-                const noteId = tagsBar.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
-                return;
-            }
-        });
+            });
+        }
 
         // 左侧边栏内容容器事件委托（处理所有动态内容的点击事件）
-        document.querySelector('.sidebar-content').addEventListener('click', (e) => {
-            // 新建标签按钮（标签面板）
-            const addBtn = e.target.closest('.tags-panel .tag-add-btn');
-            if (addBtn) {
-                e.stopPropagation();
-                this.eventBus.emit(EventTypes.TAG.CREATE);
-                return;
-            }
-
-            // 编辑标签按钮（标签面板）
-            const editBtn = e.target.closest('.tag-main-item .edit-btn');
-            if (editBtn) {
-                e.stopPropagation();
-                const tagItem = editBtn.closest('.tag-main-item');
-                if (tagItem) {
-                    const tagId = tagItem.dataset.tagId;
-                    this.eventBus.emit(EventTypes.TAG.EDIT, tagId);
-                }
-                return;
-            }
-
-            // 删除标签按钮（标签面板）
-            const deleteBtn = e.target.closest('.tag-main-item .delete-btn');
-            if (deleteBtn) {
-                e.stopPropagation();
-                const tagItem = deleteBtn.closest('.tag-main-item');
-                if (tagItem) {
-                    const tagId = tagItem.dataset.tagId;
-                    this.eventBus.emit(EventTypes.TAG.DELETE, tagId);
-                }
-                return;
-            }
-
-            // 标签主项点击（筛选该标签下的笔记）
-            const tagMainItem = e.target.closest('.tag-main-item');
-            if (tagMainItem) {
-                // 如果点击的是操作按钮，不处理
-                if (e.target.closest('.tag-actions button')) {
+        const sidebarContent = document.querySelector('.sidebar-content');
+        if (sidebarContent) {
+            sidebarContent.addEventListener('click', (e) => {
+                // 新建标签按钮（标签面板）
+                const addBtn = e.target.closest('.tags-panel .tag-add-btn');
+                if (addBtn) {
+                    e.stopPropagation();
+                    this.eventBus.emit(EventTypes.TAG.CREATE);
                     return;
                 }
-                const tagId = tagMainItem.dataset.tagId;
-                this.eventBus.emit(EventTypes.NOTE.GET.TAG_NOTES, tagId);
-                return;
-            }
 
-            // 标签下的笔记项点击
-            const tagNoteItem = e.target.closest('.tag-note-item');
-            if (tagNoteItem) {
-                const noteId = tagNoteItem.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
-                return;
-            }
+                // 编辑标签按钮（标签面板）
+                const editBtn = e.target.closest('.tag-main-item .edit-btn');
+                if (editBtn) {
+                    e.stopPropagation();
+                    const tagItem = editBtn.closest('.tag-main-item');
+                    if (tagItem) {
+                        const tagId = tagItem.dataset.tagId;
+                        this.eventBus.emit(EventTypes.TAG.EDIT, tagId);
+                    }
+                    return;
+                }
 
-            // 最近笔记项点击
-            const recentNoteItem = e.target.closest('.recent-note-item');
-            if (recentNoteItem) {
-                const noteId = recentNoteItem.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
-                return;
-            }
+                // 删除标签按钮（标签面板）
+                const deleteBtn = e.target.closest('.tag-main-item .delete-btn');
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    const tagItem = deleteBtn.closest('.tag-main-item');
+                    if (tagItem) {
+                        const tagId = tagItem.dataset.tagId;
+                        this.eventBus.emit(EventTypes.TAG.DELETE, tagId);
+                    }
+                    return;
+                }
 
-            // 归档年份标题点击（展开/折叠）
-            const archiveYearHeader = e.target.closest('.archive-year-header');
-            if (archiveYearHeader) {
-                const year = archiveYearHeader.dataset.year;
-                // 如果点击的是展开图标，不阻止冒泡
-                if (!e.target.closest('.archive-expand-icon')) {
+                // 标签主项点击（筛选该标签下的笔记）
+                const tagMainItem = e.target.closest('.tag-main-item');
+                if (tagMainItem) {
+                    // 如果点击的是操作按钮，不处理
+                    if (e.target.closest('.tag-actions button')) {
+                        return;
+                    }
+                    const tagId = tagMainItem.dataset.tagId;
+                    this.eventBus.emit(EventTypes.NOTE.GET.TAG_NOTES, tagId);
+                    return;
+                }
+
+                // 标签下的笔记项点击
+                const tagNoteItem = e.target.closest('.tag-note-item');
+                if (tagNoteItem) {
+                    const noteId = tagNoteItem.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                    return;
+                }
+
+                // 最近笔记项点击
+                const recentNoteItem = e.target.closest('.recent-note-item');
+                if (recentNoteItem) {
+                    const noteId = recentNoteItem.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                    return;
+                }
+
+                // 归档年份标题点击（展开/折叠）
+                const archiveYearHeader = e.target.closest('.archive-year-header');
+                if (archiveYearHeader) {
+                    const year = archiveYearHeader.dataset.year;
+                    // 如果点击的是展开图标，不阻止冒泡
+                    if (!e.target.closest('.archive-expand-icon')) {
+                        this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
+                        const currentPanel = this.leftSidebar.getActivePanelId();
+                        if (currentPanel === 'archive') {
+                            this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
+                        }
+                    }
+                    return;
+                }
+
+                // 归档展开图标点击（展开/折叠）
+                const archiveExpandIcon = e.target.closest('.archive-expand-icon');
+                if (archiveExpandIcon) {
+                    const yearHeader = archiveExpandIcon.closest('.archive-year-header');
+                    const year = yearHeader.dataset.year;
                     this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
                     const currentPanel = this.leftSidebar.getActivePanelId();
                     if (currentPanel === 'archive') {
                         this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
                     }
+                    return;
                 }
-                return;
-            }
 
-            // 归档展开图标点击（展开/折叠）
-            const archiveExpandIcon = e.target.closest('.archive-expand-icon');
-            if (archiveExpandIcon) {
-                const yearHeader = archiveExpandIcon.closest('.archive-year-header');
-                const year = yearHeader.dataset.year;
-                this.leftSidebar.toggleArchiveYearExpanded(parseInt(year));
-                const currentPanel = this.leftSidebar.getActivePanelId();
-                if (currentPanel === 'archive') {
-                    this.eventBus.emit(EventTypes.SIDEBAR.PANEL_CHANGE, 'archive');
+                // 归档笔记项点击
+                const archiveNoteItem = e.target.closest('.archive-note-item');
+                if (archiveNoteItem) {
+                    const noteId = archiveNoteItem.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                    return;
                 }
-                return;
-            }
 
-            // 归档笔记项点击
-            const archiveNoteItem = e.target.closest('.archive-note-item');
-            if (archiveNoteItem) {
-                const noteId = archiveNoteItem.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
-                return;
-            }
-
-            // 回收站笔记项操作按钮点击
-            const trashActionBtn = e.target.closest('.trash-action-btn');
-            if (trashActionBtn) {
-                e.stopPropagation();
-                e.preventDefault();
-                const trashItem = trashActionBtn.closest('.trash-note-item');
-                if (trashItem && trashItem.dataset.noteId) {
-                    const noteId = trashItem.dataset.noteId;
-                    if (trashActionBtn.classList.contains('restore-btn')) {
-                        this.eventBus.emit(EventTypes.TRASH.RESTORE, noteId);
-                    } else if (trashActionBtn.classList.contains('delete-btn')) {
-                        this.eventBus.emit(EventTypes.TRASH.DELETE_PERMANENT, noteId);
+                // 回收站笔记项操作按钮点击
+                const trashActionBtn = e.target.closest('.trash-action-btn');
+                if (trashActionBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const trashItem = trashActionBtn.closest('.trash-note-item');
+                    if (trashItem && trashItem.dataset.noteId) {
+                        const noteId = trashItem.dataset.noteId;
+                        if (trashActionBtn.classList.contains('restore-btn')) {
+                            this.eventBus.emit(EventTypes.TRASH.RESTORE, noteId);
+                        } else if (trashActionBtn.classList.contains('delete-btn')) {
+                            this.eventBus.emit(EventTypes.TRASH.DELETE_PERMANENT, noteId);
+                        }
                     }
+                    return;
                 }
-                return;
-            }
 
-            // 回收站笔记项点击（打开查看）
-            const trashNoteItem = e.target.closest('.trash-note-item');
-            if (trashNoteItem) {
-                const noteId = trashNoteItem.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
-                return;
-            }
+                // 回收站笔记项点击（打开查看）
+                const trashNoteItem = e.target.closest('.trash-note-item');
+                if (trashNoteItem) {
+                    const noteId = trashNoteItem.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                    return;
+                }
 
-            // 搜索结果项点击
-            const searchResultItem = e.target.closest('.search-result-card');
-            if (searchResultItem) {
-                const noteId = searchResultItem.dataset.noteId;
-                this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
-                return;
-            }
-        });
+                // 搜索结果项点击
+                const searchResultItem = e.target.closest('.search-result-card');
+                if (searchResultItem) {
+                    const noteId = searchResultItem.dataset.noteId;
+                    this.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId });
+                    return;
+                }
+            });
+        }
     }
 
     // ========== Editor 方法 ==========
