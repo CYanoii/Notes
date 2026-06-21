@@ -104,6 +104,9 @@ function escapeHtml(text) {
 <style scoped>
 .sidebar-panel {
   padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-title {
@@ -114,6 +117,7 @@ function escapeHtml(text) {
   font-weight: 600;
   color: var(--sidebar-content-text);
   margin-bottom: 12px;
+  padding: 8px 6px 0;
 }
 
 .panel-title i {
@@ -121,13 +125,14 @@ function escapeHtml(text) {
 }
 
 .panel-content {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .trash-notes-list {
   list-style: none;
   padding: 0;
+  padding-left: 8px;
   margin: 0;
 }
 

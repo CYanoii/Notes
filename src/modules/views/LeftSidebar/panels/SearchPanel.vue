@@ -141,7 +141,7 @@ defineExpose({
     <h3 class="panel-title">
       <i class="fas fa-search"></i> 快速搜索
     </h3>
-    <div class="panel-content">
+    <div class="panel-content search-panel-content">
       <div class="search-input-wrapper">
         <input
           type="text"
@@ -205,6 +205,7 @@ defineExpose({
   font-weight: 600;
   color: var(--sidebar-content-text);
   margin-bottom: 12px;
+  padding: 8px 6px 0;
 }
 
 .panel-title i {
@@ -220,12 +221,12 @@ defineExpose({
 
 .search-input-wrapper {
   position: relative;
-  margin-bottom: 12px;
+  margin: 0px 8px 12px 8px;
 }
 
 .sidebar-search-input {
   width: 100%;
-  padding: 8px 12px 8px 32px;
+  padding: 8px 12px 8px 12px;
   background: var(--sidebar-input-bg);
   border: 1px solid var(--sidebar-input-border);
   border-radius: 4px;
@@ -255,12 +256,12 @@ defineExpose({
 
 .search-results-container {
   flex: 1;
-  overflow-y: auto;
 }
 
 .search-results-list {
   list-style: none;
   padding: 0;
+  padding-left: 8px;
   margin: 0;
   display: flex;
   flex-direction: column;

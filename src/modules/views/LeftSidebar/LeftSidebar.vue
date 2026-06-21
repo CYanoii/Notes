@@ -330,7 +330,6 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     background: var(--sidebar-content-bg);
-    padding: 10px;
     transition: all 0.3s ease;
 }
 

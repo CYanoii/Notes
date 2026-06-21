@@ -211,6 +211,7 @@ function handleHeadingClick(heading) {
   font-weight: 600;
   color: var(--sidebar-content-text);
   margin-bottom: 12px;
+  padding: 8px 6px 0;
 }
 
 .panel-title span {
@@ -226,12 +227,12 @@ function handleHeadingClick(heading) {
 .panel-content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
 }
 
 .outline-list {
   display: flex;
   flex-direction: column;
+  padding-left: 8px;
 }
 
 .outline-item {
@@ -239,7 +240,6 @@ function handleHeadingClick(heading) {
   align-items: center;
   padding-top: 6px;
   padding-bottom: 6px;
-  padding-right: 8px;
   cursor: pointer;
   font-size: 13px;
   color: var(--sidebar-content-text);

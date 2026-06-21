@@ -153,6 +153,9 @@ defineExpose({
 <style scoped>
 .sidebar-panel {
   padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-title {
@@ -163,6 +166,7 @@ defineExpose({
   font-weight: 600;
   color: var(--sidebar-content-text);
   margin-bottom: 12px;
+  padding: 8px 6px 0;
 }
 
 .panel-title span {
@@ -190,13 +194,14 @@ defineExpose({
 }
 
 .panel-content {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .tags-list {
   list-style: none;
   padding: 0;
+  padding-left: 8px;
   margin: 0;
 }
 

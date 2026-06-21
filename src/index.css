@@ -60,7 +60,6 @@
   --home-title-color: #2d3748;
   --fab-bg: #4299e1;
   --fab-hover-bg: #3182ce;
-  --scrollbar-track: #f1f1f1;
   --scrollbar-thumb: #c1c1c1;
   --scrollbar-thumb-hover: #a8a8a8;
   /* 首页标签筛选 */
@@ -156,7 +155,6 @@
   --home-title-color: #f7fafc;
   --fab-bg: #4299e1;
   --fab-hover-bg: #3182ce;
-  --scrollbar-track: #2d3339;
   --scrollbar-thumb: #4a5568;
   --scrollbar-thumb-hover: #718096;
   /* 首页标签筛选 */
@@ -225,17 +223,40 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-    border-radius: 4px;
+    background: var(--sidebar-content-bg);
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
+}
+
+/* 面板滚动条 - 默认隐藏，悬停显示 */
+.panel-content {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+}
+
+.panel-content:hover {
+    overflow-y: scroll;
+}
+
+/* SearchPanel 的 panel-content 不需要滚动条效果，由 search-results-container 处理 */
+.panel-content.search-panel-content {
+    overflow: visible;
+}
+
+/* SearchPanel 滚动条由 search-results-container 控制 */
+.search-results-container {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+}
+
+.search-results-container:hover {
+    overflow-y: scroll;
 }
 
 /* 拖拽时禁止选中文本 */
