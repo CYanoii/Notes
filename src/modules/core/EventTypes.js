@@ -32,6 +32,7 @@ export const EventTypes = {
   // 编辑区事件
   EDITOR: {
     SWITCH_TAB: 'editor:switchTab',
+    SCROLL_TO: 'editor:scrollTo'
   },
 
   // 侧边栏事件

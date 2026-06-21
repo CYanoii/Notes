@@ -301,6 +301,10 @@ export class UIManager {
         this.editor.updateEditorContent(noteId, newContent);
     }
 
+    editor_scrollToPosition(noteId, index) {
+        this.editor.scrollToPosition(noteId, index);
+    }
+
     // ========== TabBar 方法 ==========
 
     tabBar_createNoteTab(noteData) {

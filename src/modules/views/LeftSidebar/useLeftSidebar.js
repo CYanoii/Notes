@@ -28,6 +28,7 @@ const panelData = reactive({
   tags: { tags: [], tagCounts: {}, tagNotes: {} },
   archive: { years: [] },
   recent: { notes: [] },
+  outline: { headings: [], content: '' },
   trash: { notes: [] }
 })
 

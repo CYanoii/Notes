@@ -39,7 +39,13 @@ export class NoteController {
         this.eventBus.on(EventTypes.NOTE.DELETE, (noteId) => this.deleteNote(noteId));
         this.eventBus.on(EventTypes.NOTE.UPDATE.TITLE, (noteId, newTitle) => this.updateNoteTitle(noteId, newTitle));
         this.eventBus.on(EventTypes.NOTE.UPDATE.EXCERPT, (noteId, newExcerpt) => this.updateNoteExcerpt(noteId, newExcerpt));
-        this.eventBus.on(EventTypes.NOTE.UPDATE.CONTENT, (noteId, newContent) => this.updateNoteContent(noteId, newContent));
+        this.eventBus.on(EventTypes.NOTE.UPDATE.CONTENT, (noteId, newContent) => {
+            this.updateNoteContent(noteId, newContent)
+            // 如果大纲面板可见，更新大纲
+            if (this.uiManager.leftSidebar_getActivePanelId() === 'outline') {
+                this.refreshOutline(noteId)
+            }
+        });
 
         // 左侧边栏事件
         this.eventBus.on(EventTypes.SIDEBAR.NAV_CLICK, (panelId) => this.handleNavClick(panelId));
@@ -54,6 +60,9 @@ export class NoteController {
             } else {
                 this.switchToNote(tabId);
             }
+        });
+        this.eventBus.on(EventTypes.EDITOR.SCROLL_TO, ({ noteId, index }) => {
+            this.uiManager.editor_scrollToPosition(noteId, index)
         });
 
         // 搜索事件
@@ -175,6 +184,27 @@ export class NoteController {
                     console.error('加载回收站笔记失败:', error);
                     this.uiManager.toast_show('加载回收站失败', 'error');
                     this.uiManager.leftSidebar_renderPanelContent(panelId, []);
+                }
+                break;
+            case 'outline':
+                try {
+                    // 获取当前笔记内容
+                    const currentNoteId = this.noteService.getCurrentNoteId();
+                    if (currentNoteId) {
+                        const note = this.noteService.getOpenNoteById(currentNoteId);
+                        if (note) {
+                            this.uiManager.leftSidebar_renderPanelContent(panelId, {
+                                content: note.content || ''
+                            });
+                        } else {
+                            this.uiManager.leftSidebar_renderPanelContent(panelId, { content: '' });
+                        }
+                    } else {
+                        this.uiManager.leftSidebar_renderPanelContent(panelId, { content: '' });
+                    }
+                } catch (error) {
+                    console.error('加载大纲失败:', error);
+                    this.uiManager.leftSidebar_renderPanelContent(panelId, { content: '' });
                 }
                 break;
             default:
@@ -314,6 +344,23 @@ export class NoteController {
     }
 
     /**
+     * 刷新大纲面板
+     * @param {string} noteId 笔记ID
+     */
+    async refreshOutline(noteId) {
+        try {
+            const note = this.noteService.getOpenNoteById(noteId)
+            if (note) {
+                this.uiManager.leftSidebar_renderPanelContent('outline', {
+                    content: note.content || ''
+                })
+            }
+        } catch (error) {
+            console.error('刷新大纲失败:', error)
+        }
+    }
+
+    /**
      * 处理标签筛选状态变化
      * @param {string} tagId 标签ID
      * @param {string} newState 新状态
@@ -397,6 +444,11 @@ export class NoteController {
         // 更新侧边栏搜索结果选中状态
         this.uiManager.leftSidebar_setActiveSearchResult(noteId);
         this.uiManager.leftSidebar_refreshSearchResultSelection();
+
+        // 如果大纲面板可见，刷新大纲
+        if (this.uiManager.leftSidebar_getActivePanelId() === 'outline') {
+            this.refreshOutline(noteId);
+        }
     }
 
     /**
@@ -409,6 +461,9 @@ export class NoteController {
 
         // 清除搜索结果选中状态
         this.uiManager.leftSidebar_clearSearchResultSelection();
+
+        // 清空大纲数据
+        this.uiManager.leftSidebar_renderPanelContent('outline', { headings: [], content: '' });
     }
 
     /**

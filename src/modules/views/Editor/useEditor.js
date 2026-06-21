@@ -127,6 +127,34 @@ export function useEditor() {
   }
 
   /**
+   * 滚动到文档指定标题
+   * @param {string|number} noteId 笔记ID
+   * @param {number} index 标题在列表中的索引
+   */
+  function scrollToPosition(noteId, index) {
+    const vditor = getVditor(noteId)
+    if (!vditor) return
+
+    try {
+      const container = document.getElementById(`vditor-${noteId}`)
+      if (!container) return
+
+      // 聚焦编辑器
+      if (typeof vditor.focus === 'function') {
+        vditor.focus()
+      }
+
+      // 查找标题元素
+      const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      if (headings.length > 0 && index < headings.length) {
+        headings[index].scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    } catch (e) {
+      console.warn('[useEditor] Failed to scroll to position:', e)
+    }
+  }
+
+  /**
    * 设置聚焦状态
    * @param {boolean} focused 是否聚焦
    */
@@ -179,6 +207,7 @@ export function useEditor() {
     updateNoteTags,
     setVditor,
     getVditor,
+    scrollToPosition,
     setFocused,
     getActiveNoteId,
     hasEditor,
