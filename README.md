@@ -4,12 +4,12 @@
 
 ## 功能特性
 
-- **左侧边栏导航** - 最近笔记/标签分类/归档/回收站，清晰的功能分区
+- **左侧边栏导航** - 最近笔记/标签分类/归档/回收站/大纲，清晰的功能分区
 - **标签分类管理** - 支持为笔记添加标签，按标签筛选笔记
 - **回收站** - 删除笔记移入回收站，支持恢复或永久删除，误删可找回
 - **归档** - 按创建日期（年-月）分组归档展示笔记
 - **多页签管理** - 支持同时打开多个笔记，通过页签快速切换
-- **Markdown 编辑器** - 基于 Vditor 的 Markdown 编辑体验
+- **Markdown 编辑器** - 基于 Vditor 的 Markdown 编辑体验，支持即时渲染
 - **本地存储** - 笔记保存在本地文件系统，安全可控
 - **笔记列表** - 首页显示所有笔记列表，支持筛选
 - **实时自动保存** - 编辑时自动保存，无需手动操作
@@ -17,6 +17,9 @@
 - **Toast 消息提示** - 操作反馈友好
 - **Modal 模态框** - 输入提示/确认对话框/标签选择/设置浮出
 - **系统托盘** - 支持最小化到托盘，托盘菜单包含显示窗口/退出选项
+- **笔记互链** - 支持 `[[笔记ID|标题]]` 语法在笔记间相互引用跳转
+- **大纲面板** - 左侧边栏显示当前笔记的 Markdown 大纲结构
+- **深色/浅色主题** - 支持切换应用主题
 
 ## 技术栈
 
@@ -61,58 +64,62 @@ CYanote/
         │
         ├── controllers/      # 控制器层（业务逻辑编排，接收 UI 事件）
         │   ├── NoteController.js       # 笔记增删改查业务流程编排
-        │   ├── TagController.js       # 标签增删改查业务流程编排
-        │   └── PageStateController.js # 页面状态恢复编排
+        │   ├── TagController.js        # 标签增删改查业务流程编排
+        │   └── PageStateController.js  # 页面状态恢复编排
         │
         ├── coordinators/     # 协调器层（处理跨领域交叉业务）
-        │   └── NoteTagCoordinator.js # 笔记与标签的交叉逻辑（搜索、绑定、批量操作）
+        │   └── NoteTagCoordinator.js   # 笔记与标签的交叉逻辑（搜索、绑定、批量操作）
         │
-        ├── views/            # 视图层（Vue SFC + 组合式函数）
-        │   ├── App.vue                    # Vue 根组件
-        │   ├── UIManager.js               # UI 管理器（代理各 composables 方法）
-        │   ├── Editor/
-        │   │   ├── Editor.vue            # 编辑器视图
-        │   │   └── useEditor.js         # 编辑器组合式函数
-        │   ├── HomePage/
-        │   │   └── HomePage.vue          # 首页视图
-        │   ├── LeftSidebar/
-        │   │   ├── LeftSidebar.vue       # 左侧边栏组件
-        │   │   ├── useLeftSidebar.js     # 左侧边栏组合式函数
-        │   │   └── panels/               # 侧边栏面板组件
-        │   │       ├── ArchivePanel.vue   # 归档面板
-        │   │       ├── RecentPanel.vue    # 最近笔记面板
-        │   │       ├── SearchPanel.vue    # 搜索面板
-        │   │       ├── TagsPanel.vue      # 标签面板
-        │   │       └── TrashPanel.vue     # 回收站面板
-        │   ├── Modal/
-        │   │   ├── Modal.vue             # 模态框组件
-        │   │   ├── ModalContainer.vue    # 模态框容器
-        │   │   ├── useModal.js           # 模态框组合式函数
-        │   │   └── types/                # 模态框类型组件
-        │   │       ├── ConfirmModal.vue  # 确认对话框
-        │   │       ├── PromptModal.vue    # 输入提示框
-        │   │       ├── SettingsModal.vue # 设置弹窗
-        │   │       └── TagSelectionModal.vue # 标签选择弹窗
-        │   ├── NoteList/
-        │   │   ├── NoteList.vue          # 笔记列表组件
-        │   │   └── useNoteList.js        # 笔记列表组合式函数
-        │   ├── TabBar/
-        │   │   ├── TabBar.vue             # 标签页栏组件
-        │   │   └── useTabBar.js          # 标签页栏组合式函数
-        │   ├── TagFilter/
-        │   │   ├── TagFilter.vue         # 标签筛选栏组件
-        │   │   └── useTagFilter.js       # 标签筛选组合式函数
-        │   ├── TitleBar/
-        │   │   └── TitleBar.vue          # 标题栏组件
-        │   └── Toast/
-        │       ├── Toast.vue             # Toast 单个消息组件
-        │       ├── ToastContainer.vue    # Toast 容器组件
-        │       └── useToast.js           # Toast 组合式函数
+        ├── utils/            # 工具函数
+        │   ├── formatters.js  # 日期格式化
+        │   ├── validators.js  # 数据验证
+        │   └── helpers.js     # 防抖、HTML 转义（防XSS）
         │
-        └── utils/             # 工具函数
-            ├── formatters.js   # 日期格式化
-            ├── validators.js   # 数据验证
-            └── helpers.js      # 防抖、HTML 转义（防XSS）
+        └── views/            # 视图层（Vue SFC + 组合式函数）
+            ├── App.vue                    # Vue 根组件
+            ├── UIManager.js               # UI 管理器（代理各 composables 方法）
+            ├── Editor/
+            │   ├── Editor.vue            # 编辑器视图
+            │   ├── useEditor.js          # 编辑器组合式函数
+            │   └── components/
+            │       └── NoteSuggestionPopup.vue  # 笔记互链选择浮层
+            ├── HomePage/
+            │   └── HomePage.vue          # 首页视图
+            ├── LeftSidebar/
+            │   ├── LeftSidebar.vue       # 左侧边栏组件
+            │   ├── useLeftSidebar.js     # 左侧边栏组合式函数
+            │   ├── panelRegistry.js      # 面板注册表
+            │   └── panels/               # 侧边栏面板组件
+            │       ├── ArchivePanel.vue   # 归档面板
+            │       ├── RecentPanel.vue    # 最近笔记面板
+            │       ├── SearchPanel.vue    # 搜索面板
+            │       ├── TagsPanel.vue      # 标签面板
+            │       ├── TrashPanel.vue     # 回收站面板
+            │       └── OutlinePanel.vue   # 大纲面板
+            ├── Modal/
+            │   ├── Modal.vue             # 模态框组件
+            │   ├── ModalContainer.vue    # 模态框容器
+            │   ├── useModal.js           # 模态框组合式函数
+            │   └── types/                # 模态框类型组件
+            │       ├── ConfirmModal.vue   # 确认对话框
+            │       ├── PromptModal.vue    # 输入提示框
+            │       ├── SettingsModal.vue  # 设置弹窗
+            │       └── TagSelectionModal.vue # 标签选择弹窗
+            ├── NoteList/
+            │   ├── NoteList.vue          # 笔记列表组件
+            │   └── useNoteList.js        # 笔记列表组合式函数
+            ├── TabBar/
+            │   ├── TabBar.vue            # 标签页栏组件
+            │   └── useTabBar.js          # 标签页栏组合式函数
+            ├── TagFilter/
+            │   ├── TagFilter.vue         # 标签筛选栏组件
+            │   └── useTagFilter.js       # 标签筛选组合式函数
+            ├── TitleBar/
+            │   └── TitleBar.vue          # 标题栏组件（包含标签页）
+            └── Toast/
+                ├── Toast.vue             # Toast 单个消息组件
+                ├── ToastContainer.vue    # Toast 容器组件
+                └── useToast.js           # Toast 组合式函数
 ```
 
 ### 架构设计
@@ -160,7 +167,7 @@ CYanote/
 
 | 模块 | 职责 |
 |------|------|
-| `coordinators/NoteTagCoordinator.js` | 仅依赖 Service 层，处理笔记+标签**交叉业务**（搜索、绑定标签、批量移除、刷新计数） |
+| `coordinators/NoteTagCoordinator.js` | 仅依赖 Service 层，处理笔记+标签**交叉业务**（搜索、绑定、批量移除、刷新计数） |
 
 **视图层 (views/)**
 
@@ -174,10 +181,10 @@ CYanote/
 | `TabBar/` | `useTabBar.js` | 标签页栏（创建/切换/关闭/拖拽排序） |
 | `NoteList/` | `useNoteList.js` | 笔记列表组件 |
 | `TagFilter/` | `useTagFilter.js` | 标签筛选栏 |
-| `LeftSidebar/` | `useLeftSidebar.js` | 左侧边栏 + 各功能面板（搜索/标签/归档/回收站） |
+| `LeftSidebar/` | `useLeftSidebar.js` | 左侧边栏 + 各功能面板（搜索/标签/归档/回收站/大纲） |
 | `Modal/` | `useModal.js` | 模态框（confirm/prompt/标签选择/设置） |
 | `Toast/` | `useToast.js` | Toast 消息提示 |
-| `TitleBar/` | - | 窗口标题栏（自定义标题栏） |
+| `TitleBar/` | - | 窗口标题栏（包含标签页） |
 | `HomePage/` | - | 首页视图 |
 
 **工具层 (utils/)**
