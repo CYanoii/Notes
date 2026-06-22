@@ -631,11 +631,8 @@ async function initVditor(noteId, container, noteData) {
       { name: 'link', tipPosition: 's', hotkey: '⌘K' },
       { name: 'table', tipPosition: 's', hotkey: '⌘T' },
       '|',
-      { name: 'outline', tipPosition: 'sw' },
-      { name: 'edit-mode', tipPosition: 'sw' },
       { name: 'preview', tipPosition: 'sw' },
       { name: 'fullscreen', tipPosition: 'sw' },
-      '|',
       {
         hotkey: '⇧⌘R',
         name: 'recovery',
