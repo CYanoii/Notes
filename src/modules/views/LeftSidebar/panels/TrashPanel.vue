@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
+import './panels-shared.css'
 
 const props = defineProps({
   panelId: {
@@ -102,37 +103,6 @@ function escapeHtml(text) {
 </template>
 
 <style scoped>
-.sidebar-panel {
-  padding: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--sidebar-content-text);
-  margin-bottom: 12px;
-  padding: 8px 6px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
-}
-
-.panel-title i {
-  color: var(--accent);
-}
-
-.panel-content {
-  flex: 1;
-  min-height: 0;
-}
-
 .trash-notes-list {
   list-style: none;
   padding: 0;
@@ -205,15 +175,5 @@ function escapeHtml(text) {
 
 .delete-btn:hover {
   color: #e53e3e;
-}
-
-.panel-empty {
-  text-align: center;
-  color: var(--sidebar-content-text-muted);
-  font-size: 13px;
-  padding: 20px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>

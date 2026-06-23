@@ -1,6 +1,7 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
+import './panels-shared.css'
 
 const props = defineProps({
   panelId: {
@@ -151,36 +152,14 @@ defineExpose({
 </template>
 
 <style scoped>
-.sidebar-panel {
-  padding: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .panel-title {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--sidebar-content-text);
-  margin-bottom: 12px;
-  padding: 8px 6px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
 }
 
 .panel-title span {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.panel-title i {
-  color: var(--accent);
 }
 
 .tag-add-btn {
@@ -195,11 +174,6 @@ defineExpose({
 
 .tag-add-btn:hover {
   color: var(--accent);
-}
-
-.panel-content {
-  flex: 1;
-  min-height: 0;
 }
 
 .tags-list {
@@ -315,15 +289,5 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.panel-empty {
-  text-align: center;
-  color: var(--sidebar-content-text-muted);
-  font-size: 13px;
-  padding: 20px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>
