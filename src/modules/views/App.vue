@@ -54,6 +54,11 @@ onMounted(async () => {
   }
   isMaximized.value = await window.electronAPI.isWindowMaximized()
 
+  // 监听窗口最大化状态变化（双击标题栏等系统操作）
+  window.electronAPI.onWindowMaximized((maximized) => {
+    isMaximized.value = maximized
+  })
+
   // Toast 和 Modal 使用 <Teleport> 到 body，需单独挂载
   const toastRoot = document.getElementById('vue-toast-root')
   if (toastRoot) {
@@ -72,23 +77,9 @@ onMounted(async () => {
 })
 
 // 窗口控制函数
-function handleMinimize() {
-  window.electronAPI.minimizeWindow()
-}
-
-async function handleMaximize() {
-  await window.electronAPI.maximizeWindow()
-  isMaximized.value = await window.electronAPI.isWindowMaximized()
-}
-
-function handleClose() {
-  window.electronAPI.closeWindow()
-}
-
-// 双击标题栏区域最大化/还原窗口
-function handleHeaderDoubleClick() {
-  handleMaximize()
-}
+const handleMinimize = () => window.electronAPI.minimizeWindow()
+const handleMaximize = () => window.electronAPI.maximizeWindow()
+const handleClose = () => window.electronAPI.closeWindow()
 </script>
 
 <template>
@@ -99,7 +90,7 @@ function handleHeaderDoubleClick() {
       <div class="resize-handle" id="resizeHandle"></div>
 
       <div class="main-container">
-        <header class="header" @dblclick="handleHeaderDoubleClick">
+        <header class="header" @dblclick="handleMaximize">
           <div class="tab-bar-wrapper">
             <TabBar class="tab-bar" />
           </div>

@@ -46,5 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.invoke('window:close'),
   isWindowMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   setWindowTitle: (title) => ipcRenderer.invoke('window:setTitle', title),
-  getFolderName: () => ipcRenderer.invoke('window:getFolderName')
+  getFolderName: () => ipcRenderer.invoke('window:getFolderName'),
+  onWindowMaximized: (callback) => {
+    ipcRenderer.send('window:listenState');
+    ipcRenderer.on('window:maximized', (event, isMaximized) => callback(isMaximized));
+  }
 });

@@ -202,6 +202,15 @@ async function setupIpcHandlers() {
     return win ? win.isMaximized() : false;
   });
 
+  // 监听窗口最大化/还原事件，通知渲染进程
+  ipcMain.on('window:listenState', (event) => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (!win) return;
+    event.sender.send('window:maximized', win.isMaximized());
+    win.on('maximize', () => event.sender.send('window:maximized', true));
+    win.on('unmaximize', () => event.sender.send('window:maximized', false));
+  });
+
   ipcMain.handle('window:setTitle', (event, title) => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.setTitle(title);
