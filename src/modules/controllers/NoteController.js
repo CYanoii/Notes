@@ -280,6 +280,8 @@ export class NoteController {
             let notes = await this.noteService.getAllNotes();
             // 应用标签筛选
             notes = this.applyTagFilter(notes);
+            // 补充标签数据
+            notes = await this.noteTagCoordinator.enrichNotesWithTags(notes);
             this.uiManager.noteList_renderNotes(notes);
         } catch (error) {
             console.error('加载所有笔记失败:', error);

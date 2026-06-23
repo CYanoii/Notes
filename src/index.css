@@ -82,6 +82,8 @@
   --note-card-title-color: #2d3748;
   --note-card-excerpt-color: #718096;
   --note-card-meta-color: #a0aec0;
+  --note-card-tag-color: #4a5568;
+  --note-card-tag-bg: #edf2f7;
   /* Modal */
   --modal-overlay-bg: rgba(0, 0, 0, 0.5);
   --modal-bg: #ffffff;
@@ -177,6 +179,8 @@
   --note-card-title-color: #e2e8f0;
   --note-card-excerpt-color: #a0aec0;
   --note-card-meta-color: #718096;
+  --note-card-tag-color: #a0aec0;
+  --note-card-tag-bg: #4a5568;
   /* Modal */
   --modal-overlay-bg: rgba(0, 0, 0, 0.7);
   --modal-bg: #2a2a2a;

@@ -224,7 +224,26 @@ export class NoteTagCoordinator {
      */
     async refreshHomeNotes() {
         const notes = await this.noteService.getAllNotes();
-        this.uiManager.noteList_renderNotes(notes);
+        const enrichedNotes = await this.enrichNotesWithTags(notes);
+        this.uiManager.noteList_renderNotes(enrichedNotes);
+    }
+
+    /**
+     * 为笔记列表补充标签数据
+     * @param {Array} notes 笔记列表
+     * @returns {Array} 补充标签数据后的笔记列表
+     */
+    async enrichNotesWithTags(notes) {
+        const allTags = await this.tagService.getAllTags();
+        const tagMap = new Map(allTags.map(tag => [tag.id, tag]));
+        for (const note of notes) {
+            if (note.tags && note.tags.length > 0) {
+                note.tagsData = note.tags
+                    .map(tagId => tagMap.get(tagId))
+                    .filter(tag => tag !== undefined);
+            }
+        }
+        return notes;
     }
 
     /**
