@@ -84,6 +84,10 @@ function escapeHtml(text) {
   color: var(--sidebar-content-text);
   margin-bottom: 12px;
   padding: 8px 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .panel-title i {
@@ -136,5 +140,8 @@ function escapeHtml(text) {
   color: var(--sidebar-content-text-muted);
   font-size: 13px;
   padding: 20px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
