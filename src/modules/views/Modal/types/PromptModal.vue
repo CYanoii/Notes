@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   modal: { type: Object, required: true }
@@ -7,11 +7,47 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'confirm'])
 
+// 预设颜色列表 - 20种清新、易区分的颜色（按色相排序）
+const PRESET_COLORS = [
+  '#2196F3', // 纯蓝
+  '#03A9F4', // 天蓝
+  '#00BCD4', // 青色
+  '#009688', // 蓝绿
+  '#4CAF50', // 绿色
+  '#8BC34A', // 草绿
+  '#CDDC39', // 柠檬绿
+  '#FF9800', // 橙色
+  '#FFC107', // 琥珀黄
+  '#FFD740', // 金色
+  '#FF5722', // 橙红
+  '#F44336', // 红色
+  '#E91E63', // 玫红
+  '#F06292', // 粉色
+  '#9C27B0', // 紫色
+  '#673AB7', // 靛蓝
+  '#3F51B5', // 靛青
+  '#795548', // 棕色
+  '#607D8B', // 蓝灰
+  '#BCAAA4'  // 藕荷
+]
+
+// 计算当前选中的颜色
+const selectedColor = ref(props.modal.defaultColor || PRESET_COLORS[0])
+
+// 点击颜色圆点
+function selectColor(color) {
+  selectedColor.value = color
+}
+
+// 将颜色分成两排
+const firstRowColors = computed(() => PRESET_COLORS.slice(0, 10))
+const secondRowColors = computed(() => PRESET_COLORS.slice(10))
+
 const localValue = ref(props.modal.defaultValue || '')
 
 function handleConfirm() {
   const value = localValue.value.trim()
-  emit('confirm', props.modal.id, value || null)
+  emit('confirm', props.modal.id, value || null, selectedColor.value)
 }
 
 function handleCancel() {
@@ -36,6 +72,36 @@ function handleCancel() {
         @keydown.enter="handleConfirm"
         @keydown.esc="handleCancel"
       >
+      <div class="color-picker">
+        <div class="color-row">
+          <button
+            v-for="color in firstRowColors"
+            :key="color"
+            class="color-dot"
+            :class="{ selected: selectedColor === color }"
+            :style="{ backgroundColor: color }"
+            @click="selectColor(color)"
+          >
+            <svg v-if="selectedColor === color" class="check-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+        <div class="color-row">
+          <button
+            v-for="color in secondRowColors"
+            :key="color"
+            class="color-dot"
+            :class="{ selected: selectedColor === color }"
+            :style="{ backgroundColor: color }"
+            @click="selectColor(color)"
+          >
+            <svg v-if="selectedColor === color" class="check-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-cancel" @click="handleCancel">取消</button>
@@ -98,6 +164,56 @@ function handleCancel() {
 .modal-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.color-picker {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.check-icon {
+  animation: checkBounce 0.15s ease-out;
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-footer {

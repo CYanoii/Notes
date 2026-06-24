@@ -26,8 +26,12 @@ export function useModal() {
 
   /**
    * 显示输入提示模态框
+   * @param {string} title 标题
+   * @param {string} defaultValue 默认值
+   * @param {Object} options 选项 { defaultColor: string|null }
    */
-  function prompt(title, defaultValue = '') {
+  function prompt(title, defaultValue = '', options = {}) {
+    const { defaultColor = null } = options
     return new Promise(resolve => {
       const id = ++state.modalId
       state.modals.push({
@@ -35,6 +39,7 @@ export function useModal() {
         type: 'prompt',
         title,
         defaultValue,
+        defaultColor,
         resolve,
         show: true
       })

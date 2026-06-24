@@ -13,8 +13,8 @@ function handleClose(id, result) {
   close(id, result)
 }
 
-function handleConfirm(id, result) {
-  close(id, result)
+function handleConfirm(id, result, color) {
+  close(id, { value: result, color })
 }
 
 function handleTagToggle(id, tagId) {

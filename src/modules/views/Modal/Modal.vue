@@ -24,7 +24,7 @@ function handleOverlayClick(e) {
         v-if="modal.type === 'prompt'"
         :modal="modal"
         @close="(id) => emit('close', id)"
-        @confirm="(id, val) => emit('confirm', id, val)"
+        @confirm="(id, val, color) => emit('confirm', id, val, color)"
       />
       <ConfirmModal
         v-else-if="modal.type === 'confirm'"

@@ -41,16 +41,17 @@ export class TagController {
      * 处理创建标签
      */
     async createTag() {
-        const name = await this.uiManager.modal_prompt('新建标签');
-        if (!name) return;
+        const result = await this.uiManager.modal_prompt('新建标签');
+        if (!result) return;
 
-        if (name.trim().length === 0) {
+        const { value: name, color } = result;
+        if (!name || name.trim().length === 0) {
             this.uiManager.toast_show('标签名称不能为空', 'warning');
             return;
         }
 
         try {
-            await this.tagService.createTag(name.trim());
+            await this.tagService.createTag(name.trim(), color);
             await this.noteTagCoordinator.refreshTagsList();
             await this.noteTagCoordinator.refreshTagRelatedHomeDisplay();
             this.uiManager.toast_show('标签创建成功', 'success');
@@ -71,15 +72,16 @@ export class TagController {
                 return;
             }
 
-            const newName = await this.uiManager.modal_prompt('编辑标签', tag.name);
-            if (newName === null) return;
+            const result = await this.uiManager.modal_prompt('编辑标签', tag.name, { defaultColor: tag.color });
+            if (result === null) return;
 
+            const { value: newName, color } = result;
             if (newName.trim().length === 0) {
                 this.uiManager.toast_show('标签名称不能为空', 'warning');
                 return;
             }
 
-            await this.tagService.updateTag(tagId, { name: newName.trim() });
+            await this.tagService.updateTag(tagId, { name: newName.trim(), color });
             await this.noteTagCoordinator.refreshTagsList();
             // 热更新所有已打开笔记的标签显示
             await this.noteTagCoordinator.refreshAllOpenNotesTags();

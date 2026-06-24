@@ -426,8 +426,8 @@ export class UIManager {
 
     // ========== Modal 方法 ==========
 
-    modal_prompt(title, defaultValue = '') {
-        return this.modal.prompt(title, defaultValue);
+    modal_prompt(title, defaultValue = '', options = {}) {
+        return this.modal.prompt(title, defaultValue, options);
     }
 
     modal_confirm(message) {
