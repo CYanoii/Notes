@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, computed, watch, ref } from 'vue'
+import { reactive, computed, watch, ref, onMounted, onUnmounted } from 'vue'
 import { getAllPanels, getVisibilitySettings, isPanelVisible } from '../../LeftSidebar/panelRegistry.js'
 
 const props = defineProps({
@@ -7,6 +7,23 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'updatePath', 'selectFolder', 'clearPath'])
+
+// 大纲导航
+const outlineItems = [
+  { id: 'theme', label: '主题' },
+  { id: 'data-path', label: '数据目录' },
+  { id: 'panels', label: '侧边栏面板' },
+  { id: 'editor-style', label: '编辑器样式' }
+]
+const activeOutlineId = ref('theme')
+
+function scrollToSection(sectionId) {
+  const el = document.getElementById(`settings-${sectionId}`)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    activeOutlineId.value = sectionId
+  }
+}
 
 // 面板可见性临时设置 - 仅在点击应用后生效
 const availablePanels = getAllPanels()
@@ -91,6 +108,38 @@ async function handleSelectFolder() {
 function handleClearPath() {
   emit('updatePath', props.modal.id, '')
 }
+
+// 监听滚动更新激活的大纲项
+function handleScroll() {
+  const content = document.querySelector('.settings-content')
+  if (!content) return
+
+  const scrollTop = content.scrollTop
+  const sections = ['theme', 'data-path', 'panels', 'editor-style']
+
+  for (let i = sections.length - 1; i >= 0; i--) {
+    const el = document.getElementById(`settings-${sections[i]}`)
+    if (el && el.offsetTop <= scrollTop + 60) {
+      activeOutlineId.value = sections[i]
+      return
+    }
+  }
+  activeOutlineId.value = sections[0]
+}
+
+onMounted(() => {
+  const content = document.querySelector('.settings-content')
+  if (content) {
+    content.addEventListener('scroll', handleScroll)
+  }
+})
+
+onUnmounted(() => {
+  const content = document.querySelector('.settings-content')
+  if (content) {
+    content.removeEventListener('scroll', handleScroll)
+  }
+})
 </script>
 
 <template>
@@ -102,137 +151,154 @@ function handleClearPath() {
       </button>
     </div>
     <div class="settings-popover-body">
-      <!-- 主题设置 -->
-      <div class="settings-item settings-theme-item">
-        <label class="settings-label">主题</label>
-        <div class="theme-options">
-          <label class="theme-option" :class="{ active: tempTheme === 'light' }">
-            <input type="radio" v-model="tempTheme" value="light" />
-            <div class="theme-preview theme-preview-light">
-              <div class="preview-titlebar"></div>
-              <div class="preview-sidebar"></div>
-              <div class="preview-editor"></div>
-            </div>
-            <span class="theme-name">浅色主题</span>
-          </label>
-          <label class="theme-option" :class="{ active: tempTheme === 'dark' }">
-            <input type="radio" v-model="tempTheme" value="dark" />
-            <div class="theme-preview theme-preview-dark">
-              <div class="preview-titlebar"></div>
-              <div class="preview-sidebar"></div>
-              <div class="preview-editor"></div>
-            </div>
-            <span class="theme-name">深色主题</span>
-          </label>
-        </div>
-      </div>
+      <!-- 左侧大纲导航 -->
+      <nav class="settings-outline">
+        <a
+          v-for="item in outlineItems"
+          :key="item.id"
+          class="outline-item"
+          :class="{ active: activeOutlineId === item.id }"
+          :href="`#settings-${item.id}`"
+          @click.prevent="scrollToSection(item.id)"
+        >
+          {{ item.label }}
+        </a>
+      </nav>
 
-      <!-- 数据目录设置 -->
-      <div class="settings-item" v-if="modal.config">
-        <label class="settings-label">数据目录</label>
-        <div class="settings-path-row">
-          <input
-            type="text"
-            class="settings-path-input"
-            :value="modal.tempDataRootPath"
-            placeholder="留空使用默认路径"
-            readonly
-          >
-          <button class="settings-select-btn" @click="handleSelectFolder">选择</button>
-          <button class="settings-clear-btn" title="清除并使用默认路径" @click="handleClearPath">×</button>
-        </div>
-      </div>
-      <div v-else class="settings-loading">加载中...</div>
-
-      <!-- 侧边栏面板可见性设置 -->
-      <div class="settings-item settings-panels-item">
-        <label class="settings-label">侧边栏面板</label>
-        <div class="settings-toggles">
-                    <div
-            v-for="panel in availablePanels"
-            :key="panel.id"
-            class="settings-toggle-row"
-            :class="{ 'cannot-hide-row': panel.cannotHide }"
-          >
-            <span class="toggle-label">
-              <i :class="panel.icon"></i>
-              {{ panel.label }}
-              <i v-if="panel.cannotHide" class="fas fa-lock lock-icon" title="无法隐藏"></i>
-            </span>
-            <label class="toggle-switch" :class="{ 'cannot-hide': panel.cannotHide }">
-              <input
-                type="checkbox"
-                :checked="tempPanelVisibility[panel.id] !== false"
-                :disabled="panel.cannotHide"
-                @change="handlePanelVisibilityChange(panel.id, $event, panel.cannotHide)"
-              >
-              <span class="toggle-slider"></span>
+      <!-- 右侧设置内容 -->
+      <div class="settings-content">
+        <!-- 主题设置 -->
+        <div id="settings-theme" class="settings-item settings-theme-item">
+          <label class="settings-label">主题</label>
+          <div class="theme-options">
+            <label class="theme-option" :class="{ active: tempTheme === 'light' }">
+              <input type="radio" v-model="tempTheme" value="light" />
+              <div class="theme-preview theme-preview-light">
+                <div class="preview-titlebar"></div>
+                <div class="preview-sidebar"></div>
+                <div class="preview-editor"></div>
+              </div>
+              <span class="theme-name">浅色主题</span>
+            </label>
+            <label class="theme-option" :class="{ active: tempTheme === 'dark' }">
+              <input type="radio" v-model="tempTheme" value="dark" />
+              <div class="theme-preview theme-preview-dark">
+                <div class="preview-titlebar"></div>
+                <div class="preview-sidebar"></div>
+                <div class="preview-editor"></div>
+              </div>
+              <span class="theme-name">深色主题</span>
             </label>
           </div>
         </div>
-      </div>
 
-      <!-- 编辑器样式设置 -->
-      <div class="settings-item settings-editor-style-item">
-         <div class="style-settings">
-          <div class="style-header">
-            <span class="style-section-title">编辑器样式</span>
-            <button class="btn btn-restore-small" @click="handleRestoreDefaults" title="恢复默认">
-              <i class="fas fa-undo"></i> 恢复默认
-            </button>
+        <!-- 数据目录设置 -->
+        <div id="settings-data-path" class="settings-item" v-if="modal.config">
+          <label class="settings-label">数据目录</label>
+          <div class="settings-path-row">
+            <input
+              type="text"
+              class="settings-path-input"
+              :value="modal.tempDataRootPath"
+              placeholder="留空使用默认路径"
+              readonly
+            >
+            <button class="settings-select-btn" @click="handleSelectFolder">选择</button>
+            <button class="settings-clear-btn" title="清除并使用默认路径" @click="handleClearPath">×</button>
           </div>
-          <!-- 字体选择 -->
-          <div class="style-row">
-            <span class="style-label">字体</span>
-            <select v-model="tempEditorStyle.fontFamily" class="style-select" @click.stop>
-              <option v-for="font in fontOptions" :key="font.value" :value="font.value">
-                {{ font.label }}
-              </option>
-            </select>
-          </div>
-          <!-- 字号 -->
-          <div class="style-row">
-            <span class="style-label">字号</span>
-            <div class="style-range-group">
-              <input
-                type="range"
-                v-model.number="tempEditorStyle.fontSize"
-                min="10"
-                max="30"
-                step="4"
-                class="style-range"
-              >
-              <span class="style-value">{{ tempEditorStyle.fontSize }}px</span>
+        </div>
+        <div v-else class="settings-loading">加载中...</div>
+
+        <!-- 侧边栏面板可见性设置 -->
+        <div id="settings-panels" class="settings-item settings-panels-item">
+          <label class="settings-label">侧边栏面板</label>
+          <div class="settings-toggles">
+                      <div
+              v-for="panel in availablePanels"
+              :key="panel.id"
+              class="settings-toggle-row"
+              :class="{ 'cannot-hide-row': panel.cannotHide }"
+            >
+              <span class="toggle-label">
+                <i :class="panel.icon"></i>
+                {{ panel.label }}
+                <i v-if="panel.cannotHide" class="fas fa-lock lock-icon" title="无法隐藏"></i>
+              </span>
+              <label class="toggle-switch" :class="{ 'cannot-hide': panel.cannotHide }">
+                <input
+                  type="checkbox"
+                  :checked="tempPanelVisibility[panel.id] !== false"
+                  :disabled="panel.cannotHide"
+                  @change="handlePanelVisibilityChange(panel.id, $event, panel.cannotHide)"
+                >
+                <span class="toggle-slider"></span>
+              </label>
             </div>
           </div>
-          <!-- 行高 -->
-          <div class="style-row">
-            <span class="style-label">行高</span>
-            <div class="style-range-group">
-              <input
-                type="range"
-                v-model.number="tempEditorStyle.lineHeight"
-                min="1"
-                max="3"
-                step="0.4"
-                class="style-range"
-              >
-              <span class="style-value">{{ tempEditorStyle.lineHeight }}</span>
+        </div>
+
+        <!-- 编辑器样式设置 -->
+        <div id="settings-editor-style" class="settings-item settings-editor-style-item">
+           <div class="style-settings">
+            <div class="style-header">
+              <span class="style-section-title">编辑器样式</span>
+              <button class="btn btn-restore-small" @click="handleRestoreDefaults" title="恢复默认">
+                <i class="fas fa-undo"></i> 恢复默认
+              </button>
             </div>
-          </div>
-          <!-- 段落间距 -->
-          <div class="style-row">
-            <span class="style-label">段落间距</span>
-            <div class="style-range-group">
-              <input
-                type="range"
-                v-model.number="tempEditorStyle.paragraphSpacing"
-                min="10"
-                max="30"
-                step="4"
-                class="style-range"
-              >
-               <span class="style-value">{{ tempEditorStyle.paragraphSpacing }}px</span>
+            <!-- 字体选择 -->
+            <div class="style-row">
+              <span class="style-label">字体</span>
+              <select v-model="tempEditorStyle.fontFamily" class="style-select" @click.stop>
+                <option v-for="font in fontOptions" :key="font.value" :value="font.value">
+                  {{ font.label }}
+                </option>
+              </select>
+            </div>
+            <!-- 字号 -->
+            <div class="style-row">
+              <span class="style-label">字号</span>
+              <div class="style-range-group">
+                <input
+                  type="range"
+                  v-model.number="tempEditorStyle.fontSize"
+                  min="10"
+                  max="30"
+                  step="4"
+                  class="style-range"
+                >
+                <span class="style-value">{{ tempEditorStyle.fontSize }}px</span>
+              </div>
+            </div>
+            <!-- 行高 -->
+            <div class="style-row">
+              <span class="style-label">行高</span>
+              <div class="style-range-group">
+                <input
+                  type="range"
+                  v-model.number="tempEditorStyle.lineHeight"
+                  min="1"
+                  max="3"
+                  step="0.4"
+                  class="style-range"
+                >
+                <span class="style-value">{{ tempEditorStyle.lineHeight }}</span>
+              </div>
+            </div>
+            <!-- 段落间距 -->
+            <div class="style-row">
+              <span class="style-label">段落间距</span>
+              <div class="style-range-group">
+                <input
+                  type="range"
+                  v-model.number="tempEditorStyle.paragraphSpacing"
+                  min="10"
+                  max="30"
+                  step="4"
+                  class="style-range"
+                >
+                 <span class="style-value">{{ tempEditorStyle.paragraphSpacing }}px</span>
+              </div>
             </div>
           </div>
         </div>
@@ -293,8 +359,45 @@ function handleClearPath() {
 }
 
 .settings-popover-body {
-  padding: 20px;
+  display: flex;
   flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.settings-outline {
+  width: 140px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  border-right: 1px solid var(--modal-border);
+  overflow-y: auto;
+}
+
+.outline-item {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--modal-text-muted);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.outline-item:hover {
+  background: var(--tag-filter-item-hover-bg);
+  color: var(--modal-text);
+}
+
+.outline-item.active {
+  background: var(--tag-filter-selected-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.settings-content {
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
 }
 
