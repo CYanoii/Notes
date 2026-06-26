@@ -15,7 +15,8 @@ export const EventTypes = {
       TITLE: 'note:update:title',
       EXCERPT: 'note:update:excerpt',
       CONTENT: 'note:update:content',
-      TAG: 'note:update:tag'
+      TAG: 'note:update:tag',
+      REFERENCES: 'note:update:references'
     },
     GET: {
       TAG_NOTES: 'note:get:tagNotes'

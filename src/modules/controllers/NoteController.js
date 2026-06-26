@@ -79,6 +79,10 @@ export class NoteController {
             await this.noteTagCoordinator.updateNoteTag(noteId, this.getNoteById(noteId));
             this.loadAllNotes();
         });
+        // 笔记引用更新事件
+        this.eventBus.on(EventTypes.NOTE.UPDATE.REFERENCES, (noteId) => {
+            this.noteTagCoordinator.refreshNoteReferences(noteId);
+        });
         // 侧边栏搜索事件（原由 Coordinator 监听）
         this.eventBus.on(EventTypes.SEARCH.SIDEBAR_SEARCH_INPUT, (query) => {
             this.noteTagCoordinator.handleSidebarSearch(query);
@@ -432,6 +436,8 @@ export class NoteController {
         this.loadAllNotes(); // 刷新列表
         // 刷新标签显示
         setTimeout(() => this.noteTagCoordinator.refreshNoteTags(noteData.id, noteData), 0);
+        // 刷新引用列表
+        setTimeout(() => this.noteTagCoordinator.refreshNoteReferences(noteData.id), 0);
     }
 
     /**
@@ -545,7 +551,10 @@ export class NoteController {
         const note = this.noteService.getOpenNoteById(noteId);
         if (note) {
             try {
-                await this.noteService.updateNote(note.id, note);
+                // 计算并保存引用列表到 metadata.json
+                const refs = this.noteService.parseReferences(note.content || '');
+                const noteToSave = { ...note, references: refs };
+                await this.noteService.updateNote(noteToSave.id, noteToSave);
                 this.loadAllNotes(); // 刷新列表更新修改时间
             } catch (error) {
                 console.error('保存笔记失败:', error);

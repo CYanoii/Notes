@@ -301,6 +301,10 @@ export class UIManager {
         this.editor.updateEditorContent(noteId, newContent);
     }
 
+    editor_updateNoteReferences(noteId, references) {
+        this.editor.updateNoteReferences(noteId, references);
+    }
+
     editor_scrollToPosition(noteId, index) {
         this.editor.scrollToPosition(noteId, index);
     }

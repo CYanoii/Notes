@@ -106,6 +106,18 @@ export function useEditor() {
   }
 
   /**
+   * 更新笔记引用列表显示
+   * @param {string|number} noteId 笔记ID
+   * @param {Array} references 引用列表
+   */
+  function updateNoteReferences(noteId, references) {
+    const editor = state.editors.get(noteId)
+    if (editor) {
+      editor.references = references
+    }
+  }
+
+  /**
    * 设置 Vditor 实例
    * @param {string|number} noteId 笔记ID
    * @param {Object} vditor Vditor 实例
@@ -205,6 +217,7 @@ export function useEditor() {
     updateEditorTitle,
     updateEditorContent,
     updateNoteTags,
+    updateNoteReferences,
     setVditor,
     getVditor,
     scrollToPosition,

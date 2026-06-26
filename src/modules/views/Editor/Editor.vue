@@ -99,6 +99,29 @@ function getTagsDisplay(noteId) {
   }
 }
 
+// 获取引用显示数据
+function getReferencesDisplay(noteId) {
+  const editor = state.editors.get(noteId)
+  if (!editor) return { references: [] }
+  return {
+    references: editor.references || []
+  }
+}
+
+// 刷新引用列表
+function handleReferencesRefresh(noteId) {
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.NOTE.UPDATE.REFERENCES, noteId);
+  }
+}
+
+// 引用项点击跳转
+function handleReferenceClick(noteId) {
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId })
+  }
+}
+
 // ============================================================
 // Wiki Link 工具
 // 规则：
@@ -503,6 +526,22 @@ async function handleNotePickerSelect(noteId) {
   activePicker = false
 }
 
+// 检测引用变化的函数
+function detectReferenceChanges(noteId, oldRefs, newRefs) {
+  const oldSet = new Set(oldRefs.map(r => r.id + '|' + (r.alias || '')))
+  const newSet = new Set(newRefs.map(r => r.id + '|' + (r.alias || '')))
+
+  const added = newRefs.filter(r => !oldSet.has(r.id + '|' + (r.alias || '')))
+  const removed = oldRefs.filter(r => !newSet.has(r.id + '|' + (r.alias || '')))
+
+  if (added.length > 0) {
+    console.log('[Wiki Link 检测] 新增引用:', added.map(r => `[[${r.id}${r.alias ? '|' + r.alias : ''}]]`).join(', '))
+  }
+  if (removed.length > 0) {
+    console.log('[Wiki Link 检测] 移除引用:', removed.map(r => `[[${r.id}${r.alias ? '|' + r.alias : ''}]]`).join(', '))
+  }
+}
+
 function closeNotePicker(direction = null) {
   if (direction === 'left') {
     if (notePicker.typingSpan) {
@@ -846,6 +885,19 @@ async function initVditor(noteId, container, noteData) {
       if (window.eventBus) {
         window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, noteId, value)
       }
+      // 检测引用变化
+      const editor = state.editors.get(noteId)
+      if (editor) {
+        const oldRefs = editor.references || []
+        const WIKI_LINK_REGEX = /\[\[(\d+)(?:\|([^\]]+))?\]\]/g
+        const newRefs = []
+        let match
+        while ((match = WIKI_LINK_REGEX.exec(value)) !== null) {
+          newRefs.push({ id: match[1].trim(), alias: match[2] ? match[2].trim() : null })
+        }
+        detectReferenceChanges(noteId, oldRefs, newRefs)
+        editor.references = newRefs
+      }
       // 检测 [[ 触发
       detectWikiLinkTrigger(vditor, noteId)
     }
@@ -1036,6 +1088,36 @@ defineExpose({
       </div>
     </div>
 
+    <!-- 引用列表 -->
+    <div
+      class="note-references-bar"
+      :data-note-id="editor.id"
+      v-if="getReferencesDisplay(editor.id).references.length > 0 || true"
+    >
+      <div class="references-header">
+        <span class="references-title">引用 ({{ getReferencesDisplay(editor.id).references.length }})</span>
+        <button
+          class="btn-refresh-references"
+          @click="handleReferencesRefresh(editor.id)"
+          title="刷新引用列表"
+        >
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="references-list">
+        <span
+          v-for="ref in getReferencesDisplay(editor.id).references"
+          :key="ref.id"
+          class="reference-item"
+          :class="{ 'missing': ref.missing }"
+          @click="handleReferenceClick(ref.id)"
+        >
+          <i class="fas fa-link reference-icon"></i>
+          <span class="reference-title">{{ ref.alias || ref.title }}</span>
+        </span>
+      </div>
+    </div>
+
     <!-- Vditor 容器 -->
     <div
       class="vditor-container"
@@ -1207,6 +1289,95 @@ defineExpose({
     border-color: var(--accent);
     color: var(--accent);
     background: var(--editor-tags-hover-bg);
+}
+
+/* 引用列表栏 */
+.note-references-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 20px 10px 20px;
+    padding: 8px 12px;
+    background: var(--editor-tags-bg);
+    border-radius: 8px;
+    border: 1px solid var(--editor-tags-border);
+}
+
+.references-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.references-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.btn-refresh-references {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-refresh-references:hover {
+    color: var(--accent);
+    background: var(--editor-tags-hover-bg);
+}
+
+.btn-refresh-references:active {
+    transform: rotate(180deg);
+}
+
+.references-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.reference-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--sidebar-content-bg);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--panel-border);
+}
+
+.reference-item:hover {
+    border-color: var(--accent);
+    background: var(--editor-tags-hover-bg);
+}
+
+.reference-item.missing {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.reference-icon {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.reference-title {
+    font-size: 12px;
+    color: var(--text-primary);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 只读编辑器样式 */

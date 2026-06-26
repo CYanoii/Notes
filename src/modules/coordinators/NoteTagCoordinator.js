@@ -232,6 +232,21 @@ export class NoteTagCoordinator {
     }
 
     /**
+     * 刷新笔记引用列表显示
+     * @param {string|number} noteId 笔记ID
+     */
+    async refreshNoteReferences(noteId) {
+        const note = this.noteService.getOpenNoteById(noteId);
+        if (!note || !note.content) {
+            this.uiManager.editor_updateNoteReferences(noteId, []);
+            return;
+        }
+        const refs = this.noteService.parseReferences(note.content);
+        const refsDetails = await this.noteService.getReferencesDetails(refs);
+        this.uiManager.editor_updateNoteReferences(noteId, refsDetails);
+    }
+
+    /**
      * 为笔记列表补充标签数据
      * @param {Array} notes 笔记列表
      * @returns {Array} 补充标签数据后的笔记列表

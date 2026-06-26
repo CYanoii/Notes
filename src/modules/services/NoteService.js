@@ -92,9 +92,15 @@ export class NoteService {
      */
     async updateNote(noteId, noteData) {
         const result = await window.electronAPI.updateNote(noteId, noteData);
-        // 更新内存缓存
+        // 更新内存缓存：如果 result 不包含 content，保留内存中已有的完整笔记
         if (this.openNotes.has(noteId)) {
-            this.openNotes.set(noteId, result);
+            const existingNote = this.openNotes.get(noteId);
+            if (result.content) {
+                this.openNotes.set(noteId, result);
+            } else {
+                // API 返回不完整，保留现有 content
+                this.openNotes.set(noteId, { ...result, content: existingNote.content });
+            }
         }
         return result;
     }
@@ -150,5 +156,57 @@ export class NoteService {
      */
     async deletePermanently(noteId) {
         await window.electronAPI.deletePermanently(noteId);
+    }
+
+    /**
+     * 从笔记内容中解析所有引用（wiki links）
+     * @param {string} content 笔记内容
+     * @returns {Array<{id: string, alias: string|null}>} 引用列表
+     */
+    parseReferences(content) {
+        if (!content) return [];
+        const references = [];
+        const regex = /\[\[(\d+)(?:\|([^\]]+))?\]\]/g;
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            references.push({
+                id: match[1].trim(),
+                alias: match[2] ? match[2].trim() : null
+            });
+        }
+        return references;
+    }
+
+    /**
+     * 根据引用ID列表获取引用笔记的详细信息
+     * @param {Array<{id: string, alias: string|null}>} references 引用列表
+     * @returns {Promise<Array>} 带有完整信息的引用列表
+     */
+    async getReferencesDetails(references) {
+        if (!references || references.length === 0) return [];
+        const result = [];
+        for (const ref of references) {
+            try {
+                const note = await window.electronAPI.getNote(ref.id);
+                if (note) {
+                    result.push({
+                        id: ref.id,
+                        alias: ref.alias,
+                        title: note.title || '无标题笔记',
+                        excerpt: note.excerpt || ''
+                    });
+                }
+            } catch (e) {
+                // 引用目标不存在仍保留显示
+                result.push({
+                    id: ref.id,
+                    alias: ref.alias,
+                    title: ref.alias || `笔记 ${ref.id}`,
+                    excerpt: '',
+                    missing: true
+                });
+            }
+        }
+        return result;
     }
 }
