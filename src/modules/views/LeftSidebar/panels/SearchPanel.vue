@@ -166,7 +166,7 @@ defineExpose({
           >
             <div class="search-result-title" v-html="highlightMatch(escapeHtml(note.title || '无标题'), displayQuery)"></div>
             <div class="search-result-preview" v-html="generatePreview(note.content || '', displayQuery)"></div>
-            <div v-if="note.tags && note.tagsData && note.tags.length > 0" class="search-note-tags">
+            <div v-if="Array.isArray(note.tags) && note.tagsData && note.tags.length > 0" class="search-note-tags">
               <span
                 v-for="tag in note.tagsData"
                 :key="tag.id"

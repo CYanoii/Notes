@@ -39,7 +39,7 @@ export class NoteTagCoordinator {
             const tagMatchingNotes = [];
 
             for (const note of allNotes) {
-                if (note.tags && note.tags.length > 0) {
+                if (Array.isArray(note.tags) && note.tags.length > 0) {
                     const tagMatches = note.tags.some(tagId => {
                         const tag = tagMap.get(tagId);
                         return tag && tag.name.toLowerCase().includes(lowerQuery);
@@ -54,7 +54,7 @@ export class NoteTagCoordinator {
             // 第四步：合并结果并添加完整标签数据（名称+颜色）
             const allResults = [...baseResults, ...tagMatchingNotes];
             for (const note of allResults) {
-                if (note.tags && note.tags.length > 0) {
+                if (Array.isArray(note.tags) && note.tags.length > 0) {
                     note.tagsData = note.tags
                         .map(tagId => tagMap.get(tagId))
                         .filter(tag => tag !== undefined);
@@ -109,11 +109,14 @@ export class NoteTagCoordinator {
             }
 
             // 调用UI层显示标签选择模态框
-            const selectedTags = await this.uiManager.modal_showTagSelection(allTags, currentNote.tags || []);
-            if (selectedTags === null) return;
+            const currentTagIds = Array.isArray(currentNote.tags) ? currentNote.tags : [];
+            const selectedTags = await this.uiManager.modal_showTagSelection(allTags, currentTagIds);
+            // ModalContainer.handleConfirm 会对结果进行包装 { value, color }，这里进行解包
+            const resolvedTags = selectedTags?.value ?? selectedTags;
+            if (!resolvedTags || !Array.isArray(resolvedTags)) return;
 
             // 更新笔记标签
-            const updatedNote = { ...currentNote, tags: selectedTags };
+            const updatedNote = { ...currentNote, tags: resolvedTags };
             await this.noteService.updateNote(noteId, updatedNote);
 
             // 更新UI显示
@@ -151,7 +154,7 @@ export class NoteTagCoordinator {
         // 处理已打开的笔记（内存中 - 从NoteService获取）
         const openNotes = this.noteService.getAllOpenNotes();
         for (const [noteId, note] of openNotes) {
-            if (note.tags && note.tags.includes(tagId)) {
+            if (Array.isArray(note.tags) && note.tags.includes(tagId)) {
                 note.tags = note.tags.filter(t => t !== tagId);
             }
             this.refreshNoteTags(noteId, note);
@@ -161,7 +164,7 @@ export class NoteTagCoordinator {
         try {
             const allNotes = await this.noteService.getAllNotes();
             for (const note of allNotes) {
-                if (note.tags && note.tags.includes(tagId)) {
+                if (Array.isArray(note.tags) && note.tags.includes(tagId)) {
                     const updatedTags = note.tags.filter(t => t !== tagId);
                     await this.noteService.updateNote(note.id, { tags: updatedTags });
                 }
@@ -202,7 +205,7 @@ export class NoteTagCoordinator {
         const tagNotes = {};
         for (const tag of tags) {
             tagNotes[tag.id] = allNotes.filter(note =>
-                note.tags && note.tags.includes(tag.id)
+                Array.isArray(note.tags) && note.tags.includes(tag.id)
             );
             tagCounts[tag.id] = tagNotes[tag.id].length;
         }
@@ -237,7 +240,7 @@ export class NoteTagCoordinator {
         const allTags = await this.tagService.getAllTags();
         const tagMap = new Map(allTags.map(tag => [tag.id, tag]));
         for (const note of notes) {
-            if (note.tags && note.tags.length > 0) {
+            if (Array.isArray(note.tags) && note.tags.length > 0) {
                 note.tagsData = note.tags
                     .map(tagId => tagMap.get(tagId))
                     .filter(tag => tag !== undefined);

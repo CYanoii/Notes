@@ -86,9 +86,9 @@ function getTagsDisplay(noteId) {
   const editor = state.editors.get(noteId)
   if (!editor) return { showAddBtn: false, tags: [] }
 
-  const noteTags = editor.noteData?.tags || []
+  const noteTags = Array.isArray(editor.noteData?.tags) ? editor.noteData.tags : []
   const isTrashed = editor.noteData?.status === 'trashed'
-  const hasTags = noteTags && noteTags.length > 0
+  const hasTags = noteTags.length > 0
 
   return {
     showAddBtn: !isTrashed && !hasTags,
