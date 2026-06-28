@@ -102,9 +102,15 @@ function getTagsDisplay(noteId) {
 // 获取引用显示数据
 function getReferencesDisplay(noteId) {
   const editor = state.editors.get(noteId)
-  if (!editor) return { references: [] }
+  if (!editor) return { showAddBtn: false, references: [] }
+
+  const noteRefs = editor.references || []
+  const isTrashed = editor.noteData?.status === 'trashed'
+  const hasRefs = noteRefs.length > 0
+
   return {
-    references: editor.references || []
+    showAddBtn: !isTrashed && !hasRefs,
+    references: noteRefs
   }
 }
 
@@ -115,10 +121,29 @@ function handleReferencesRefresh(noteId) {
   }
 }
 
-// 引用项点击跳转
-function handleReferenceClick(noteId) {
-  if (window.eventBus) {
-    window.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId })
+// 引用项点击 - 滚动到当前笔记中对应的 wiki link 位置
+function handleReferenceClick(noteId, editorId) {
+  const container = document.getElementById(`vditor-${editorId}`)
+  if (!container) return
+
+  // 查找对应的 wiki-link 元素
+  const wikiLink = container.querySelector(`.wiki-link[data-note-id="${noteId}"]`)
+  if (wikiLink) {
+    wikiLink.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // 短暂高亮
+    wikiLink.style.backgroundColor = 'var(--accent)'
+    wikiLink.style.color = '#fff'
+    setTimeout(() => {
+      wikiLink.style.backgroundColor = ''
+      wikiLink.style.color = ''
+    }, 500)
+  }
+}
+
+// 空引用占位点击 - 显示提示
+function handleAddReferenceTip() {
+  if (window.toastApi) {
+    window.toastApi.show('在编辑区输入 [[]] ，选中其内部来创建引用', 'info')
   }
 }
 
@@ -1092,25 +1117,21 @@ defineExpose({
     <div
       class="note-references-bar"
       :data-note-id="editor.id"
-      v-if="getReferencesDisplay(editor.id).references.length > 0 || true"
     >
-      <div class="references-header">
-        <span class="references-title">引用 ({{ getReferencesDisplay(editor.id).references.length }})</span>
-        <button
-          class="btn-refresh-references"
-          @click="handleReferencesRefresh(editor.id)"
-          title="刷新引用列表"
-        >
-          <i class="fas fa-sync-alt"></i>
-        </button>
-      </div>
+      <button
+        v-if="getReferencesDisplay(editor.id).showAddBtn"
+        class="btn-add-reference"
+        @click="handleAddReferenceTip"
+      >
+        <i class="fas fa-plus"></i> 创建引用
+      </button>
       <div class="references-list">
         <span
           v-for="ref in getReferencesDisplay(editor.id).references"
           :key="ref.id"
           class="reference-item"
           :class="{ 'missing': ref.missing }"
-          @click="handleReferenceClick(ref.id)"
+          @click="handleReferenceClick(ref.id, editor.id)"
         >
           <i class="fas fa-link reference-icon"></i>
           <span class="reference-title">{{ ref.alias || ref.title }}</span>
@@ -1170,10 +1191,11 @@ defineExpose({
     z-index: 1;
 }
 
-/* 聚焦 Vditor 时隐藏标题/摘要/标签栏 */
+/* 聚焦 Vditor 时隐藏标题/摘要/标签栏/引用列表 */
 .note-editor.editor-focused .note-title-input,
 .note-editor.editor-focused .note-excerpt-input,
-.note-editor.editor-focused .note-tags-bar {
+.note-editor.editor-focused .note-tags-bar,
+.note-editor.editor-focused .note-references-bar {
     display: none;
 }
 
@@ -1291,57 +1313,21 @@ defineExpose({
     background: var(--editor-tags-hover-bg);
 }
 
-/* 引用列表栏 */
+/* 引用列表栏 - 模仿标签栏样式 */
 .note-references-bar {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    gap: 12px;
     margin: 0 20px 10px 20px;
-    padding: 8px 12px;
-    background: var(--editor-tags-bg);
-    border-radius: 8px;
-    border: 1px solid var(--editor-tags-border);
-}
-
-.references-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.references-title {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.btn-refresh-references {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.btn-refresh-references:hover {
-    color: var(--accent);
-    background: var(--editor-tags-hover-bg);
-}
-
-.btn-refresh-references:active {
-    transform: rotate(180deg);
+    flex-wrap: wrap;
 }
 
 .references-list {
     display: flex;
-    flex-wrap: wrap;
+    flex: 1;
     gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .reference-item {
@@ -1349,16 +1335,16 @@ defineExpose({
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    background: var(--sidebar-content-bg);
-    border-radius: 12px;
+    background: var(--editor-tags-bg);
+    border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid var(--panel-border);
+    border: 1px solid var(--editor-tags-border);
 }
 
 .reference-item:hover {
-    border-color: var(--accent);
     background: var(--editor-tags-hover-bg);
+    border-color: var(--text-muted);
 }
 
 .reference-item.missing {
@@ -1374,10 +1360,31 @@ defineExpose({
 .reference-title {
     font-size: 12px;
     color: var(--text-primary);
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.btn-add-reference {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px dashed var(--editor-add-tag-border);
+    color: var(--editor-add-tag-color);
+    padding: 4px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
     white-space: nowrap;
+}
+
+.btn-add-reference:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--editor-tags-hover-bg);
+}
+
+.btn-add-reference:active {
+    transform: scale(0.98);
 }
 
 /* 只读编辑器样式 */

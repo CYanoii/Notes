@@ -26,6 +26,7 @@
     "wait-on": "^7.2.0"
   },
   "dependencies": {
+    "d3": "^7.9.0",
     "electron-reload": "^2.0.0-alpha.1",
     "vditor": "^3.11.2"
   },
