@@ -55,7 +55,7 @@ function escapeHtml(text) {
         <li
           v-for="note in displayNotes"
           :key="note.id"
-          class="recent-note-item"
+          class="panel-item recent-note-item"
           :data-note-id="note.id"
           @click="handleNoteClick(note.id)"
         >
@@ -74,29 +74,6 @@ function escapeHtml(text) {
   padding: 0;
   padding-left: 8px;
   margin: 0;
-}
-
-.recent-note-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--sidebar-content-text);
-  font-size: 13px;
-  transition: background-color 0.2s;
-  border: 1px solid var(--sidebar-card-border);
-  margin-bottom: 4px;
-}
-
-.recent-note-item:hover {
-  background: var(--sidebar-card-hover-bg);
-}
-
-.recent-note-item i {
-  color: var(--sidebar-content-text-muted);
-  font-size: 12px;
 }
 
 .recent-note-title {

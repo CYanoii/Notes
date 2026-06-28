@@ -50,3 +50,44 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* 统一的面板项样式 */
+.panel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-radius 0.2s;
+  color: var(--sidebar-content-text);
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  /* 无边框 - 失焦状态仅有文字和图标 */
+}
+
+.panel-item i {
+  color: var(--sidebar-content-text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+}
+
+/* 悬停状态 - 灰色长方形背景，无边框 */
+.panel-item:hover {
+  background: var(--sidebar-card-hover-bg);
+  border-radius: 6px;
+}
+
+/* 子列表容器 - 保证子项宽度与主列表一致 */
+.panel-item-parent {
+  padding-left: 8px;
+}
+
+/* 子列表项 - 文字缩进，宽度撑满 */
+.panel-item-child {
+  padding-left: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}

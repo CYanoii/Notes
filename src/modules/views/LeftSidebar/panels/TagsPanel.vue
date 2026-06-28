@@ -103,7 +103,7 @@ defineExpose({
       <ul v-if="tags.length > 0" class="tags-list">
         <template v-for="tag in tags" :key="tag.id">
           <li
-            class="tag-main-item"
+            class="panel-item tag-main-item"
             :data-tag-id="tag.id"
             @click="handleTagClick(tag.id)"
           >
@@ -113,7 +113,6 @@ defineExpose({
             ></i>
             <span class="tag-color" :style="{ backgroundColor: tag.color }"></span>
             <span class="tag-name">{{ escapeHtml(tag.name) }}</span>
-            <span class="tag-count">{{ tagCounts[tag.id] || 0 }}</span>
             <div class="tag-actions">
               <button
                 class="tag-action-btn edit-btn"
@@ -130,12 +129,13 @@ defineExpose({
                 <i class="fas fa-trash"></i>
               </button>
             </div>
+            <span class="tag-count">{{ tagCounts[tag.id] || 0 }}</span>
           </li>
           <ul v-if="isTagExpanded(tag.id) && tagNotes[tag.id]?.length > 0" class="tag-notes-list">
             <li
               v-for="note in tagNotes[tag.id]"
               :key="note.id"
-              class="tag-note-item"
+              class="panel-item panel-item-child tag-note-item"
               :data-note-id="note.id"
               :data-tag-id="tag.id"
               @click.stop="handleTagNoteClick(note.id)"
@@ -183,27 +183,7 @@ defineExpose({
   margin: 0;
 }
 
-.tag-main-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: var(--sidebar-content-text);
-  font-size: 13px;
-  border: 1px solid var(--sidebar-card-border);
-  margin-bottom: 4px;
-}
-
-.tag-main-item:hover {
-  background: var(--sidebar-card-hover-bg);
-}
-
 .tag-main-item i {
-  color: var(--sidebar-content-text-muted);
-  font-size: 10px;
   width: 12px;
 }
 
@@ -257,32 +237,8 @@ defineExpose({
 
 .tag-notes-list {
   list-style: none;
-  padding: 0 0 0 20px;
+  padding: 0;
   margin: 0;
-}
-
-.tag-note-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--sidebar-content-text-secondary);
-  font-size: 12px;
-  transition: background-color 0.2s;
-  border: 1px solid var(--sidebar-card-border);
-  margin-bottom: 2px;
-}
-
-.tag-note-item:hover {
-  background: var(--sidebar-card-hover-bg);
-  color: var(--sidebar-content-text);
-}
-
-.tag-note-item i {
-  font-size: 10px;
-  color: var(--sidebar-content-text-muted);
 }
 
 .tag-note-title {

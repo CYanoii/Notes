@@ -71,7 +71,7 @@ function escapeHtml(text) {
         <li
           v-for="note in displayNotes"
           :key="note.id"
-          class="trash-note-item"
+          class="panel-item trash-note-item"
           :data-note-id="note.id"
           @click="handleNoteClick(note.id)"
         >
@@ -92,7 +92,7 @@ function escapeHtml(text) {
               title="永久删除"
               @click="handlePermanentDelete($event, note.id)"
             >
-              <i class="fas fa-times"></i>
+              <i class="fas fa-trash"></i>
             </button>
           </div>
         </li>
@@ -110,34 +110,12 @@ function escapeHtml(text) {
   margin: 0;
 }
 
-.trash-note-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-bottom: 8px;
-  border: 1px solid var(--sidebar-card-border);
-}
-
-.trash-note-item:hover {
-  background: var(--sidebar-card-hover-bg);
-}
-
 .trash-note-info {
   display: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
   min-width: 0;
-}
-
-.trash-note-info i {
-  color: var(--sidebar-content-text-muted);
-  font-size: 12px;
-  flex-shrink: 0;
 }
 
 .trash-note-title {
@@ -152,21 +130,26 @@ function escapeHtml(text) {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.trash-note-item:hover .trash-note-actions {
+  opacity: 1;
 }
 
 .trash-action-btn {
   background: transparent;
   border: none;
-  color: var(--sidebar-content-text-secondary);
+  color: var(--sidebar-content-text-muted);
   cursor: pointer;
-  padding: 4px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: 4px;
+  font-size: 10px;
+  transition: color 0.2s;
 }
 
 .trash-action-btn:hover {
-  background: var(--sidebar-card-hover-bg);
+  color: var(--accent);
 }
 
 .restore-btn:hover {

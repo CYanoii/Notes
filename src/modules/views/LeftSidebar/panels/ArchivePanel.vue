@@ -73,12 +73,12 @@ defineExpose({
       <ul v-if="years.length > 0" class="archive-list">
         <li v-for="yearData in years" :key="yearData.year" class="archive-year-item">
           <div
-            class="archive-year-header"
+            class="panel-item archive-year-header"
             :data-year="yearData.year"
             @click="toggleYearExpanded(yearData.year)"
           >
             <i
-              class="fas archive-expand-icon"
+              class="fas"
               :class="expandedYears.has(yearData.year) ? 'fa-chevron-down' : 'fa-chevron-right'"
             ></i>
             <span class="archive-year-text">{{ yearData.year }}年</span>
@@ -94,7 +94,7 @@ defineExpose({
                 <li
                   v-for="note in monthData.notes"
                   :key="note.id"
-                  class="archive-note-item"
+                  class="panel-item panel-item-child archive-note-item"
                   :data-note-id="note.id"
                   @click="handleNoteClick(note.id)"
                 >
@@ -120,28 +120,13 @@ defineExpose({
 }
 
 .archive-year-item {
-  margin-bottom: 8px;
-}
-
-.archive-year-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--sidebar-content-text);
-  font-size: 13px;
-  transition: background-color 0.2s;
-  border: 1px solid var(--sidebar-card-border);
+  flex-direction: column;
+  margin-bottom: 0;
 }
 
-.archive-year-header:hover {
-  background: var(--sidebar-card-hover-bg);
-}
-
-.archive-expand-icon {
-  color: var(--sidebar-content-text-muted);
+.archive-year-item i.archive-expand-icon,
+.archive-year-item > i:first-child {
   font-size: 10px;
 }
 
@@ -160,12 +145,12 @@ defineExpose({
 
 .archive-months-list {
   list-style: none;
-  padding: 0 0 0 20px;
+  padding: 0;
   margin: 0;
 }
 
 .archive-month-item {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .archive-month-header {
@@ -173,6 +158,7 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 6px 8px;
+  padding-left: 20px;
   color: var(--sidebar-content-text-secondary);
   font-size: 12px;
 }
@@ -184,30 +170,8 @@ defineExpose({
 
 .archive-notes-list {
   list-style: none;
-  padding: 0 0 0 16px;
+  padding: 0;
   margin: 0;
-}
-
-.archive-note-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--sidebar-content-text-secondary);
-  font-size: 12px;
-  transition: background-color 0.2s;
-}
-
-.archive-note-item:hover {
-  background: var(--sidebar-card-hover-bg);
-  color: var(--sidebar-content-text);
-}
-
-.archive-note-item i {
-  font-size: 10px;
-  color: var(--sidebar-content-text-muted);
 }
 
 .archive-note-title {

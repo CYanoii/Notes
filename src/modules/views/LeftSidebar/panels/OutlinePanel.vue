@@ -173,7 +173,7 @@ function handleHeadingClick(heading) {
         <div
           v-for="(heading, index) in flatHeadings"
           :key="index"
-          class="outline-item"
+          class="panel-item outline-item"
           :class="'level-' + heading.level"
           :style="{ paddingLeft: (heading.indent * 16 + 8) + 'px' }"
           @click="handleHeadingClick(heading)"
@@ -213,17 +213,10 @@ function handleHeadingClick(heading) {
 .outline-item {
   display: flex;
   align-items: center;
-  padding-top: 6px;
-  padding-bottom: 6px;
   cursor: pointer;
-  font-size: 13px;
   color: var(--sidebar-content-text);
-  transition: background-color 0.15s;
+  transition: background-color 0.2s;
   position: relative;
-}
-
-.outline-item:hover {
-  background: var(--sidebar-hover-bg);
 }
 
 .outline-item.level-1 {
@@ -248,7 +241,7 @@ function handleHeadingClick(heading) {
   align-items: stretch;
   height: 100%;
   position: absolute;
-  left: 0;
+  left: -8px;
   top: 0;
 }
 
@@ -282,6 +275,5 @@ function handleHeadingClick(heading) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-left: 8px;
 }
 </style>
