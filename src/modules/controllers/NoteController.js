@@ -6,11 +6,12 @@ import { debounce } from '../utils/helpers.js';
 import { EventTypes } from '../core/EventTypes.js';
 
 export class NoteController {
-    constructor(noteService, uiManager, eventBus, noteTagCoordinator) {
+    constructor(noteService, uiManager, eventBus, noteTagCoordinator, pageTagCoordinator) {
         this.noteService = noteService;
         this.uiManager = uiManager;
         this.eventBus = eventBus;
         this.noteTagCoordinator = noteTagCoordinator;
+        this.pageTagCoordinator = pageTagCoordinator;
 
         // 已打开笔记缓存由 NoteService 维护
 
@@ -74,9 +75,9 @@ export class NoteController {
         this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
         this.eventBus.on(EventTypes.TRASH.DELETE_PERMANENT, (noteId) => this.handlePermanentDelete(noteId));
 
-        // 笔记标签更新事件（原由 Coordinator 监听）（添加异步等待确保标签更新完成后再刷新列表）
-        this.eventBus.on(EventTypes.NOTE.UPDATE.TAG, async (noteId) => {
-            await this.noteTagCoordinator.updateNoteTag(noteId, this.getNoteById(noteId));
+        // 页面标签更新事件（统一处理笔记和便签的标签更新）
+        this.eventBus.on(EventTypes.PAGE.UPDATE.TAG, async (noteId) => {
+            await this.pageTagCoordinator.updatePageTag(noteId, this.getNoteById(noteId));
             this.loadAllNotes();
         });
         // 笔记引用更新事件

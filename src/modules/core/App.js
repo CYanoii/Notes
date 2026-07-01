@@ -6,10 +6,13 @@ import { EventBus } from './EventBus.js';
 import { NoteController } from '../controllers/NoteController.js';
 import { TagController } from '../controllers/TagController.js';
 import { PageStateController } from '../controllers/PageStateController.js';
+import { StickyController } from '../controllers/StickyController.js';
 import { NoteService } from '../services/NoteService.js';
 import { TagService } from '../services/TagService.js';
 import { PageStateService } from '../services/PageStateService.js';
+import { StickyService } from '../services/StickyService.js';
 import { NoteTagCoordinator } from '../coordinators/NoteTagCoordinator.js';
+import { PageTagCoordinator } from '../coordinators/PageTagCoordinator.js';
 import { UIManager } from '../views/UIManager.js';
 
 export class App {
@@ -21,6 +24,7 @@ export class App {
         this.noteService = new NoteService();
         this.tagService = new TagService();
         this.pageStateService = new PageStateService();
+        this.stickyService = new StickyService();
 
         // 3. 创建 UI 管理器，由它统一创建和管理所有 UI 组件
         this.uiManager = new UIManager(this.eventBus);
@@ -31,13 +35,19 @@ export class App {
             this.tagService,
             this.uiManager
         );
+        this.pageTagCoordinator = new PageTagCoordinator(
+            this.noteService,
+            this.tagService,
+            this.uiManager
+        );
 
         // 5. 创建控制器层（依赖下层模块 + 协调器）
         this.noteController = new NoteController(
             this.noteService,
             this.uiManager,
             this.eventBus,
-            this.noteTagCoordinator
+            this.noteTagCoordinator,
+            this.pageTagCoordinator
         );
 
         this.tagController = new TagController(
@@ -50,6 +60,11 @@ export class App {
         this.pageStateController = new PageStateController(
             this.pageStateService,
             this.uiManager,
+            this.eventBus
+        );
+
+        this.stickyController = new StickyController(
+            this.stickyService,
             this.eventBus
         );
 
@@ -121,6 +136,7 @@ export class App {
     exposeToGlobal() {
         window.app = this;
         window.eventBus = this.eventBus;
+        window.stickyController = this.stickyController;
     }
 
     /**

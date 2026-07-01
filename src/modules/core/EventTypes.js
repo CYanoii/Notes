@@ -72,6 +72,22 @@ export const EventTypes = {
     ORDER_CHANGE: 'tabBar:orderChange',
     SWITCH_HOME: 'tabBar:switchHome',
     SWITCH_TAB: 'tabBar:switchTab'
+  },
+
+  // 页面事件（通用）
+  PAGE: {
+    UPDATE: {
+      TAG: 'page:update:tag'
+    }
+  },
+
+  // 便签事件
+  STICKY: {
+    LOAD: 'sticky:load',
+    CREATE: 'sticky:create',
+    UPDATE: 'sticky:update',
+    DELETE: 'sticky:delete',
+    BRING_TO_FRONT: 'sticky:bringToFront'
   }
 
 }

@@ -115,7 +115,7 @@ export class UIManager {
                     }
                     const tagsBar = addBtn.closest('.note-tags-bar');
                     const noteId = tagsBar.dataset.noteId;
-                    this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
+                    this.eventBus.emit(EventTypes.PAGE.UPDATE.TAG, noteId);
                     return;
                 }
 
@@ -129,7 +129,7 @@ export class UIManager {
                     }
                     const tagsBar = e.target.closest('.note-tags-bar');
                     const noteId = tagsBar.dataset.noteId;
-                    this.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId);
+                    this.eventBus.emit(EventTypes.PAGE.UPDATE.TAG, noteId);
                     return;
                 }
             });

@@ -40,6 +40,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateTag: (tagId, updates) => ipcRenderer.invoke('tags:update', tagId, updates),
   deleteTag: (tagId) => ipcRenderer.invoke('tags:delete', tagId),
 
+  // 便签操作
+  getStickies: (stickyPageId) => ipcRenderer.invoke('stickies:get', stickyPageId),
+  createSticky: (stickyPageId, data) => ipcRenderer.invoke('stickies:create', stickyPageId, data),
+  updateSticky: (stickyPageId, stickyId, updates) => ipcRenderer.invoke('stickies:update', stickyPageId, stickyId, updates),
+  deleteSticky: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:delete', stickyPageId, stickyId),
+  bringStickyToFront: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:bringToFront', stickyPageId, stickyId),
+
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   maximizeWindow: () => ipcRenderer.invoke('window:maximize'),

@@ -7,10 +7,12 @@ const path = require('path');
 const NotesManager = require('./NotesManager');
 const TagsManager = require('./TagsManager');
 const ConfigManager = require('./ConfigManager');
+const StickyManager = require('./StickyManager');
 
 let notesManager;
 let tagsManager;
 let configManager;
+let stickyManager;
 
 async function setupIpcHandlers() {
   // 初始化配置管理器
@@ -22,6 +24,7 @@ async function setupIpcHandlers() {
 
   notesManager = new NotesManager(dataRootPath);
   tagsManager = new TagsManager(dataRootPath);
+  stickyManager = new StickyManager(dataRootPath);
 
   await notesManager.initialize();
   await tagsManager.initialize();
@@ -174,6 +177,33 @@ async function setupIpcHandlers() {
   ipcMain.handle('tags:delete', async (event, tagId) => {
     await tagsManager.deleteTag(tagId);
     return true;
+  });
+
+  // ===== 便签操作 =====
+  // 获取便签墙的所有便签
+  ipcMain.handle('stickies:get', async (event, stickyPageId) => {
+    return await stickyManager.getStickies(stickyPageId);
+  });
+
+  // 创建便签
+  ipcMain.handle('stickies:create', async (event, stickyPageId, data) => {
+    return await stickyManager.createSticky(stickyPageId, data);
+  });
+
+  // 更新便签
+  ipcMain.handle('stickies:update', async (event, stickyPageId, stickyId, updates) => {
+    return await stickyManager.updateSticky(stickyPageId, stickyId, updates);
+  });
+
+  // 删除便签
+  ipcMain.handle('stickies:delete', async (event, stickyPageId, stickyId) => {
+    await stickyManager.deleteSticky(stickyPageId, stickyId);
+    return true;
+  });
+
+  // 将便签置于顶层
+  ipcMain.handle('stickies:bringToFront', async (event, stickyPageId, stickyId) => {
+    return await stickyManager.bringToFront(stickyPageId, stickyId);
   });
 
 // ===== 窗口控制 =====

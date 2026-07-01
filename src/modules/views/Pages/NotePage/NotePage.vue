@@ -103,7 +103,7 @@ function handleExcerptBlur(noteId, event) {
 // 标签点击处理
 function handleTagClick(noteId) {
   if (window.eventBus) {
-    window.eventBus.emit(EventTypes.NOTE.UPDATE.TAG, noteId)
+    window.eventBus.emit(EventTypes.PAGE.UPDATE.TAG, noteId)
   }
 }
 
