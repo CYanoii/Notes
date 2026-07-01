@@ -63,7 +63,8 @@ export class NoteService {
      * @returns {Promise<Array>} 笔记列表
      */
     async getAllNotes() {
-        return await window.electronAPI.getAllNotes();
+        const notes = await window.electronAPI.getAllNotes();
+        return notes.map(n => this.normalizeNote(n));
     }
 
     /**
@@ -72,7 +73,8 @@ export class NoteService {
      * @returns {Promise<Object>} 笔记详情
      */
     async getNote(noteId) {
-        return await window.electronAPI.getNote(noteId);
+        const note = await window.electronAPI.getNote(noteId);
+        return note ? this.normalizeNote(note) : null;
     }
 
     /**
@@ -128,7 +130,20 @@ export class NoteService {
      * @returns {Promise<Array>} 回收站笔记列表
      */
     async getTrashedNotes() {
-        return await window.electronAPI.getTrashedNotes();
+        const notes = await window.electronAPI.getTrashedNotes();
+        return notes.map(n => this.normalizeNote(n));
+    }
+
+    /**
+     * 规范化笔记数据，为缺失的 pageType 字段补充默认值
+     * @param {Object} note 笔记对象
+     * @returns {Object} 规范化后的笔记对象
+     */
+    normalizeNote(note) {
+        return {
+            ...note,
+            pageType: note.pageType || 'note'
+        };
     }
 
     /**

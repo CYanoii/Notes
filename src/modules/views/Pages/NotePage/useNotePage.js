@@ -1,6 +1,11 @@
 /**
- * useEditor - 编辑器模块的组合式函数
+ * useNotePage - 笔记页面渲染的组合式函数
  * 使用单例模式确保状态在模块级别共享
+ *
+ * 注意：此处保留了 useEditor.js 中的核心状态管理逻辑，
+ * 因为 NotePage 组件需要与 Editor 容器共享同一个状态。
+ * Editor 容器负责管理编辑器的创建/销毁/切换，
+ * NotePage 负责具体的笔记内容渲染。
  */
 import { reactive, computed } from 'vue'
 
@@ -11,16 +16,15 @@ const state = reactive({
   isFocused: false        // 是否聚焦在编辑器内容区
 })
 
-export function useEditor() {
+export function useNotePage() {
   /**
    * 创建笔记编辑器
    * @param {Object} noteData 笔记数据
    */
   function createNoteEditor(noteData) {
-    console.log('[useEditor] createNoteEditor:', noteData)
-    // 如果已存在则跳过
+    console.log('[useNotePage] createNoteEditor:', noteData)
     if (state.editors.has(noteData.id)) {
-      console.log('[useEditor] Editor already exists for note:', noteData.id)
+      console.log('[useNotePage] Editor already exists for note:', noteData.id)
       return
     }
     state.editors.set(noteData.id, {
@@ -34,7 +38,7 @@ export function useEditor() {
    * @param {string|number} noteId 笔记ID
    */
   function switchToNoteEditor(noteId) {
-    console.log('[useEditor] switchToNoteEditor:', noteId)
+    console.log('[useNotePage] switchToNoteEditor:', noteId)
     state.activeNoteId = noteId
   }
 
@@ -42,7 +46,7 @@ export function useEditor() {
    * 切换到首页
    */
   function switchToHomePage() {
-    console.log('[useEditor] switchToHomePage')
+    console.log('[useNotePage] switchToHomePage')
     state.activeNoteId = null
   }
 
@@ -51,7 +55,7 @@ export function useEditor() {
    * @param {string|number} noteId 笔记ID
    */
   function closeNoteEditor(noteId) {
-    console.log('[useEditor] closeNoteEditor:', noteId)
+    console.log('[useNotePage] closeNoteEditor:', noteId)
     const editor = state.editors.get(noteId)
     if (editor && editor.vditor) {
       editor.vditor.destroy()
@@ -151,18 +155,16 @@ export function useEditor() {
       const container = document.getElementById(`vditor-${noteId}`)
       if (!container) return
 
-      // 聚焦编辑器
       if (typeof vditor.focus === 'function') {
         vditor.focus()
       }
 
-      // 查找标题元素
       const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6')
       if (headings.length > 0 && index < headings.length) {
         headings[index].scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     } catch (e) {
-      console.warn('[useEditor] Failed to scroll to position:', e)
+      console.warn('[useNotePage] Failed to scroll to position:', e)
     }
   }
 
@@ -229,4 +231,4 @@ export function useEditor() {
 }
 
 // 导出单例状态供外部访问
-export const editorState = state
+export const notePageState = state

@@ -38,7 +38,8 @@ class NotesManager {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       tags: [],
-      status: 'active'
+      status: 'active',
+      pageType: 'note'
     };
 
     await this.saveMetadata(noteId, metadata);
@@ -278,6 +279,23 @@ class NotesManager {
   // 保存索引
   async saveIndex(index) {
     await fs.writeFile(this.indexFile, JSON.stringify(index, null, 2), 'utf-8');
+  }
+
+  // 迁移旧笔记的 pageType 字段
+  async migratePageTypes() {
+    const index = await this.loadIndex();
+    let migrated = 0;
+    for (const note of index.notes) {
+      if (!note.pageType) {
+        note.pageType = 'note';
+        await this.saveMetadata(note.id, note);
+        migrated++;
+      }
+    }
+    if (migrated > 0) {
+      await this.saveIndex(index);
+    }
+    return migrated;
   }
 }
 

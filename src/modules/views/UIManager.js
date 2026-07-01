@@ -4,7 +4,7 @@
  * 所有 eventBus 事件在此统一绑定
  */
 import { EventTypes } from '../core/EventTypes.js';
-import { useEditor } from './Editor/useEditor.js';
+import { useNotePage } from './Pages/NotePage/useNotePage.js';
 import { useTabBar } from './TabBar/useTabBar.js';
 import { useTagFilter } from './TagFilter/useTagFilter.js';
 import { useNoteList } from './NoteList/useNoteList.js';
@@ -17,7 +17,7 @@ export class UIManager {
         this.eventBus = eventBus;
 
         // 直接调用 composables（单例状态，跨所有 Vue 实例共享）
-        this.editor = useEditor();
+        this.editor = useNotePage();
         this.tabBar = useTabBar();
         this.tagFilter = useTagFilter();
         this.noteList = useNoteList();

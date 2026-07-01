@@ -1,8 +1,8 @@
 <script setup>
 import { computed, watch, nextTick, onMounted, reactive, ref } from 'vue'
-import { useEditor } from './useEditor.js'
-import { EventTypes } from '../../core/EventTypes.js'
-import { escapeHtml } from '../../utils/helpers.js'
+import { useNotePage } from './useNotePage.js'
+import { EventTypes } from '../../../core/EventTypes.js'
+import { escapeHtml } from '../../../utils/helpers.js'
 import NoteSuggestionPopup from './components/NoteSuggestionPopup.vue'
 
 // Wiki Link 正则：匹配 [[id|Title]] 或 [[id]]
@@ -23,7 +23,23 @@ const {
   setFocused,
   getActiveNoteId,
   getEditors
-} = useEditor()
+} = useNotePage()
+
+// 获取笔记列表
+const editorList = computed(() => {
+  return getEditors()
+})
+
+// 暴露方法给外部
+defineExpose({
+  createNoteEditor,
+  switchToNoteEditor,
+  switchToHomePage,
+  closeNoteEditor,
+  updateEditorTitle,
+  updateEditorContent,
+  updateNoteTags
+})
 
 // Wiki Link 选择浮层状态
 const notePicker = reactive({
@@ -705,6 +721,7 @@ async function initVditor(noteId, container, noteData) {
         className: 'recover',
         icon: '<svg t="1717420000000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><path d="M128 160 L896 160" stroke="#666666" stroke-width="96" stroke-linecap="round" fill="none" /><path d="M512 300 L512 896 M320 700 L512 896 L704 700" stroke="#666666" stroke-width="96" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>',
         click() {
+          setFocused(false)
           const editorEl = document.getElementById(`note-${noteId}`)
           if (editorEl) {
             editorEl.classList.remove('editor-focused')
@@ -1029,26 +1046,10 @@ onMounted(() => {
   initializeExistingEditors()
   observeThemeChanges()
 })
-
-// 获取笔记列表
-const editorList = computed(() => {
-  return getEditors()
-})
-
-// 暴露方法给外部
-defineExpose({
-  createNoteEditor,
-  switchToNoteEditor,
-  switchToHomePage,
-  closeNoteEditor,
-  updateEditorTitle,
-  updateEditorContent,
-  updateNoteTags
-})
 </script>
 
 <template>
-  <!-- 动态笔记编辑器 -->
+  <!-- 动态笔记编辑器容器 -->
   <div class="editor-root" v-bind="$attrs">
     <div
       v-for="editor in editorList"
@@ -1061,89 +1062,89 @@ defineExpose({
         'editor-focused': isFocused && activeNoteId === editor.id
       }"
     >
-    <!-- 标题输入 -->
-    <input
-      type="text"
-      class="note-title-input"
-      v-model="editor.noteData.title"
-      placeholder="输入标题..."
-      :disabled="editor.noteData?.status === 'trashed'"
-      @input="handleTitleInput(editor.id, $event)"
-      @blur="handleTitleBlur(editor.id, $event)"
-    >
-
-    <!-- 摘要输入 -->
-    <input
-      type="text"
-      class="note-excerpt-input"
-      v-model="editor.noteData.excerpt"
-      placeholder="输入摘要（最多50字）..."
-      maxlength="50"
-      :disabled="editor.noteData?.status === 'trashed'"
-      @input="handleExcerptInput(editor.id, $event)"
-      @blur="handleExcerptBlur(editor.id, $event)"
-    >
-
-    <!-- 标签栏 -->
-    <div
-      class="note-tags-bar"
-      :data-note-id="editor.id"
-    >
-      <button
-        v-if="getTagsDisplay(editor.id).showAddBtn"
-        class="btn-add-tag"
-        @click="handleTagClick(editor.id)"
+      <!-- 标题输入 -->
+      <input
+        type="text"
+        class="note-title-input"
+        v-model="editor.noteData.title"
+        placeholder="输入标题..."
+        :disabled="editor.noteData?.status === 'trashed'"
+        @input="handleTitleInput(editor.id, $event)"
+        @blur="handleTitleBlur(editor.id, $event)"
       >
-        <i class="fas fa-plus"></i> 添加标签
-      </button>
-      <div class="note-tags-list">
-        <span
-          v-for="tag in getTagsDisplay(editor.id).tags"
-          :key="tag.id"
-          class="note-tag-item"
-          :data-tag-id="tag.id"
+
+      <!-- 摘要输入 -->
+      <input
+        type="text"
+        class="note-excerpt-input"
+        v-model="editor.noteData.excerpt"
+        placeholder="输入摘要（最多50字）..."
+        maxlength="50"
+        :disabled="editor.noteData?.status === 'trashed'"
+        @input="handleExcerptInput(editor.id, $event)"
+        @blur="handleExcerptBlur(editor.id, $event)"
+      >
+
+      <!-- 标签栏 -->
+      <div
+        class="note-tags-bar"
+        :data-note-id="editor.id"
+      >
+        <button
+          v-if="getTagsDisplay(editor.id).showAddBtn"
+          class="btn-add-tag"
           @click="handleTagClick(editor.id)"
         >
+          <i class="fas fa-plus"></i> 添加标签
+        </button>
+        <div class="note-tags-list">
           <span
-            class="note-tag-color"
-            :style="{ backgroundColor: tag.color }"
-          ></span>
-          <span class="note-tag-name">{{ tag.name }}</span>
-        </span>
+            v-for="tag in getTagsDisplay(editor.id).tags"
+            :key="tag.id"
+            class="note-tag-item"
+            :data-tag-id="tag.id"
+            @click="handleTagClick(editor.id)"
+          >
+            <span
+              class="note-tag-color"
+              :style="{ backgroundColor: tag.color }"
+            ></span>
+            <span class="note-tag-name">{{ tag.name }}</span>
+          </span>
+        </div>
       </div>
-    </div>
 
-    <!-- 引用列表 -->
-    <div
-      class="note-references-bar"
-      :data-note-id="editor.id"
-    >
-      <button
-        v-if="getReferencesDisplay(editor.id).showAddBtn"
-        class="btn-add-reference"
-        @click="handleAddReferenceTip"
+      <!-- 引用列表 -->
+      <div
+        class="note-references-bar"
+        :data-note-id="editor.id"
       >
-        <i class="fas fa-plus"></i> 创建引用
-      </button>
-      <div class="references-list">
-        <span
-          v-for="ref in getReferencesDisplay(editor.id).references"
-          :key="ref.id"
-          class="reference-item"
-          :class="{ 'missing': ref.missing }"
-          @click="handleReferenceClick(ref.id, editor.id)"
+        <button
+          v-if="getReferencesDisplay(editor.id).showAddBtn"
+          class="btn-add-reference"
+          @click="handleAddReferenceTip"
         >
-          <i class="fas fa-link reference-icon"></i>
-          <span class="reference-title">{{ ref.alias || ref.title }}</span>
-        </span>
+          <i class="fas fa-plus"></i> 创建引用
+        </button>
+        <div class="references-list">
+          <span
+            v-for="ref in getReferencesDisplay(editor.id).references"
+            :key="ref.id"
+            class="reference-item"
+            :class="{ 'missing': ref.missing }"
+            @click="handleReferenceClick(ref.id, editor.id)"
+          >
+            <i class="fas fa-link reference-icon"></i>
+            <span class="reference-title">{{ ref.alias || ref.title }}</span>
+          </span>
+        </div>
       </div>
-    </div>
 
-    <!-- Vditor 容器 -->
-    <div
-      class="vditor-container"
-      :id="`vditor-${editor.id}`"
-    ></div>
+      <!-- Vditor 容器 -->
+      <div
+        class="vditor-container"
+        :id="`vditor-${editor.id}`"
+      ></div>
     </div>
   </div>
 

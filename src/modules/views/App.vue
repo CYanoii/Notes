@@ -4,10 +4,10 @@ import ToastContainer from './Toast/ToastContainer.vue'
 import ModalContainer from './Modal/ModalContainer.vue'
 import LeftSidebar from './LeftSidebar/LeftSidebar.vue'
 import TabBar from './TabBar/TabBar.vue'
-import Editor from './Editor/Editor.vue'
+import Editor from './Pages/NotePage/NotePage.vue'
 import HomePage from './HomePage/HomePage.vue'
 import { useLeftSidebar } from './LeftSidebar/useLeftSidebar.js'
-import { useEditor } from './Editor/useEditor.js'
+import { useNotePage } from './Pages/NotePage/useNotePage.js'
 import { useTabBar } from './TabBar/useTabBar.js'
 import { useTagFilter } from './TagFilter/useTagFilter.js'
 import { useNoteList } from './NoteList/useNoteList.js'
@@ -17,7 +17,7 @@ import { EventTypes } from '../core/EventTypes.js'
 
 // 立即暴露 composable 实例到 window（早于 UIManager 构造函数调用）
 window.leftSidebarApi = useLeftSidebar()
-window.editorApi = useEditor()
+window.editorApi = useNotePage()
 window.tabBarApi = useTabBar()
 window.tagFilterApi = useTagFilter()
 window.noteListApi = useNoteList()
