@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
 
   // 笔记操作
-  createNote: () => ipcRenderer.invoke('notes:create'),
+  createNote: (pageType) => ipcRenderer.invoke('notes:create', pageType),
   getNote: (noteId) => ipcRenderer.invoke('notes:get', noteId),
   getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
   getRecentNotes: (limit) => ipcRenderer.invoke('notes:getRecent', limit),

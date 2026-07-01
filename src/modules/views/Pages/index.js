@@ -1,7 +1,9 @@
 import NotePage from './NotePage/NotePage.vue'
+import StickyPage from './StickyPage/StickyPage.vue'
 
 // 页面类型常量
 export const NOTE_PAGE = 'note'
+export const STICKY_PAGE = 'sticky'
 
 /**
  * Page Factory - Creates page components based on page type
@@ -13,6 +15,10 @@ export function createPage(pageType, options = {}) {
   const pages = {
     [NOTE_PAGE]: {
       component: NotePage,
+      defaultProps: {}
+    },
+    [STICKY_PAGE]: {
+      component: StickyPage,
       defaultProps: {}
     }
   }
@@ -38,5 +44,5 @@ export function createPage(pageType, options = {}) {
  * @returns {boolean}
  */
 export function isValidPageType(pageType) {
-  return pageType === NOTE_PAGE
+  return pageType === NOTE_PAGE || pageType === STICKY_PAGE
 }

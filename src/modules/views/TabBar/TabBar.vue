@@ -109,7 +109,7 @@ function onDrop(event, index) {
       @drop="onDrop($event, index)"
     >
       <div class="tab-icon-title">
-        <i class="fas fa-file-alt"></i>
+        <i :class="tab.pageType === 'sticky' ? 'fas fa-sticky-note' : 'fas fa-file-alt'"></i>
         <span class="tab-title">{{ tab.title }}</span>
       </div>
       <span class="tab-close" @click="handleClose($event, tab.id)">

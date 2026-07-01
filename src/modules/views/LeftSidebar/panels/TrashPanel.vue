@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
+import { getPageIcon } from '../../../utils/helpers.js'
 import './panels-shared.css'
 
 const props = defineProps({
@@ -76,7 +77,7 @@ function escapeHtml(text) {
           @click="handleNoteClick(note.id)"
         >
           <div class="trash-note-info">
-            <i class="fas fa-sticky-note"></i>
+            <i :class="getPageIcon(note.pageType)"></i>
             <span class="trash-note-title">{{ escapeHtml(note.title || '无标题') }}</span>
           </div>
           <div class="trash-note-actions">

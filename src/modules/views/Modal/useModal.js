@@ -81,6 +81,21 @@ export function useModal() {
   }
 
   /**
+   * 显示页面类型选择模态框
+   */
+  function showPageTypeSelection() {
+    return new Promise(resolve => {
+      const id = ++state.modalId
+      state.modals.push({
+        id,
+        type: 'pageTypeSelection',
+        resolve,
+        show: true
+      })
+    })
+  }
+
+  /**
    * 显示设置浮出窗口
    */
   async function showSettingsPopover() {
@@ -134,6 +149,7 @@ export function useModal() {
     prompt,
     confirm,
     showTagSelection,
+    showPageTypeSelection,
     showSettingsPopover,
     toggleTagSelection,
     updateSettingsPath,

@@ -3,12 +3,13 @@ import PromptModal from './types/PromptModal.vue'
 import ConfirmModal from './types/ConfirmModal.vue'
 import TagSelectionModal from './types/TagSelectionModal.vue'
 import SettingsModal from './types/SettingsModal.vue'
+import PageTypeModal from './types/PageTypeModal.vue'
 
 const props = defineProps({
   modal: { type: Object, required: true }
 })
 
-const emit = defineEmits(['close', 'confirm', 'tagToggle', 'updatePath', 'selectFolder', 'clearPath'])
+const emit = defineEmits(['close', 'confirm', 'tagToggle', 'updatePath', 'selectFolder', 'clearPath', 'select'])
 
 function handleOverlayClick(e) {
   if (e.target === e.currentTarget) {
@@ -46,6 +47,12 @@ function handleOverlayClick(e) {
         @updatePath="(id, path) => emit('updatePath', id, path)"
         @selectFolder="(id) => emit('selectFolder', id)"
         @clearPath="(id) => emit('clearPath', id)"
+      />
+      <PageTypeModal
+        v-else-if="modal.type === 'pageTypeSelection'"
+        :modal="modal"
+        @close="(id) => emit('close', id)"
+        @select="(id, type) => emit('select', id, type)"
       />
     </div>
   </Teleport>

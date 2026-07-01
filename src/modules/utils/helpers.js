@@ -27,3 +27,12 @@ export function debounce(func, delay) {
         timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
 }
+
+/**
+ * 根据页面类型获取图标类名
+ * @param {string} pageType 页面类型 ('note' | 'sticky')
+ * @returns {string} FontAwesome 图标类名
+ */
+export function getPageIcon(pageType) {
+    return pageType === 'sticky' ? 'fas fa-sticky-note' : 'fas fa-file-alt';
+}

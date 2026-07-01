@@ -24,6 +24,10 @@ function handleTagToggle(id, tagId) {
 function handleUpdatePath(id, path) {
   updateSettingsPath(id, path)
 }
+
+function handleSelect(id, type) {
+  close(id, type)
+}
 </script>
 
 <template>
@@ -35,5 +39,6 @@ function handleUpdatePath(id, path) {
     @confirm="handleConfirm"
     @tagToggle="handleTagToggle"
     @updatePath="handleUpdatePath"
+    @select="handleSelect"
   />
 </template>

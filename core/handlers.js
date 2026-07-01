@@ -90,8 +90,8 @@ async function setupIpcHandlers() {
 
   // ===== 笔记操作 =====
   // 创建笔记
-  ipcMain.handle('notes:create', async () => {
-    return await notesManager.createNote();
+  ipcMain.handle('notes:create', async (event, pageType = 'note') => {
+    return await notesManager.createNote('', pageType);
   });
 
   // 获取所有笔记

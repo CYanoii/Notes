@@ -62,7 +62,7 @@ function handleNewNote() {
     <!-- 笔记列表 -->
     <div class="all-notes">
       <h2>
-        <i class="fas fa-sticky-note"></i> 所有笔记
+        <i class="fas fa-columns"></i> 所有页面
       </h2>
       <NoteList class="notes-grid-wrapper" />
     </div>

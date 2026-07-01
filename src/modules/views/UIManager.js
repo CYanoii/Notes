@@ -442,6 +442,10 @@ export class UIManager {
         return this.modal.showTagSelection(allTags, currentTagIds);
     }
 
+    modal_showPageTypeSelection() {
+        return this.modal.showPageTypeSelection();
+    }
+
     modal_showSettingsPopover() {
         this.modal.showSettingsPopover();
     }

@@ -25,7 +25,7 @@ class NotesManager {
   }
 
   // 创建新笔记
-  async createNote(title = '') {
+  async createNote(title = '', pageType = 'note') {
     const noteId = Date.now().toString();
     const noteDir = path.join(this.notesDir, noteId);
 
@@ -39,7 +39,7 @@ class NotesManager {
       updatedAt: new Date().toISOString(),
       tags: [],
       status: 'active',
-      pageType: 'note'
+      pageType: pageType
     };
 
     await this.saveMetadata(noteId, metadata);

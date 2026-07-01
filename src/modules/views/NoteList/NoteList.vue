@@ -2,6 +2,7 @@
 import { formatDate } from '../../utils/formatters.js'
 import { EventTypes } from '../../core/EventTypes.js'
 import { useNoteList } from './useNoteList.js'
+import { getPageIcon } from '../../utils/helpers.js'
 import { ref } from 'vue'
 
 const { notes } = useNoteList()
@@ -164,7 +165,6 @@ function formatNoteDate(date) {
     margin: 0 0 6px 0;
     font-size: 16px;
     font-weight: 600;
-    color: var(--note-card-title-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

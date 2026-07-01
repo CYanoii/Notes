@@ -19,7 +19,11 @@ export function useTabBar() {
     // 检查是否已存在
     const exists = state.tabs.some(t => t.id === noteData.id)
     if (!exists) {
-      state.tabs.push({ id: noteData.id, title: noteData.title || '无标题' })
+      state.tabs.push({
+        id: noteData.id,
+        title: noteData.title || '无标题',
+        pageType: noteData.pageType || 'note'
+      })
     }
   }
 

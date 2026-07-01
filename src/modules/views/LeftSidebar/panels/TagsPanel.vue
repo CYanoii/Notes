@@ -1,6 +1,7 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { EventTypes } from '../../../core/EventTypes.js'
+import { getPageIcon } from '../../../utils/helpers.js'
 import './panels-shared.css'
 
 const props = defineProps({
@@ -140,7 +141,7 @@ defineExpose({
               :data-tag-id="tag.id"
               @click.stop="handleTagNoteClick(note.id)"
             >
-              <i class="fas fa-sticky-note"></i>
+              <i :class="getPageIcon(note.pageType)"></i>
               <span class="tag-note-title">{{ escapeHtml(note.title || '无标题') }}</span>
             </li>
           </ul>

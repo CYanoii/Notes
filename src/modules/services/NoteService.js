@@ -79,10 +79,11 @@ export class NoteService {
 
     /**
      * 创建新笔记
+     * @param {string} pageType 页面类型 ('note' | 'sticky')
      * @returns {Promise<Object>} 新创建的笔记
      */
-    async createNote() {
-        const note = await window.electronAPI.createNote();
+    async createNote(pageType = 'note') {
+        const note = await window.electronAPI.createNote(pageType);
         return note;
     }
 

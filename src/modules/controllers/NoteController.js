@@ -395,7 +395,11 @@ export class NoteController {
      */
     async createNewNote() {
         try {
-            const noteData = await this.noteService.createNote();
+            // 弹出页面类型选择框
+            const pageType = await this.uiManager.modal_showPageTypeSelection();
+            if (!pageType) return; // 用户取消选择
+
+            const noteData = await this.noteService.createNote(pageType);
             this.addNoteToApp(noteData);
         } catch (error) {
             console.error('创建笔记失败:', error);

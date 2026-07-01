@@ -4,6 +4,16 @@ import { useNotePage } from './useNotePage.js'
 import { EventTypes } from '../../../core/EventTypes.js'
 import { escapeHtml } from '../../../utils/helpers.js'
 import NoteSuggestionPopup from './components/NoteSuggestionPopup.vue'
+import StickyPage from '../StickyPage/StickyPage.vue'
+
+// 页面类型常量
+const NOTE_PAGE = 'note'
+const STICKY_PAGE = 'sticky'
+
+// 检查是否为便签页
+function isStickyPage(noteData) {
+  return noteData?.pageType === STICKY_PAGE
+}
 
 // Wiki Link 正则：匹配 [[id|Title]] 或 [[id]]
 const WIKI_LINK_REGEX = /\[\[(\d+)(?:\|([^\]]+))?\]\]/g;
@@ -1062,28 +1072,24 @@ onMounted(() => {
         'editor-focused': isFocused && activeNoteId === editor.id
       }"
     >
-      <!-- 标题输入 -->
-      <input
-        type="text"
-        class="note-title-input"
-        v-model="editor.noteData.title"
-        placeholder="输入标题..."
-        :disabled="editor.noteData?.status === 'trashed'"
-        @input="handleTitleInput(editor.id, $event)"
-        @blur="handleTitleBlur(editor.id, $event)"
-      >
+      <!-- 便签页 -->
+      <StickyPage
+        v-if="isStickyPage(editor.noteData)"
+        :noteData="editor.noteData"
+      />
 
-      <!-- 摘要输入 -->
-      <input
-        type="text"
-        class="note-excerpt-input"
-        v-model="editor.noteData.excerpt"
-        placeholder="输入摘要（最多50字）..."
-        maxlength="50"
-        :disabled="editor.noteData?.status === 'trashed'"
-        @input="handleExcerptInput(editor.id, $event)"
-        @blur="handleExcerptBlur(editor.id, $event)"
-      >
+      <!-- 笔记页 -->
+      <template v-else>
+        <!-- 标题输入 -->
+        <input
+          type="text"
+          class="note-title-input"
+          v-model="editor.noteData.title"
+          placeholder="输入标题..."
+          :disabled="editor.noteData?.status === 'trashed'"
+          @input="handleTitleInput(editor.id, $event)"
+          @blur="handleTitleBlur(editor.id, $event)"
+        >
 
       <!-- 标签栏 -->
       <div
@@ -1145,6 +1151,7 @@ onMounted(() => {
         class="vditor-container"
         :id="`vditor-${editor.id}`"
       ></div>
+      </template>
     </div>
   </div>
 
