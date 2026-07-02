@@ -90,6 +90,8 @@ class StickyManager {
       y,
       zIndex: maxZIndex + 1,
       content: '',
+      color: '#fff9c4',
+      headerColor: '#fff176',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -104,7 +106,7 @@ class StickyManager {
    * 更新便签
    * @param {string} stickyPageId 便签页 ID
    * @param {string} stickyId 便签 ID
-   * @param {Object} updates 更新内容 { x?, y?, zIndex?, content? }
+   * @param {Object} updates 更新内容 { x?, y?, zIndex?, content?, color?, headerColor? }
    * @returns {Promise<Object>} 更新后的便签
    */
   async updateSticky(stickyPageId, stickyId, updates) {

@@ -21,6 +21,9 @@ const stickies = ref([])
 const activeStickyId = ref(null)
 const wallRef = ref(null)
 
+// 下拉菜单展开状态
+const isDropdownOpen = ref(false)
+
 // 拖拽状态
 const dragging = reactive({
   isDragging: false,
@@ -28,11 +31,52 @@ const dragging = reactive({
   startX: 0,
   startY: 0,
   offsetX: 0,
-  offsetY: 0
+  offsetY: 0,
+  isOverTrash: false
+})
+
+// 垃圾桶区域状态
+const trashZone = reactive({
+  isVisible: false,
+  isHover: false
 })
 
 // 便签页 ID
 const stickyPageId = computed(() => props.noteData.id)
+
+// 获取便签页编辑器数据
+function getEditor() {
+  return state.editors.get(stickyPageId.value)
+}
+
+// 切换下拉菜单
+function toggleDropdown() {
+  isDropdownOpen.value = !isDropdownOpen.value
+}
+
+// 标题变化处理
+function handleTitleInput(e) {
+  const newTitle = e.target.value
+  const editor = getEditor()
+  if (editor && editor.noteData) {
+    editor.noteData.title = newTitle
+    if (window.eventBus) {
+      window.eventBus.emit(EventTypes.NOTE.UPDATE.TITLE, stickyPageId.value, newTitle)
+    }
+  }
+}
+
+// 摘要变化处理
+function handleExcerptInput(e) {
+  const newExcerpt = e.target.value
+  const editor = getEditor()
+  if (editor && editor.noteData) {
+    editor.noteData.excerpt = newExcerpt
+    if (window.eventBus) {
+      window.eventBus.emit(EventTypes.NOTE.UPDATE.EXCERPT, stickyPageId.value, newExcerpt)
+    }
+  }
+}
 
 // 获取标签显示数据
 function getTagsDisplay() {
@@ -69,8 +113,9 @@ async function loadStickies() {
 
 // 创建新便签
 async function handleCreateSticky() {
-  // 在右上角位置创建新便签
-  const x = window.innerWidth - 250
+  // 在右上角位置创建新便签（确保便签完全在页面内）
+  const stickyWidth = 180
+  const x = window.innerWidth - 200 - stickyWidth - 20
   const y = 80
   const newSticky = await window.stickyController.createSticky(stickyPageId.value, { x, y })
   if (newSticky) {
@@ -139,6 +184,9 @@ function handleDragStart(stickyId, e) {
   dragging.offsetX = sticky.x
   dragging.offsetY = sticky.y
 
+  // 显示垃圾桶区域
+  trashZone.isVisible = true
+
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
 }
@@ -159,6 +207,19 @@ function handleDragMove(e) {
     sticky.x = newX
     sticky.y = newY
   }
+
+  // 检查是否在垃圾桶区域
+  const trashZoneEl = document.querySelector('.trash-zone')
+  if (trashZoneEl) {
+    const rect = trashZoneEl.getBoundingClientRect()
+    dragging.isOverTrash = (
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom
+    )
+    trashZone.isHover = dragging.isOverTrash
+  }
 }
 
 // 防抖保存位置
@@ -170,17 +231,27 @@ const debouncedSavePosition = debounce((stickyId, x, y) => {
 function handleDragEnd(e) {
   if (!dragging.isDragging) return
 
-  const deltaX = e.clientX - dragging.startX
-  const deltaY = e.clientY - dragging.startY
+  // 如果在垃圾桶区域上方，删除便签
+  if (dragging.isOverTrash) {
+    handleStickyDelete(dragging.stickyId)
+  } else {
+    const deltaX = e.clientX - dragging.startX
+    const deltaY = e.clientY - dragging.startY
 
-  const newX = dragging.offsetX + deltaX
-  const newY = dragging.offsetY + deltaY
+    const newX = dragging.offsetX + deltaX
+    const newY = dragging.offsetY + deltaY
 
-  // 保存最终位置
-  debouncedSavePosition(dragging.stickyId, newX, newY)
+    // 保存最终位置
+    debouncedSavePosition(dragging.stickyId, newX, newY)
+  }
+
+  // 隐藏垃圾桶区域
+  trashZone.isVisible = false
+  trashZone.isHover = false
 
   dragging.isDragging = false
   dragging.stickyId = null
+  dragging.isOverTrash = false
 
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
@@ -204,38 +275,69 @@ onMounted(() => {
 
 <template>
   <div class="sticky-page">
-    <!-- 左上角标签栏 -->
-    <div
-      class="sticky-tags-bar"
-      :data-note-id="stickyPageId"
-    >
+    <!-- 左上角设置面板 -->
+    <div class="sticky-settings">
+      <!-- 设置下拉菜单 -->
+      <div v-if="isDropdownOpen" class="sticky-settings-dropdown">
+          <!-- 标题编辑区 -->
+          <div class="settings-section">
+            <input
+              type="text"
+              class="sticky-title-input"
+              :value="getEditor()?.noteData?.title || ''"
+              placeholder="输入标题..."
+              @input="handleTitleInput"
+            >
+          </div>
+
+          <!-- 摘要编辑区 -->
+          <div class="settings-section">
+            <input
+              type="text"
+              class="sticky-excerpt-input"
+              :value="getEditor()?.noteData?.excerpt || ''"
+              placeholder="输入摘要..."
+              maxlength="50"
+              @input="handleExcerptInput"
+            >
+          </div>
+
+          <!-- 标签区 -->
+          <div class="note-tags-bar">
+            <button
+              v-if="getTagsDisplay().showAddBtn"
+              class="btn-add-tag"
+              @click="handleTagClick"
+            >
+              <i class="fas fa-plus"></i> 添加标签
+            </button>
+            <div class="note-tags-list">
+              <span
+                v-for="tag in getTagsDisplay().tags"
+                :key="tag.id"
+                class="note-tag-item"
+                @click="handleTagClick"
+              >
+                <span class="note-tag-color" :style="{ backgroundColor: tag.color }"></span>
+                <span class="note-tag-name">{{ tag.name }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+      <!-- 切换按钮 -->
       <button
-        v-if="getTagsDisplay().showAddBtn"
-        class="btn-add-tag"
-        @click="handleTagClick"
+        class="sticky-settings-toggle"
+        :class="{ open: isDropdownOpen }"
+        @click="toggleDropdown"
       >
-        <i class="fas fa-plus"></i> 添加标签
+        <i class="fas fa-chevron-up"></i>
       </button>
-      <div class="sticky-tags-list">
-        <span
-          v-for="tag in getTagsDisplay().tags"
-          :key="tag.id"
-          class="sticky-tag-item"
-          :data-tag-id="tag.id"
-          @click="handleTagClick"
-        >
-          <span
-            class="sticky-tag-color"
-            :style="{ backgroundColor: tag.color }"
-          ></span>
-          <span class="sticky-tag-name">{{ tag.name }}</span>
-        </span>
-      </div>
     </div>
 
     <!-- 右上方新建便签按钮 -->
     <button class="btn-new-sticky" @click="handleCreateSticky" title="新建便签">
-      <i class="fas fa-plus"></i>
+      <i class="far fa-sticky-note"></i>
     </button>
 
     <!-- 便签墙 -->
@@ -252,6 +354,13 @@ onMounted(() => {
         @focus="() => handleStickyFocus(sticky.id)"
       />
     </div>
+
+    <!-- 垃圾桶区域 -->
+    <Transition name="trash-fade">
+      <div v-if="trashZone.isVisible" class="trash-zone" :class="{ hover: trashZone.isHover }">
+        <i class="fas fa-trash-alt"></i>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -266,45 +375,80 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 左上角标签栏 */
-.sticky-tags-bar {
+/* 左上角设置面板 */
+.sticky-settings {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  top: 0;
+  left: 30px;
   z-index: 100;
-  background: var(--modal-bg);
-  padding: 8px 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.sticky-tags-list {
+/* 设置下拉菜单 */
+.sticky-settings-dropdown {
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  width: 240px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 99;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
+}
+
+/* 便签页标签栏 */
+.note-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.sticky-tag-item {
+.note-tags-list {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.note-tag-item {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
   background: var(--editor-tags-bg);
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 12px;
+  transition: all 0.2s;
+  border: 1px solid var(--editor-tags-border);
 }
 
-.sticky-tag-color {
-  width: 8px;
-  height: 8px;
+.note-tag-item:hover {
+  background: var(--editor-tags-hover-bg);
+  border-color: var(--text-muted);
+}
+
+.note-tag-color {
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.sticky-tag-name {
+.note-tag-name {
+  font-size: 12px;
   color: var(--text-primary);
 }
 
@@ -315,16 +459,81 @@ onMounted(() => {
   background: transparent;
   border: 1px dashed var(--editor-add-tag-border);
   color: var(--editor-add-tag-color);
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-add-tag:hover {
+  background: var(--editor-tags-hover-bg);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.sticky-title-input,
+.sticky-excerpt-input {
+  width: 100%;
+  border: none;
+  background: var(--editor-tags-bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sticky-title-input:focus,
+.sticky-excerpt-input:focus {
   border-color: var(--accent);
+}
+
+.sticky-title-input::placeholder,
+.sticky-excerpt-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* 切换按钮 */
+.sticky-settings-toggle {
+  width: 40px;
+  height: 24px;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s;
+  position: relative;
+  z-index: 100;
+  /* 居中于下拉菜单下方 */
+  margin-top: -1px;
+  margin-left: calc(240px / 2 - 20px);
+}
+
+.sticky-settings-toggle .fa-chevron-up {
+  transition: transform 0.25s ease;
+}
+
+.sticky-settings-toggle:hover {
+  background: var(--modal-bg);
   color: var(--accent);
+}
+
+.sticky-settings-toggle .fa-chevron-up {
+  transform: rotate(180deg);
+}
+
+.sticky-settings-toggle.open .fa-chevron-up {
+  transform: rotate(0deg);
 }
 
 /* 右上角新建按钮 */
@@ -359,4 +568,54 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
 }
+
+/* 垃圾桶区域 */
+.trash-zone {
+  position: fixed;
+  bottom: 30px;
+  /* 相对于页面中心（左侧留 250px 侧边栏） */
+  left: calc((100% - 250px) / 2 + 250px);
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: var(--modal-bg);
+  border: 2px solid var(--modal-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  transition: all 0.2s;
+}
+
+.trash-zone.hover {
+  background: #fee;
+  border-color: #c44;
+  color: #c44;
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(204, 68, 68, 0.3);
+}
+
+.trash-zone i {
+  transition: transform 0.2s;
+}
+
+.trash-zone.hover i {
+  transform: scale(1.2);
+}
+
+/* 垃圾桶浮现动画 */
+.trash-fade-enter-active,
+.trash-fade-leave-active {
+  transition: opacity 0.2s;
+}
+
+.trash-fade-enter-from,
+.trash-fade-leave-to {
+  opacity: 0;
+}
 </style>
+

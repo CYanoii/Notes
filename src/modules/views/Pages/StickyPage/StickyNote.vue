@@ -19,13 +19,34 @@ const emit = defineEmits(['update', 'delete', 'dragstart', 'dragend', 'focus'])
 const stickyRef = ref(null)
 const contentRef = ref(null)
 
-// 本地内容状态
-const localContent = ref(props.stickyData.content || '')
+// 是否正在由用户输入（避免外部更新时干扰）
+const isUserInputting = ref(false)
 
-// 监听 props 变化同步本地状态
+// 颜色选项
+const colorOptions = [
+  { name: '黄色', bg: '#fff9c4', header: '#fff176' },
+  { name: '粉色', bg: '#f8bbd9', header: '#f48fb1' },
+  { name: '蓝色', bg: '#bbdefb', header: '#90caf9' },
+  { name: '绿色', bg: '#c8e6c9', header: '#a5d6a7' },
+  { name: '紫色', bg: '#e1bee7', header: '#ce93d8' },
+  { name: '橙色', bg: '#ffe0b2', header: '#ffcc80' }
+]
+
+// 颜色选择下拉展开状态
+const isColorOpen = ref(false)
+
+// 初始化内容
+onMounted(() => {
+  if (contentRef.value) {
+    contentRef.value.innerText = props.stickyData.content || ''
+  }
+})
+
+// 监听外部内容变化，更新 DOM
 watch(() => props.stickyData.content, (newContent) => {
-  if (newContent !== localContent.value) {
-    localContent.value = newContent
+  if (isUserInputting.value) return
+  if (contentRef.value && contentRef.value.innerText !== newContent) {
+    contentRef.value.innerText = newContent || ''
   }
 })
 
@@ -36,14 +57,32 @@ const debouncedSaveContent = debounce((content) => {
 
 // 内容变化处理
 function handleContentInput(e) {
-  localContent.value = e.target.innerText
-  debouncedSaveContent(localContent.value)
+  isUserInputting.value = true
+  const content = e.target.innerText
+  debouncedSaveContent(content)
+  // 短暂延迟后重置标志，让外部更新可以生效
+  setTimeout(() => {
+    isUserInputting.value = false
+  }, 600)
 }
 
-// 删除便签
-function handleDelete(e) {
+// 切换颜色下拉
+function toggleColorDropdown(e) {
   e.stopPropagation()
-  emit('delete')
+  isColorOpen.value = !isColorOpen.value
+}
+
+// 选择颜色
+function selectColor(color) {
+  isColorOpen.value = false
+  emit('update', { color: color.bg, headerColor: color.header })
+}
+
+// 点击外部关闭颜色下拉
+function handleClickOutside(e) {
+  if (isColorOpen.value) {
+    isColorOpen.value = false
+  }
 }
 
 // 便签获得焦点
@@ -75,15 +114,39 @@ defineExpose({
     :style="{
       left: stickyData.x + 'px',
       top: stickyData.y + 'px',
-      zIndex: stickyData.zIndex
+      zIndex: stickyData.zIndex,
+      backgroundColor: stickyData.color || '#fff9c4'
     }"
-    @mousedown.stop="handleDragStart"
+    @click="handleClickOutside"
   >
     <!-- 便签头部 -->
-    <div class="sticky-header">
-      <button class="sticky-delete-btn" @click="handleDelete" title="删除便签">
-        <i class="fas fa-times"></i>
-      </button>
+    <div
+      class="sticky-header"
+      :style="{ backgroundColor: stickyData.headerColor || '#fff176' }"
+      @mousedown.stop="handleDragStart"
+    >
+      <!-- 颜色选择器 -->
+      <div class="color-picker">
+        <button
+          class="color-dot"
+          :style="{ backgroundColor: stickyData.color || '#fff9c4' }"
+          @click.stop="toggleColorDropdown"
+          title="切换颜色"
+        ></button>
+        <div v-if="isColorOpen" class="color-dropdown">
+          <button
+            v-for="color in colorOptions"
+            :key="color.name"
+            class="color-option"
+            :class="{ active: (stickyData.color || '#fff9c4') === color.bg }"
+            :style="{ backgroundColor: color.bg }"
+            :title="color.name"
+            @click.stop="selectColor(color)"
+          >
+            <i v-if="(stickyData.color || '#fff9c4') === color.bg" class="fas fa-check check-icon"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- 便签内容 -->
@@ -93,8 +156,7 @@ defineExpose({
       contenteditable="true"
       @input="handleContentInput"
       @focus="handleFocus"
-      @blur="debouncedSaveContent(localContent)"
-      v-text="localContent"
+      @blur="debouncedSaveContent(contentRef?.innerText || '')"
     ></div>
   </div>
 </template>
@@ -102,56 +164,106 @@ defineExpose({
 <style scoped>
 .sticky-note {
   position: absolute;
-  width: 200px;
-  min-height: 150px;
-  background: #fff9c4;
-  border-radius: 2px;
-  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.15);
-  cursor: move;
-  user-select: none;
+  width: 180px;
+  min-height: 200px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.sticky-note:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sticky-note.active {
-  box-shadow: 4px 8px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
 .sticky-header {
   display: flex;
-  justify-content: flex-end;
-  padding: 4px;
-  background: #fff176;
-  border-radius: 2px 2px 0 0;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 12px 12px 0 0;
+  cursor: move;
+  min-height: 26px;
 }
 
-.sticky-delete-btn {
-  background: transparent;
+.color-picker {
+  position: relative;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
-  padding: 2px 6px;
-  color: #f57f17;
-  opacity: 0.6;
-  transition: opacity 0.2s;
 }
 
-.sticky-delete-btn:hover {
-  opacity: 1;
+.color-dropdown {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: 20px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.color-option {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+  padding: 0;
+}
+
+.color-option:hover {
+  transform: scale(1.15);
+}
+
+.color-option .check-icon {
+  color: white;
+  font-size: 8px;
+  animation: checkBounce 0.15s ease-out;
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .sticky-content {
   flex: 1;
-  padding: 12px;
-  font-size: 14px;
-  line-height: 1.5;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.7;
   color: #333;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
   outline: none;
   word-wrap: break-word;
   overflow-y: auto;
-}
-
-.sticky-content:empty::before {
-  content: '输入内容...';
-  color: #999;
 }
 </style>
