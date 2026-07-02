@@ -413,7 +413,6 @@ const handleClose = () => window.electronAPI.closeWindow()
 }
 
 .fab-dropdown-item:hover {
-  background: var(--tag-filter-hover-bg);
   border-color: var(--accent);
 }
 

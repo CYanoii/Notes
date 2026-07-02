@@ -99,7 +99,6 @@ function handleCancel() {
 
 .page-type-option:hover {
   border-color: var(--accent);
-  background: var(--tag-filter-hover-bg);
 }
 
 .page-type-option i {
