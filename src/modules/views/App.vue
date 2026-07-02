@@ -24,10 +24,32 @@ window.noteListApi = useNoteList()
 window.toastApi = useToast()
 window.modalApi = useModal()
 
-// 新建笔记
-function handleNewNote() {
+// 新建页面下拉菜单状态
+const showPageTypeDropdown = ref(false)
+
+// 切换下拉菜单
+function toggleDropdown() {
+  showPageTypeDropdown.value = !showPageTypeDropdown.value
+}
+
+// 关闭下拉菜单
+function closeDropdown() {
+  showPageTypeDropdown.value = false
+}
+
+// 创建笔记页
+function createNotePage() {
+  closeDropdown()
   if (window.eventBus) {
-    window.eventBus.emit(EventTypes.NOTE.CREATE)
+    window.eventBus.emit(EventTypes.NOTE.CREATE, 'note')
+  }
+}
+
+// 创建便签页
+function createStickyPage() {
+  closeDropdown()
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.NOTE.CREATE, 'sticky')
   }
 }
 
@@ -57,6 +79,13 @@ onMounted(async () => {
   // 监听窗口最大化状态变化（双击标题栏等系统操作）
   window.electronAPI.onWindowMaximized((maximized) => {
     isMaximized.value = maximized
+  })
+
+  // 点击外部关闭下拉菜单
+  document.addEventListener('click', (e) => {
+    if (showPageTypeDropdown.value && !e.target.closest('.fab-container')) {
+      closeDropdown()
+    }
   })
 
   // Toast 和 Modal 使用 <Teleport> 到 body，需单独挂载
@@ -112,10 +141,28 @@ const handleClose = () => window.electronAPI.closeWindow()
           <Editor class="notes-container" />
         </main>
 
-        <!-- 悬浮新建笔记按钮（仅首页显示） -->
-        <button v-if="isOnHomePage" class="fab-new-note" id="fabNewNote" @click="handleNewNote" title="新建笔记">
-          <i class="fas fa-plus"></i>
-        </button>
+        <!-- 悬浮新建页面按钮（仅首页显示） -->
+        <div v-if="isOnHomePage" class="fab-container">
+          <div v-if="showPageTypeDropdown" class="fab-dropdown">
+            <button class="fab-dropdown-item" @click="createStickyPage">
+              <i class="fas fa-sticky-note"></i>
+              <span>便签页</span>
+            </button>
+            <button class="fab-dropdown-item" @click="createNotePage">
+              <i class="fas fa-file-alt"></i>
+              <span>笔记页</span>
+            </button>
+          </div>
+          <button
+            class="fab-new-note"
+            id="fabNewNote"
+            :class="{ active: showPageTypeDropdown }"
+            @click.stop="toggleDropdown"
+            title="新建页面"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -284,13 +331,23 @@ const handleClose = () => window.electronAPI.closeWindow()
   display: none;
 }
 
-/* 悬浮新建笔记按钮 (FAB) */
-.fab-new-note {
+/* 悬浮新建页面按钮容器 */
+.fab-container {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
+  bottom: 40px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 悬浮新建页面按钮 (FAB) */
+.fab-new-note {
   width: 56px;
   height: 56px;
+  margin-left: 22px;
+  margin-right: 22px;
   border-radius: 50%;
   background: var(--fab-bg);
   color: white;
@@ -302,7 +359,6 @@ const handleClose = () => window.electronAPI.closeWindow()
   justify-content: center;
   font-size: 24px;
   transition: all 0.2s ease;
-  z-index: 1000;
 }
 
 .fab-new-note:hover {
@@ -313,5 +369,66 @@ const handleClose = () => window.electronAPI.closeWindow()
 
 .fab-new-note:active {
   transform: scale(0.95);
+}
+
+.fab-new-note.active {
+  background: var(--fab-hover-bg);
+  transform: rotate(45deg);
+}
+
+/* 下拉菜单 */
+.fab-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 下拉菜单项 */
+.fab-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--modal-bg);
+  color: var(--modal-text);
+  border: 1px solid var(--modal-border);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.fab-dropdown-item:hover {
+  background: var(--tag-filter-hover-bg);
+  border-color: var(--accent);
+}
+
+.fab-dropdown-item i {
+  font-size: 14px;
+  color: var(--accent);
+  width: 16px;
+  text-align: center;
+}
+
+.fab-dropdown-item span {
+  font-size: 13px;
+}
+
+.fab-dropdown-item span {
+  font-size: 14px;
 }
 </style>

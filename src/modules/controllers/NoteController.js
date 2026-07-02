@@ -36,7 +36,7 @@ export class NoteController {
         // 笔记事件
         this.eventBus.on(EventTypes.NOTE.OPEN, (note) => this.openNote(note));
         this.eventBus.on(EventTypes.NOTE.CLOSE, (noteId) => this.closeNote(noteId));
-        this.eventBus.on(EventTypes.NOTE.CREATE, () => this.createNewNote());
+        this.eventBus.on(EventTypes.NOTE.CREATE, (pageType) => this.createNewNote(pageType));
         this.eventBus.on(EventTypes.NOTE.DELETE, (noteId) => this.deleteNote(noteId));
         this.eventBus.on(EventTypes.NOTE.UPDATE.TITLE, (noteId, newTitle) => this.updateNoteTitle(noteId, newTitle));
         this.eventBus.on(EventTypes.NOTE.UPDATE.EXCERPT, (noteId, newExcerpt) => this.updateNoteExcerpt(noteId, newExcerpt));
@@ -393,11 +393,14 @@ export class NoteController {
 
     /**
      * 创建新笔记
+     * @param {string} pageType 页面类型 ('note' | 'sticky')，可选
      */
-    async createNewNote() {
+    async createNewNote(pageType) {
         try {
-            // 弹出页面类型选择框
-            const pageType = await this.uiManager.modal_showPageTypeSelection();
+            // 如果没有指定页面类型，弹出选择框
+            if (!pageType) {
+                pageType = await this.uiManager.modal_showPageTypeSelection();
+            }
             if (!pageType) return; // 用户取消选择
 
             const noteData = await this.noteService.createNote(pageType);
