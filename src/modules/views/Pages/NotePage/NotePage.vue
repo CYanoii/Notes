@@ -1091,6 +1091,18 @@ onMounted(() => {
           @blur="handleTitleBlur(editor.id, $event)"
         >
 
+        <!-- 摘要输入 -->
+        <input
+          type="text"
+          class="note-excerpt-input"
+          v-model="editor.noteData.excerpt"
+          placeholder="输入摘要（最多50字）..."
+          maxlength="50"
+          :disabled="editor.noteData?.status === 'trashed'"
+          @input="handleExcerptInput(editor.id, $event)"
+          @blur="handleExcerptBlur(editor.id, $event)"
+        >
+
       <!-- 标签栏 -->
       <div
         class="note-tags-bar"
