@@ -15,7 +15,6 @@ export function useTabBar() {
    * 创建笔记标签页
    */
   function createNoteTab(noteData) {
-    console.log('[useTabBar] createNoteTab:', noteData)
     // 检查是否已存在
     const exists = state.tabs.some(t => t.id === noteData.id)
     if (!exists) {
@@ -31,7 +30,6 @@ export function useTabBar() {
    * 切换到指定标签页
    */
   function switchToTab(tabId) {
-    console.log('[useTabBar] switchToTab:', tabId, 'current:', state.activeTabId)
     state.activeTabId = tabId
   }
 
@@ -39,7 +37,6 @@ export function useTabBar() {
    * 关闭指定标签页
    */
   function closeNoteTab(noteId) {
-    console.log('[useTabBar] closeNoteTab:', noteId)
     const index = state.tabs.findIndex(t => t.id === noteId)
     if (index !== -1) {
       state.tabs.splice(index, 1)

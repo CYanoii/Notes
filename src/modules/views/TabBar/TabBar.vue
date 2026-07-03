@@ -10,7 +10,6 @@ const dragOverTabIndex = ref(null)
 
 // 处理标签点击
 function handleTabClick(tabId) {
-  console.log('[TabBar] handleTabClick:', tabId)
   if (tabId === 'home') {
     if (window.eventBus) {
       window.eventBus.emit(EventTypes.TAB_BAR.SWITCH_HOME)
@@ -26,7 +25,6 @@ function handleTabClick(tabId) {
 // 处理关闭按钮点击
 function handleClose(event, tabId) {
   event.stopPropagation()
-  console.log('[TabBar] handleClose:', tabId)
   closeNoteTab(tabId)
   if (window.eventBus) {
     window.eventBus.emit(EventTypes.NOTE.CLOSE, tabId)

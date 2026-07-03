@@ -22,9 +22,7 @@ export function useNotePage() {
    * @param {Object} noteData 笔记数据
    */
   function createNoteEditor(noteData) {
-    console.log('[useNotePage] createNoteEditor:', noteData)
     if (state.editors.has(noteData.id)) {
-      console.log('[useNotePage] Editor already exists for note:', noteData.id)
       return
     }
     state.editors.set(noteData.id, {
@@ -38,7 +36,6 @@ export function useNotePage() {
    * @param {string|number} noteId 笔记ID
    */
   function switchToNoteEditor(noteId) {
-    console.log('[useNotePage] switchToNoteEditor:', noteId)
     state.activeNoteId = noteId
   }
 
@@ -46,7 +43,6 @@ export function useNotePage() {
    * 切换到首页
    */
   function switchToHomePage() {
-    console.log('[useNotePage] switchToHomePage')
     state.activeNoteId = null
   }
 
@@ -55,7 +51,6 @@ export function useNotePage() {
    * @param {string|number} noteId 笔记ID
    */
   function closeNoteEditor(noteId) {
-    console.log('[useNotePage] closeNoteEditor:', noteId)
     const editor = state.editors.get(noteId)
     if (editor && editor.vditor) {
       editor.vditor.destroy()

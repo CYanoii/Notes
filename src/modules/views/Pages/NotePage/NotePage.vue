@@ -586,10 +586,8 @@ function detectReferenceChanges(noteId, oldRefs, newRefs) {
   const removed = oldRefs.filter(r => !newSet.has(r.id + '|' + (r.alias || '')))
 
   if (added.length > 0) {
-    console.log('[Wiki Link 检测] 新增引用:', added.map(r => `[[${r.id}${r.alias ? '|' + r.alias : ''}]]`).join(', '))
   }
   if (removed.length > 0) {
-    console.log('[Wiki Link 检测] 移除引用:', removed.map(r => `[[${r.id}${r.alias ? '|' + r.alias : ''}]]`).join(', '))
   }
 }
 
