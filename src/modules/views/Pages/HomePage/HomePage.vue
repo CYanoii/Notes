@@ -1,10 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { EventTypes } from '../../core/EventTypes.js'
-import NoteList from '../NoteList/NoteList.vue'
-import TagFilter from '../TagFilter/TagFilter.vue'
-import ReferenceGraph from '../ReferenceGraph/ReferenceGraph.vue'
-import { useNoteList } from '../NoteList/useNoteList.js'
+import { EventTypes } from '../../../core/EventTypes.js'
+import NoteList from '../../NoteList/NoteList.vue'
+import TagFilter from '../../TagFilter/TagFilter.vue'
+import ReferenceGraph from '../../ReferenceGraph/ReferenceGraph.vue'
+import { useNoteList } from '../../NoteList/useNoteList.js'
 
 const { notes } = useNoteList()
 
