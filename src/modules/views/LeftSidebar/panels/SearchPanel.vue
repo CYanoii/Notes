@@ -205,7 +205,7 @@ defineExpose({
 
 .sidebar-search-input {
   width: 100%;
-  padding: 8px 12px 8px 12px;
+  padding: 8px 28px 8px 12px;
   background: var(--sidebar-input-bg);
   border: 1px solid var(--sidebar-input-border);
   border-radius: 4px;
