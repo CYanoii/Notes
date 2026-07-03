@@ -299,7 +299,6 @@ defineExpose({
   border: 1px solid;
   border-radius: 10px;
   color: var(--sidebar-content-text);
-  background: var(--sidebar-card-hover-bg);
   line-height: 1.2;
 }
 
