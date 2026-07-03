@@ -128,15 +128,13 @@ function escapeHtml(text) {
 }
 
 .trash-note-actions {
-  display: flex;
+  display: none;
   gap: 4px;
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .trash-note-item:hover .trash-note-actions {
-  opacity: 1;
+  display: flex;
 }
 
 .trash-action-btn {
@@ -144,7 +142,7 @@ function escapeHtml(text) {
   border: none;
   color: var(--sidebar-content-text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: 2px;
   font-size: 10px;
   transition: color 0.2s;
 }

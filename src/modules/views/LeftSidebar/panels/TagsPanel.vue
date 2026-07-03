@@ -208,14 +208,12 @@ defineExpose({
 }
 
 .tag-actions {
-  display: flex;
+  display: none;
   gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .tag-main-item:hover .tag-actions {
-  opacity: 1;
+  display: flex;
 }
 
 .tag-action-btn {
@@ -223,7 +221,7 @@ defineExpose({
   border: none;
   color: var(--sidebar-content-text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: 2px;
   font-size: 10px;
   transition: color 0.2s;
 }
