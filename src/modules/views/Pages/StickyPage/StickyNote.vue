@@ -1,6 +1,9 @@
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { debounce } from '../../../utils/helpers.js'
+import { useWikiLink } from '../WikiLink/useWikiLink.js'
+import NoteSuggestionPopup from '../WikiLink/NoteSuggestionPopup.vue'
+import { EventTypes } from '../../../core/EventTypes.js'
 
 const props = defineProps({
   stickyData: {
@@ -13,7 +16,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update', 'delete', 'dragstart', 'dragend', 'focus'])
+const emit = defineEmits(['update', 'delete', 'dragstart', 'dragend', 'focus', 'wikiLinkClose'])
 
 // 引用 DOM 元素
 const stickyRef = ref(null)
@@ -35,10 +38,174 @@ const colorOptions = [
 // 颜色选择下拉展开状态
 const isColorOpen = ref(false)
 
+// Wiki Link 初始化
+const wikiLink = useWikiLink()
+const { notePicker } = wikiLink
+
+// 创建 ContentEditable 适配器
+function createStickyAdapter() {
+  return wikiLink.createContentEditableAdapter(contentRef.value)
+}
+
+// Wiki link 检测处理
+function handleWikiLinkInput() {
+  wikiLink.detectTrigger(
+    () => props.stickyData.id,
+    () => false  // 便签页不在回收站
+  )
+}
+
+function handleWikiLinkClick(e) {
+  const linkEl = e.target.closest('.wiki-link')
+
+  // 处理 Ctrl/Cmd + 点击 wiki link 跳转（不弹 picker）
+  if (linkEl && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault()
+    const noteId = linkEl.dataset.noteId
+    if (noteId && window.eventBus) {
+      window.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId })
+    }
+    return
+  }
+
+  // 使用点击后的 selection 检测光标位置
+  const selection = window.getSelection()
+  if (selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0)
+    // 确保光标在 contentRef 内
+    if (contentRef.value?.contains(range.startContainer)) {
+      wikiLink.checkCursorForWikiLinkWithRange(range, () => props.stickyData.id)
+    }
+  }
+}
+
+function handleWikiLinkKeyup(e) {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
+    wikiLink.checkCursorForWikiLink(() => props.stickyData.id)
+  }
+}
+
+// Wiki link 选择处理
+function handleWikiLinkSelect(noteId) {
+  const adapter = createStickyAdapter()
+  if (adapter) {
+    wikiLink.handleNotePickerSelect(adapter, noteId)
+  }
+}
+
+function handleWikiLinkClose(direction) {
+  wikiLink.closeNotePicker(direction)
+  emit('wikiLinkClose', direction)
+}
+
+// Wiki link 点击跳转（Ctrl/Cmd + 点击）
+function handleStickyWikiLinkClick(e) {
+  const wikiLink_el = e.target.closest('.wiki-link')
+  if (!wikiLink_el) return
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault()
+    e.stopPropagation()
+    const noteId = wikiLink_el.dataset.noteId
+    if (noteId && window.eventBus) {
+      window.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId })
+    }
+  }
+}
+
+// 将文本中的 [[...]] 替换为 wiki-link span
+function replaceTextWithWikiLinks(parent, textNode, text) {
+  const fragment = document.createDocumentFragment()
+  let lastIndex = 0
+  const regex = /\[\[([^\]]+)\]\]/g
+  let match
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)))
+    }
+    fragment.appendChild(createWikiLinkSpan(match[0]))
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(lastIndex)))
+  }
+
+  parent.replaceChild(fragment, textNode)
+}
+
+// 创建 wiki-link span（设置为 contenteditable="false" 防止在 span 内输入）
+function createWikiLinkSpan(fullText) {
+  const span = document.createElement('span')
+  span.className = 'wiki-link'
+  span.textContent = fullText
+  span.contentEditable = 'false'
+  // 从 [[id|title]] 中提取 id
+  const match = fullText.match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/)
+  if (match) {
+    span.dataset.noteId = match[1]
+  }
+  return span
+}
+
+// 渲染文本节点中的 wiki link 样式
+function renderWikiLinkStyle(textNode) {
+  const text = textNode.textContent
+  if (!/\[\[[^\]]+\]\]/.test(text)) return
+
+  const parent = textNode.parentNode
+  if (!parent || parent.classList.contains('wiki-link')) return
+
+  replaceTextWithWikiLinks(parent, textNode, text)
+}
+
+// 遍历节点处理 wiki link
+function walkTextNodes(node) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    renderWikiLinkStyle(node)
+  } else if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('wiki-link')) {
+    if (!node.classList.contains('vditor-ir__marker') && node.getAttribute('data-type') !== 'html-inline') {
+      node.childNodes.forEach(walkTextNodes)
+    }
+  }
+}
+
+// Wiki link 突变观察器
+let wikiLinkObserver = null
+
 // 初始化内容
 onMounted(() => {
   if (contentRef.value) {
     contentRef.value.innerText = props.stickyData.content || ''
+
+    // 初始化时遍历已有内容
+    walkTextNodes(contentRef.value)
+
+    // 设置 MutationObserver 监听内容变化
+    wikiLinkObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              walkTextNodes(node)
+            } else if (node.nodeType === Node.TEXT_NODE) {
+              renderWikiLinkStyle(node)
+            }
+          })
+        } else if (mutation.type === 'characterData') {
+          walkTextNodes(mutation.target.parentNode)
+        }
+      })
+    })
+
+    wikiLinkObserver.observe(contentRef.value, { childList: true, subtree: true, characterData: true })
+  }
+})
+
+// 清理观察器
+onUnmounted(() => {
+  if (wikiLinkObserver) {
+    wikiLinkObserver.disconnect()
+    wikiLinkObserver = null
   }
 })
 
@@ -64,6 +231,8 @@ function handleContentInput(e) {
   setTimeout(() => {
     isUserInputting.value = false
   }, 600)
+  // Wiki link 检测
+  handleWikiLinkInput()
 }
 
 // 切换颜色下拉
@@ -157,8 +326,23 @@ defineExpose({
       @input="handleContentInput"
       @focus="handleFocus"
       @blur="debouncedSaveContent(contentRef?.innerText || '')"
+      @click="handleWikiLinkClick"
+      @keyup="handleWikiLinkKeyup"
     ></div>
   </div>
+
+  <!-- Wiki Link 笔记选择浮层 -->
+  <NoteSuggestionPopup
+    :visible="notePicker.visible"
+    :notes="notePicker.notes"
+    :selectedIndex="notePicker.selectedIndex"
+    :searchQuery="notePicker.searchQuery"
+    :position="notePicker.position"
+    @update:searchQuery="wikiLink.updateNotePickerSearch"
+    @update:selectedIndex="(idx) => notePicker.selectedIndex = idx"
+    @select="handleWikiLinkSelect"
+    @close="handleWikiLinkClose"
+  />
 </template>
 
 <style scoped>
@@ -265,5 +449,19 @@ defineExpose({
   outline: none;
   word-wrap: break-word;
   overflow-y: auto;
+}
+
+/* Wiki link 样式 - 与 NotePage 保持一致 */
+:deep(.wiki-link) {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent);
+  transition: opacity 0.2s;
+}
+
+:deep(.wiki-link:hover) {
+  opacity: 0.8;
+  border-bottom-style: solid;
 }
 </style>

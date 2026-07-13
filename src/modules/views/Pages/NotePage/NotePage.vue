@@ -1,9 +1,10 @@
 <script setup>
 import { computed, watch, nextTick, onMounted, reactive, ref } from 'vue'
 import { useNotePage } from './useNotePage.js'
+import { useWikiLink } from '../WikiLink/useWikiLink.js'
 import { EventTypes } from '../../../core/EventTypes.js'
 import { escapeHtml } from '../../../utils/helpers.js'
-import NoteSuggestionPopup from './components/NoteSuggestionPopup.vue'
+import NoteSuggestionPopup from '../WikiLink/NoteSuggestionPopup.vue'
 import StickyPage from '../StickyPage/StickyPage.vue'
 
 // 页面类型常量
@@ -14,9 +15,6 @@ const STICKY_PAGE = 'sticky'
 function isStickyPage(noteData) {
   return noteData?.pageType === STICKY_PAGE
 }
-
-// Wiki Link 正则：匹配 [[id|Title]] 或 [[id]]
-const WIKI_LINK_REGEX = /\[\[(\d+)(?:\|([^\]]+))?\]\]/g;
 
 const {
   state,
@@ -51,19 +49,18 @@ defineExpose({
   updateNoteTags
 })
 
-// Wiki Link 选择浮层状态
-const notePicker = reactive({
-  visible: false,
-  notes: [],
-  selectedIndex: 0,
-  searchQuery: '',
-  position: { top: 0, left: 0 },
-  typingSpan: null,
-  currentNoteId: null
-})
+// Wiki Link 初始化
+const wikiLink = useWikiLink()
+const { notePicker } = wikiLink
 
-// 缓存所有笔记数据
-let allNotesCache = []
+// 创建当前笔记的 Vditor 适配器
+function createVditorAdapterForCurrentNote() {
+  const noteId = notePicker.currentNoteId
+  if (!noteId) return null
+  const vditor = state.editors.get(noteId)?.vditor
+  if (!vditor) return null
+  return wikiLink.createVditorAdapter(vditor)
+}
 
 // 标题变化处理
 function handleTitleInput(noteId, event) {
@@ -174,311 +171,8 @@ function handleAddReferenceTip() {
 }
 
 // ============================================================
-// Wiki Link 工具
-// 规则：
-//  1. 渲染时：只有闭合的 [[id|Title]] 或 [[id]] 才渲染为可点击链接
-//  2. 输入时：光标在 [[...]] 内部时（无论中间是否有内容），弹出笔记选择器
-//  3. 选择后：清空括号中的现存内容，覆盖为 [[id|Title]]
-//  4. 其它任何时候不触发
+// Wiki Link 功能已移至 useWikiLink.js composable
 // ============================================================
-
-/**
- * 将光标定位到 ]] 正后方
- * @param {{node: Text, offset: number}|null} typingSpan - [[ 的起始位置
- */
-function positionCursorAfterWikiLink(typingSpan) {
-  if (!typingSpan || !typingSpan.node || typingSpan.node.nodeType !== Node.TEXT_NODE) return
-
-  const { node, offset } = typingSpan
-  const text = node.textContent
-  const MAX_WIKI_LINK_LENGTH = 50
-
-  // 从 offset 位置开始向前查找 ]]（因为插入后 text 已变化）
-  // 搜索范围：[offset, offset + MAX_WIKI_LINK_LENGTH)
-  for (let i = offset; i < offset + MAX_WIKI_LINK_LENGTH && i < text.length - 1; i++) {
-    if (text[i] === ']' && text[i + 1] === ']') {
-      // 定位到 ]] 正后方
-      const sel = window.getSelection()
-      if (!sel) return
-      const range = document.createRange()
-      range.setStart(node, i + 2)
-      range.collapse(true)
-      sel.removeAllRanges()
-      sel.addRange(range)
-      return
-    }
-  }
-}
-
-/**
- * 将光标定位到 [[ 正前方
- * @param {{node: Text, offset: number}|null} typingSpan - [[ 的起始位置
- */
-function positionCursorBeforeWikiLink(typingSpan) {
-  if (!typingSpan || !typingSpan.node || typingSpan.node.nodeType !== Node.TEXT_NODE) return
-
-  const { node, offset } = typingSpan
-  const text = node.textContent
-  const MAX_SEARCH = 30
-
-  // 向前找 [[ 的位置
-  for (let i = offset - 1; i >= 0 && offset - i <= MAX_SEARCH; i--) {
-    if (text[i] === '[' && text[i + 1] === '[') {
-      // 定位到 [[ 正前方
-      const sel = window.getSelection()
-      if (!sel) return
-      const range = document.createRange()
-      range.setStart(node, i)
-      range.collapse(true)
-      sel.removeAllRanges()
-      sel.addRange(range)
-      return
-    }
-  }
-}
-
-// -- 渲染（readonly/trash 模式用）--
-
-/**
- * 保护闭合的 wiki link 不被 marked 转义
- * 只匹配 [[id|Title]] 和 [[id]]（有闭合 ]]）
- */
-function protectWikiLinks(text) {
-  const links = []
-  let index = 0
-  const regex = new RegExp(WIKI_LINK_REGEX.source, 'g')
-  const result = text.replace(regex, (match, id, alias) => {
-    const placeholder = `\x00WKLK${index}\x00`
-    links.push({ placeholder, id: id.trim(), alias: alias ? alias.trim() : null })
-    index++
-    return placeholder
-  })
-  return { protected: result, links }
-}
-
-/**
- * 将 wiki link 占位符还原为 HTML span
- */
-function restoreWikiLinks(html, wikiLinks, noteMetadata = new Map()) {
-  let result = html
-  wikiLinks.forEach(({ placeholder, id, alias }) => {
-    const meta = noteMetadata.get(id)
-    const displayTitle = alias || (meta ? meta.title : `笔记 ${id}`)
-    const fullText = `[[${id}|${displayTitle}]]`
-    const linkHtml = `<span class="wiki-link" data-note-id="${escapeHtml(id)}" title="跳转到: ${escapeHtml(displayTitle)}">${escapeHtml(fullText)}</span>`
-    result = result.replace(placeholder, linkHtml)
-  })
-  return result
-}
-
-/**
- * 渲染 Markdown（含 wiki link 转换）
- */
-function renderMarkdown(content, noteMetadata = new Map()) {
-  if (!content) return ''
-  if (typeof window.marked !== 'undefined') {
-    const { protected: protectedContent, links: wikiLinks } = protectWikiLinks(content)
-    let html = window.marked.parse(protectedContent)
-    html = restoreWikiLinks(html, wikiLinks, noteMetadata)
-    return html
-  }
-  return escapeHtml(content)
-}
-
-// -- 触发检测（编辑模式用）--
-
-/** 当前是否已有打开的 picker */
-let activePicker = false
-
-/**
- * 判断光标是否处于 [[ 和 ]] 之间
- * 搜索范围：左右各最多 50 字符
- *
- * 核心策略：
- * - 左扫：找最近的 [[ 或 ]]
- *   - 如果先找到 [[ → 说明左边有引用开始
- *   - 如果先找到 ]] → 说明左边有其它引用结束，当前光标在引用外部
- * - 右扫：找最近的 [[ 或 ]]
- *   - 如果先找到 ]] → 说明右边有引用结束
- *   - 如果先找到 [[ → 说明右边有其它引用开始，当前光标在引用外部
- * - 触发条件：左边先找到 [[ 且 右边先找到 ]]
- *
- * @returns {object} {
- *   isInside: boolean,       // 光标是否在 [[...]] 内部
- *   leftOpenPos: number,    // 左边 [[ 的位置（未找到为 -1）
- *   rightClosePos: number,  // 右边 ]] 的位置（未找到为 -1）
- * }
- */
-function getCursorWikiLinkInfo(range) {
-  if (!range) return { isInside: false, span: null, noteId: null, isTypingNew: false, typingSpan: null }
-
-  const node = range.startContainer
-  const offset = range.startOffset
-
-  // 情况1：光标在一个已渲染的 .wiki-link span 内
-  const wikiLinkSpan = node.nodeType === Node.TEXT_NODE
-    ? node.parentElement?.closest('.wiki-link')
-    : node.closest?.('.wiki-link')
-
-  if (wikiLinkSpan) {
-    return {
-      isInside: true,
-      span: wikiLinkSpan,
-      noteId: wikiLinkSpan.dataset.noteId || null,
-      isTypingNew: false,
-      typingSpan: null
-    }
-  }
-
-  // 情况2：光标不在 span 内，基于 DOM 文本节点做左右扫描
-  if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.textContent || ''
-    const beforeCursor = text.substring(0, offset)  // 光标左侧文本
-    const afterCursor = text.substring(offset)     // 光标右侧文本
-
-    const MAX_SEARCH = 30
-
-    // 左扫：找最近的 [[ 或 ]]
-    let leftOpenPos = -1
-    let leftTerminator = null  // '[[' 或 ']]'
-    for (let i = beforeCursor.length - 1; i >= 0 && beforeCursor.length - i <= MAX_SEARCH; i--) {
-      if (beforeCursor[i] === '[' && beforeCursor[i + 1] === '[') {
-        leftOpenPos = i
-        leftTerminator = '[['
-        break
-      }
-      if (beforeCursor[i] === ']' && beforeCursor[i + 1] === ']') {
-        leftOpenPos = i
-        leftTerminator = ']]'
-        break
-      }
-    }
-
-    // 右扫：找最近的 [[ 或 ]]
-    let rightClosePos = -1
-    let rightTerminator = null  // '[[' 或 ']]'
-    for (let i = 0; i < afterCursor.length && i < MAX_SEARCH; i++) {
-      if (afterCursor[i] === ']' && afterCursor[i + 1] === ']') {
-        rightClosePos = i
-        rightTerminator = ']]'
-        break
-      }
-      if (afterCursor[i] === '[' && afterCursor[i + 1] === '[') {
-        rightClosePos = i
-        rightTerminator = '[['
-        break
-      }
-    }
-
-    // 触发条件：左边先找到 [[ 且 右边先找到 ]]
-    if (leftTerminator === '[[' && rightTerminator === ']]') {
-      return {
-        isInside: true,
-        span: null,
-        noteId: null,
-        isTypingNew: true,
-        typingSpan: { node, offset: leftOpenPos }
-      }
-    }
-  }
-
-  return { isInside: false, span: null, noteId: null, isTypingNew: false, typingSpan: null }
-}
-
-/**
- * 检测输入时是否在 wiki link 内部，触发笔记选择器
- * 使用 DOM 而非纯文本位置判断
- */
-function detectWikiLinkTrigger(vditor, noteId) {
-  const editor = state.editors.get(noteId)
-  if (editor && editor.noteData && editor.noteData.status === 'trashed') return
-  if (activePicker) return
-
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0) return
-  const range = selection.getRangeAt(0)
-
-  const { isInside, isTypingNew, typingSpan } = getCursorWikiLinkInfo(range)
-
-  // 只在输入新 [[ 时触发；已在已有 span 内不重复触发
-  if (!isInside || !isTypingNew) return
-
-  activePicker = true
-  showNotePickerModal(noteId, typingSpan, range)
-}
-
-/**
- * 检测光标移动（点击、方向键）时是否在 wiki link 内部
- * 使用 DOM 而非纯文本位置判断
- */
-function checkCursorForWikiLink(vditor, noteId) {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0) return
-  const range = selection.getRangeAt(0)
-
-  const { isInside, span, isTypingNew } = getCursorWikiLinkInfo(range)
-
-  if (!isInside) return
-  if (activePicker) return
-
-  // 正在输入新 [[ 时，或点击已渲染的 wiki-link span 时，都弹出 picker
-  activePicker = true
-  const typingSpan = isTypingNew
-    ? { node: range.startContainer, offset: range.startOffset }
-    : null
-  showNotePickerModal(noteId, typingSpan, range, span)
-}
-
-/**
- * 选择笔记后，替换 [[...]] 中间的内容
- * @param {object} vditor - Vditor 实例
- * @param {string} selectedNoteId - 选中的笔记 ID
- * @param {{node: Text, offset: number}|null} typingSpan - [[ 的起始位置
- */
-async function resolveWikiLink(vditor, selectedNoteId, typingSpan = null) {
-  const note = await window.electronAPI.getNote(selectedNoteId)
-  const displayTitle = note ? (note.title || '无标题笔记') : '笔记'
-
-  if (!vditor || typeof vditor.insertMD !== 'function') return
-  if (!typingSpan || !typingSpan.node || typingSpan.node.nodeType !== Node.TEXT_NODE) return
-
-  const { node, offset } = typingSpan
-  const text = node.textContent
-
-  // 向前找 [[
-  let openStart = -1
-  for (let i = offset - 1; i >= 0 && offset - i <= 30; i--) {
-    if (text[i] === '[' && text[i + 1] === '[') {
-      openStart = i
-      break
-    }
-  }
-  if (openStart === -1) return
-
-  // 向后找 ]]
-  let closeEnd = -1
-  for (let i = offset; i < text.length && i - offset <= 30; i++) {
-    if (text[i] === ']' && text[i + 1] === ']') {
-      closeEnd = i + 2
-      break
-    }
-  }
-  if (closeEnd === -1) return
-
-  // 选中 [[...]] 全部（包括括号）
-  const sel = window.getSelection()
-  const range = document.createRange()
-  range.setStart(node, openStart)      // [[ 起始
-  range.setEnd(node, closeEnd)         // ]] 结束
-  sel.removeAllRanges()
-  sel.addRange(range)
-
-  // 一次性插入带括号的完整 wiki link
-  vditor.insertMD(`[[${selectedNoteId}|${displayTitle}]]`)
-
-  // 将光标定位到 ]] 正后方
-  positionCursorAfterWikiLink(typingSpan)
-}
 
 // -- 点击跳转（readonly 渲染结果用）--
 
@@ -493,90 +187,6 @@ function handleWikiLinkClick(e) {
   }
 }
 
-// -- 选择器调用 --
-
-async function showNotePickerModal(currentNoteId, typingSpan, range, existingSpan = null) {
-  try {
-    // 获取/刷新笔记缓存
-    if (allNotesCache.length === 0) {
-      const allNotes = await window.electronAPI.getAllNotes()
-      allNotesCache = allNotes
-    }
-
-    // 过滤掉当前笔记
-    const availableNotes = allNotesCache
-      .filter(n => n.id !== currentNoteId)
-      .map(n => ({ id: n.id, title: n.title, excerpt: n.excerpt || '' }))
-
-    // 获取光标屏幕坐标
-    let top = 0, left = 0
-    if (range) {
-      const rect = range.getBoundingClientRect()
-      top = rect.bottom + 8
-      left = rect.left
-    }
-
-    // 设置浮层状态
-    notePicker.visible = true
-    notePicker.notes = availableNotes
-    notePicker.selectedIndex = 0
-    notePicker.searchQuery = ''
-    notePicker.position = { top, left }
-    notePicker.typingSpan = typingSpan
-    notePicker.currentNoteId = currentNoteId
-    notePicker.existingSpan = existingSpan
-  } catch (error) {
-    console.error('[WikiLink] 显示笔记选择器失败:', error)
-    activePicker = false
-  }
-}
-
-// Wiki Link 选择器事件处理
-async function handleNotePickerSelect(noteId) {
-  if (!noteId) return
-
-  // 如果点击的是已渲染的 wiki-link span，直接更新 span 内容
-  const existingSpan = notePicker.existingSpan
-  if (existingSpan) {
-    const note = await window.electronAPI.getNote(noteId)
-    const displayTitle = note ? (note.title || '无标题笔记') : '笔记'
-    const currentNoteId = notePicker.currentNoteId
-    existingSpan.textContent = `[[${noteId}|${displayTitle}]]`
-    existingSpan.dataset.noteId = noteId
-    existingSpan.title = `跳转到: ${displayTitle}`
-    notePicker.existingSpan = null
-
-    // 光标定位到 span 后方（延迟到下一帧，确保 DOM 更新完成）
-    requestAnimationFrame(() => {
-      const editorEl = document.getElementById(`note-${currentNoteId}`)
-      const vditorContent = editorEl?.querySelector('.vditor-ir')
-      if (vditorContent?.contains(existingSpan)) {
-        vditorContent.focus()
-        const sel = window.getSelection()
-        if (sel) {
-          const range = document.createRange()
-          range.setStartAfter(existingSpan)
-          range.collapse(true)
-          sel.removeAllRanges()
-          sel.addRange(range)
-        }
-      }
-    })
-  } else {
-    const vditor = state.editors.get(notePicker.currentNoteId)?.vditor
-    if (vditor) {
-      resolveWikiLink(vditor, noteId, notePicker.typingSpan)
-    }
-  }
-
-  // Reset picker 状态（不调用 closeNotePicker，避免 positionCursorAfterWikiLink 重复执行）
-  notePicker.visible = false
-  notePicker.notes = []
-  notePicker.typingSpan = null
-  notePicker.currentNoteId = null
-  activePicker = false
-}
-
 // 检测引用变化的函数
 function detectReferenceChanges(noteId, oldRefs, newRefs) {
   const oldSet = new Set(oldRefs.map(r => r.id + '|' + (r.alias || '')))
@@ -589,62 +199,6 @@ function detectReferenceChanges(noteId, oldRefs, newRefs) {
   }
   if (removed.length > 0) {
   }
-}
-
-function closeNotePicker(direction = null) {
-  if (direction === 'left') {
-    if (notePicker.typingSpan) {
-      positionCursorBeforeWikiLink(notePicker.typingSpan)
-    } else if (notePicker.existingSpan) {
-      // 已渲染 span 模式下，恢复光标到 span 前方
-      const sel = window.getSelection()
-      if (sel) {
-        const range = document.createRange()
-        range.setStartBefore(notePicker.existingSpan)
-        range.collapse(true)
-        sel.removeAllRanges()
-        sel.addRange(range)
-      }
-    }
-  } else if (direction === 'right') {
-    if (notePicker.typingSpan) {
-      positionCursorAfterWikiLink(notePicker.typingSpan)
-    } else if (notePicker.existingSpan) {
-      // 已渲染 span 模式下，恢复光标到 span 后方
-      const sel = window.getSelection()
-      if (sel) {
-        const range = document.createRange()
-        range.setStartAfter(notePicker.existingSpan)
-        range.collapse(true)
-        sel.removeAllRanges()
-        sel.addRange(range)
-      }
-    }
-  }
-  notePicker.visible = false
-  notePicker.notes = []
-  notePicker.typingSpan = null
-  notePicker.currentNoteId = null
-  notePicker.existingSpan = null
-  activePicker = false
-}
-
-function handleNotePickerClose(direction) {
-  closeNotePicker(direction)
-}
-
-function updateNotePickerSearch(query) {
-  notePicker.searchQuery = query
-  const lowerQuery = query.toLowerCase()
-  const availableNotes = allNotesCache
-    .filter(n => n.id !== notePicker.currentNoteId)
-    .filter(n =>
-      n.title.toLowerCase().includes(lowerQuery) ||
-      (n.excerpt && n.excerpt.toLowerCase().includes(lowerQuery))
-    )
-    .map(n => ({ id: n.id, title: n.title, excerpt: n.excerpt || '' }))
-  notePicker.notes = availableNotes
-  notePicker.selectedIndex = 0
 }
 
 // ============================================================
@@ -663,7 +217,7 @@ async function initVditor(noteId, container, noteData) {
     // 获取所有笔记元数据用于 wiki link 标题查找
     const allNotes = await window.electronAPI.getAllNotes()
     const noteMetadata = new Map(allNotes.map(n => [n.id, { title: n.title }]))
-    readonlyEl.innerHTML = renderMarkdown(noteData.content || '', noteMetadata)
+    readonlyEl.innerHTML = wikiLink.renderMarkdown(noteData.content || '', noteMetadata)
     container.appendChild(readonlyEl)
     // 笔记间跳转：wiki link 点击处理（事件代理到 container）
     container.addEventListener('click', handleWikiLinkClick)
@@ -796,11 +350,11 @@ async function initVditor(noteId, container, noteData) {
       // 监听光标移动（鼠标点击、方向键等），检测是否在 [[...]] 内部
       container.addEventListener('click', (e) => {
         if (e.ctrlKey || e.metaKey) return  // Ctrl/Cmd+点击由导航处理
-        checkCursorForWikiLink(vditor, noteId)
+        wikiLink.checkCursorForWikiLink(() => noteId)
       })
       container.addEventListener('keyup', (e) => {
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
-          checkCursorForWikiLink(vditor, noteId)
+          wikiLink.checkCursorForWikiLink(() => noteId)
         }
       })
 
@@ -880,10 +434,12 @@ async function initVditor(noteId, container, noteData) {
 
         // 创建 wiki-link span（复用逻辑）
         // 直接将 [[...]] 文本渲染为链接，保留原文本
+        // 设置 contenteditable="false" 防止在 span 内输入
         const createWikiLinkSpan = (fullText) => {
           const span = document.createElement('span')
           span.className = 'wiki-link'
           span.textContent = fullText
+          span.contentEditable = 'false'
           // 从 [[id|title]] 中提取 id
           const match = fullText.match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/)
           if (match) {
@@ -949,7 +505,10 @@ async function initVditor(noteId, container, noteData) {
         editor.references = newRefs
       }
       // 检测 [[ 触发
-      detectWikiLinkTrigger(vditor, noteId)
+      wikiLink.detectTrigger(
+        () => noteId,
+        (id) => state.editors.get(id)?.noteData?.status === 'trashed'
+      )
     }
   })
 
@@ -1172,10 +731,10 @@ onMounted(() => {
     :selectedIndex="notePicker.selectedIndex"
     :searchQuery="notePicker.searchQuery"
     :position="notePicker.position"
-    @update:searchQuery="updateNotePickerSearch"
+    @update:searchQuery="wikiLink.updateNotePickerSearch"
     @update:selectedIndex="(idx) => notePicker.selectedIndex = idx"
-    @select="handleNotePickerSelect"
-    @close="handleNotePickerClose"
+    @select="(noteId) => wikiLink.handleNotePickerSelect(createVditorAdapterForCurrentNote(), noteId)"
+    @close="wikiLink.closeNotePicker"
   />
 </template>
 
