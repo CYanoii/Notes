@@ -46,6 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateSticky: (stickyPageId, stickyId, updates) => ipcRenderer.invoke('stickies:update', stickyPageId, stickyId, updates),
   deleteSticky: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:delete', stickyPageId, stickyId),
   bringStickyToFront: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:bringToFront', stickyPageId, stickyId),
+  archiveSticky: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:archive', stickyPageId, stickyId),
+  unarchiveSticky: (stickyPageId, stickyId) => ipcRenderer.invoke('stickies:unarchive', stickyPageId, stickyId),
+  getArchivedStickies: (stickyPageId) => ipcRenderer.invoke('stickies:getArchived', stickyPageId),
 
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),

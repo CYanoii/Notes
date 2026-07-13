@@ -4,6 +4,7 @@ import { useNotePage } from '../NotePage/useNotePage.js'
 import { EventTypes } from '../../../core/EventTypes.js'
 import { debounce } from '../../../utils/helpers.js'
 import StickyNote from './StickyNote.vue'
+import ArchiveModal from './components/ArchiveModal.vue'
 
 const props = defineProps({
   noteData: { type: Object, required: true }
@@ -32,7 +33,8 @@ const dragging = reactive({
   startY: 0,
   offsetX: 0,
   offsetY: 0,
-  isOverTrash: false
+  isOverTrash: false,
+  isOverArchive: false
 })
 
 // 垃圾桶区域状态
@@ -40,6 +42,15 @@ const trashZone = reactive({
   isVisible: false,
   isHover: false
 })
+
+// 归档区域状态
+const archiveZone = reactive({
+  isVisible: false,
+  isHover: false
+})
+
+// 归档弹窗状态
+const isArchiveModalOpen = ref(false)
 
 // 便签页 ID
 const stickyPageId = computed(() => props.noteData.id)
@@ -107,7 +118,8 @@ function handleTagClick() {
 async function loadStickies() {
   const data = await window.stickyController.loadStickies(stickyPageId.value)
   if (data) {
-    stickies.value = data
+    // 只加载未归档的便签
+    stickies.value = data.filter(s => !s.archivedAt)
   }
 }
 
@@ -184,8 +196,9 @@ function handleDragStart(stickyId, e) {
   dragging.offsetX = sticky.x
   dragging.offsetY = sticky.y
 
-  // 显示垃圾桶区域
+  // 显示垃圾桶和归档区域
   trashZone.isVisible = true
+  archiveZone.isVisible = true
 
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
@@ -220,6 +233,19 @@ function handleDragMove(e) {
     )
     trashZone.isHover = dragging.isOverTrash
   }
+
+  // 检查是否在归档区域
+  const archiveZoneEl = document.querySelector('.archive-zone')
+  if (archiveZoneEl) {
+    const rect = archiveZoneEl.getBoundingClientRect()
+    dragging.isOverArchive = (
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom
+    )
+    archiveZone.isHover = dragging.isOverArchive
+  }
 }
 
 // 防抖保存位置
@@ -234,6 +260,9 @@ function handleDragEnd(e) {
   // 如果在垃圾桶区域上方，删除便签
   if (dragging.isOverTrash) {
     handleStickyDelete(dragging.stickyId)
+  } else if (dragging.isOverArchive) {
+    // 归档便签
+    handleStickyArchive(dragging.stickyId)
   } else {
     const deltaX = e.clientX - dragging.startX
     const deltaY = e.clientY - dragging.startY
@@ -245,16 +274,67 @@ function handleDragEnd(e) {
     debouncedSavePosition(dragging.stickyId, newX, newY)
   }
 
-  // 隐藏垃圾桶区域
+  // 隐藏垃圾桶和归档区域
   trashZone.isVisible = false
   trashZone.isHover = false
+  archiveZone.isVisible = false
+  archiveZone.isHover = false
 
   dragging.isDragging = false
   dragging.stickyId = null
   dragging.isOverTrash = false
+  dragging.isOverArchive = false
 
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
+}
+
+// 归档便签
+async function handleStickyArchive(stickyId) {
+  await window.stickyController.archiveSticky(stickyPageId.value, stickyId)
+  // 从墙面移除（但数据还在，只是隐藏）
+  stickies.value = stickies.value.filter(s => s.id !== stickyId)
+  if (activeStickyId.value === stickyId) {
+    activeStickyId.value = null
+  }
+}
+
+// 取消归档便签
+async function handleStickyUnarchive(stickyId) {
+  const updated = await window.stickyController.unarchiveSticky(stickyPageId.value, stickyId)
+  if (updated) {
+    // 添加回墙面
+    stickies.value.push(updated)
+    // 从归档列表移除
+    archivedStickies.value = archivedStickies.value.filter(s => s.id !== stickyId)
+  }
+}
+
+// 归档便签列表
+const archivedStickies = ref([])
+
+// 打开归档弹窗
+async function openArchiveModal() {
+  isArchiveModalOpen.value = true
+  // 加载归档便签
+  const data = await window.stickyController.getArchivedStickies(stickyPageId.value)
+  if (data) {
+    archivedStickies.value = data
+  }
+}
+
+// 关闭归档弹窗
+function closeArchiveModal() {
+  isArchiveModalOpen.value = false
+}
+
+// 切换归档弹窗
+function toggleArchiveModal() {
+  if (isArchiveModalOpen.value) {
+    closeArchiveModal()
+  } else {
+    openArchiveModal()
+  }
 }
 
 // 便签组件引用
@@ -335,6 +415,11 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- 右上方归档按钮 -->
+    <button class="btn-archive" @click="toggleArchiveModal" title="归档便签">
+      <i class="fas fa-box"></i>
+    </button>
+
     <!-- 右上方新建便签按钮 -->
     <button class="btn-new-sticky" @click="handleCreateSticky" title="新建便签">
       <i class="far fa-sticky-note"></i>
@@ -355,12 +440,25 @@ onMounted(() => {
       />
     </div>
 
-    <!-- 垃圾桶区域 -->
-    <Transition name="trash-fade">
-      <div v-if="trashZone.isVisible" class="trash-zone" :class="{ hover: trashZone.isHover }">
-        <i class="fas fa-trash-alt"></i>
+    <!-- 垃圾桶和归档区域 -->
+    <Transition name="zones-fade">
+      <div v-if="trashZone.isVisible || archiveZone.isVisible" class="drop-zones">
+        <div v-if="archiveZone.isVisible" class="drop-zone archive-zone" :class="{ hover: archiveZone.isHover }">
+          <i class="fas fa-box"></i>
+        </div>
+        <div v-if="trashZone.isVisible" class="drop-zone trash-zone" :class="{ hover: trashZone.isHover }">
+          <i class="fas fa-trash-alt"></i>
+        </div>
       </div>
     </Transition>
+
+    <!-- 归档弹窗 -->
+    <ArchiveModal
+      :visible="isArchiveModalOpen"
+      :stickyPageId="stickyPageId"
+      @close="closeArchiveModal"
+      @unarchive="handleStickyUnarchive"
+    />
   </div>
 </template>
 
@@ -569,13 +667,20 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 垃圾桶区域 */
-.trash-zone {
+/* 拖拽放下区域容器 */
+.drop-zones {
   position: fixed;
   bottom: 30px;
-  /* 相对于页面中心（左侧留 250px 侧边栏） */
+  /* 水平居中（考虑侧边栏） */
   left: calc((100% - 250px) / 2 + 250px);
   transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 9999;
+}
+
+/* 通用放下区域样式 */
+.drop-zone {
   width: 60px;
   height: 60px;
   background: var(--modal-bg);
@@ -587,15 +692,15 @@ onMounted(() => {
   color: var(--text-muted);
   font-size: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
   transition: all 0.2s;
 }
 
+/* 垃圾桶悬停 */
 .trash-zone.hover {
   background: #fee;
   border-color: #c44;
   color: #c44;
-  transform: translateX(-50%) scale(1.1);
+  transform: scale(1.1);
   box-shadow: 0 6px 20px rgba(204, 68, 68, 0.3);
 }
 
@@ -607,14 +712,79 @@ onMounted(() => {
   transform: scale(1.2);
 }
 
-/* 垃圾桶浮现动画 */
-.trash-fade-enter-active,
-.trash-fade-leave-active {
+/* 归档区域悬停 */
+.archive-zone.hover {
+  background: #efe;
+  border-color: #4a4;
+  color: #4a4;
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(68, 170, 68, 0.3);
+}
+
+.archive-zone i {
+  transition: transform 0.2s;
+}
+
+.archive-zone.hover i {
+  transform: scale(1.2);
+}
+
+/* 放下区域浮现动画 */
+.zones-fade-enter-active,
+.zones-fade-leave-active {
   transition: opacity 0.2s;
 }
 
-.trash-fade-enter-from,
-.trash-fade-leave-to {
+.zones-fade-enter-from,
+.zones-fade-leave-to {
+  opacity: 0;
+}
+
+/* 归档浮现动画 */
+.archive-fade-enter-active,
+.archive-fade-leave-active {
+  transition: opacity 0.2s;
+}
+
+.archive-fade-enter-from,
+.archive-fade-leave-to {
+  opacity: 0;
+}
+
+/* 归档按钮 - 与新建按钮一致 */
+.btn-archive {
+  position: absolute;
+  top: 16px;
+  right: 80px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-archive:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 归档浮现动画 */
+.archive-fade-enter-active,
+.archive-fade-leave-active {
+  transition: opacity 0.2s;
+}
+
+.archive-fade-enter-from,
+.archive-fade-leave-to {
   opacity: 0;
 }
 </style>

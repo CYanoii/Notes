@@ -23,6 +23,9 @@ export class StickyController {
         this.eventBus.on(EventTypes.STICKY.UPDATE, ({ stickyPageId, stickyId, updates }) => this.updateSticky(stickyPageId, stickyId, updates));
         this.eventBus.on(EventTypes.STICKY.DELETE, ({ stickyPageId, stickyId }) => this.deleteSticky(stickyPageId, stickyId));
         this.eventBus.on(EventTypes.STICKY.BRING_TO_FRONT, ({ stickyPageId, stickyId }) => this.bringToFront(stickyPageId, stickyId));
+        this.eventBus.on(EventTypes.STICKY.ARCHIVE, ({ stickyPageId, stickyId }) => this.archiveSticky(stickyPageId, stickyId));
+        this.eventBus.on(EventTypes.STICKY.UNARCHIVE, ({ stickyPageId, stickyId }) => this.unarchiveSticky(stickyPageId, stickyId));
+        this.eventBus.on(EventTypes.STICKY.GET_ARCHIVED, (stickyPageId) => this.getArchivedStickies(stickyPageId));
     }
 
     /**
@@ -98,6 +101,50 @@ export class StickyController {
         } catch (error) {
             console.error('置顶便签失败:', error);
             return null;
+        }
+    }
+
+    /**
+     * 归档便签
+     * @param {string} stickyPageId 便签页 ID
+     * @param {string} stickyId 便签 ID
+     * @returns {Promise<Object>} 更新后的便签
+     */
+    async archiveSticky(stickyPageId, stickyId) {
+        try {
+            return await this.stickyService.archiveSticky(stickyPageId, stickyId);
+        } catch (error) {
+            console.error('归档便签失败:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 取消归档便签
+     * @param {string} stickyPageId 便签页 ID
+     * @param {string} stickyId 便签 ID
+     * @returns {Promise<Object>} 更新后的便签
+     */
+    async unarchiveSticky(stickyPageId, stickyId) {
+        try {
+            return await this.stickyService.unarchiveSticky(stickyPageId, stickyId);
+        } catch (error) {
+            console.error('取消归档便签失败:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 获取已归档便签
+     * @param {string} stickyPageId 便签页 ID
+     * @returns {Promise<Array>} 已归档便签数组
+     */
+    async getArchivedStickies(stickyPageId) {
+        try {
+            return await this.stickyService.getArchivedStickies(stickyPageId);
+        } catch (error) {
+            console.error('获取归档便签失败:', error);
+            return [];
         }
     }
 }

@@ -53,6 +53,35 @@ export class StickyService {
   async bringToFront(stickyPageId, stickyId) {
     return await window.electronAPI.bringStickyToFront(stickyPageId, stickyId);
   }
+
+  /**
+   * 归档便签
+   * @param {string} stickyPageId 便签页 ID
+   * @param {string} stickyId 便签 ID
+   * @returns {Promise<Object>} 更新后的便签
+   */
+  async archiveSticky(stickyPageId, stickyId) {
+    return await window.electronAPI.archiveSticky(stickyPageId, stickyId);
+  }
+
+  /**
+   * 取消归档便签
+   * @param {string} stickyPageId 便签页 ID
+   * @param {string} stickyId 便签 ID
+   * @returns {Promise<Object>} 更新后的便签
+   */
+  async unarchiveSticky(stickyPageId, stickyId) {
+    return await window.electronAPI.unarchiveSticky(stickyPageId, stickyId);
+  }
+
+  /**
+   * 获取已归档便签
+   * @param {string} stickyPageId 便签页 ID
+   * @returns {Promise<Array>} 已归档便签数组
+   */
+  async getArchivedStickies(stickyPageId) {
+    return await window.electronAPI.getArchivedStickies(stickyPageId);
+  }
 }
 
 // 导出单例

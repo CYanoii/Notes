@@ -206,6 +206,21 @@ async function setupIpcHandlers() {
     return await stickyManager.bringToFront(stickyPageId, stickyId);
   });
 
+  // 归档便签
+  ipcMain.handle('stickies:archive', async (event, stickyPageId, stickyId) => {
+    return await stickyManager.archiveSticky(stickyPageId, stickyId);
+  });
+
+  // 取消归档便签
+  ipcMain.handle('stickies:unarchive', async (event, stickyPageId, stickyId) => {
+    return await stickyManager.unarchiveSticky(stickyPageId, stickyId);
+  });
+
+  // 获取已归档便签
+  ipcMain.handle('stickies:getArchived', async (event, stickyPageId) => {
+    return await stickyManager.getArchivedStickies(stickyPageId);
+  });
+
 // ===== 窗口控制 =====
   ipcMain.handle('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow();

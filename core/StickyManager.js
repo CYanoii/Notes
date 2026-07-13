@@ -154,6 +154,50 @@ class StickyManager {
 
     return await this.updateSticky(stickyPageId, stickyId, { zIndex: maxZIndex + 1 });
   }
+
+  /**
+   * 归档便签
+   * @param {string} stickyPageId 便签页 ID
+   * @param {string} stickyId 便签 ID
+   * @returns {Promise<Object>} 更新后的便签
+   */
+  async archiveSticky(stickyPageId, stickyId) {
+    return await this.updateSticky(stickyPageId, stickyId, { archivedAt: new Date().toISOString() });
+  }
+
+  /**
+   * 取消归档便签
+   * @param {string} stickyPageId 便签页 ID
+   * @param {string} stickyId 便签 ID
+   * @returns {Promise<Object>} 更新后的便签
+   */
+  async unarchiveSticky(stickyPageId, stickyId) {
+    const stickies = await this.getStickies(stickyPageId);
+    const sticky = stickies.find(s => s.id === stickyId);
+    if (!sticky) {
+      throw new Error(`Sticky ${stickyId} not found`);
+    }
+
+    // 取消归档时恢复zIndex到最大值
+    const maxZIndex = stickies.length > 0
+      ? Math.max(...stickies.map(s => s.zIndex || 0))
+      : 0;
+
+    const updates = { archivedAt: null, zIndex: maxZIndex + 1 };
+    return await this.updateSticky(stickyPageId, stickyId, updates);
+  }
+
+  /**
+   * 获取已归档便签（按归档时间从下到上排序，新的在上）
+   * @param {string} stickyPageId 便签页 ID
+   * @returns {Promise<Array>} 已归档便签数组
+   */
+  async getArchivedStickies(stickyPageId) {
+    const stickies = await this.getStickies(stickyPageId);
+    return stickies
+      .filter(s => s.archivedAt)
+      .sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
+  }
 }
 
 module.exports = StickyManager;

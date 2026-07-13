@@ -87,7 +87,10 @@ export const EventTypes = {
     CREATE: 'sticky:create',
     UPDATE: 'sticky:update',
     DELETE: 'sticky:delete',
-    BRING_TO_FRONT: 'sticky:bringToFront'
+    BRING_TO_FRONT: 'sticky:bringToFront',
+    ARCHIVE: 'sticky:archive',
+    UNARCHIVE: 'sticky:unarchive',
+    GET_ARCHIVED: 'sticky:getArchived'
   }
 
 }
