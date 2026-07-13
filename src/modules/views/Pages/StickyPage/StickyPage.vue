@@ -137,6 +137,8 @@ async function handleCreateSticky() {
     await nextTick()
     focusSticky(newSticky.id)
   }
+  // 更新页面最后修改时间，触发首页卡片刷新
+  window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, stickyPageId.value)
 }
 
 // 更新便签
@@ -152,6 +154,8 @@ async function handleStickyUpdate(stickyId, updates) {
       stickies.value[index] = updated
     }
   }
+  // 更新页面最后修改时间，触发首页卡片刷新
+  window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, stickyPageId.value)
 }
 
 // 删除便签
@@ -161,6 +165,7 @@ async function handleStickyDelete(stickyId) {
   if (activeStickyId.value === stickyId) {
     activeStickyId.value = null
   }
+  window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, stickyPageId.value)
 }
 
 // 聚焦便签
@@ -297,6 +302,7 @@ async function handleStickyArchive(stickyId) {
   if (activeStickyId.value === stickyId) {
     activeStickyId.value = null
   }
+  window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, stickyPageId.value)
 }
 
 // 取消归档便签
@@ -308,6 +314,7 @@ async function handleStickyUnarchive(stickyId) {
     // 从归档列表移除
     archivedStickies.value = archivedStickies.value.filter(s => s.id !== stickyId)
   }
+  window.eventBus.emit(EventTypes.NOTE.UPDATE.CONTENT, stickyPageId.value)
 }
 
 // 归档便签列表
