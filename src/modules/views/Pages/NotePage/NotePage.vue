@@ -1135,9 +1135,9 @@ onMounted(() => {
 }
 
 .note-title-input:disabled {
-    background-color: var(--editor-tags-bg);
-    color: var(--text-muted);
-    cursor: not-allowed;
+    background-color: transparent;
+    color: var(--editor-title-color);
+    cursor: default;
 }
 
 .note-excerpt-input {
@@ -1160,9 +1160,9 @@ onMounted(() => {
 }
 
 .note-excerpt-input:disabled {
-    background-color: var(--editor-tags-bg);
-    color: var(--text-muted);
-    cursor: not-allowed;
+    background-color: transparent;
+    color: var(--editor-excerpt-color);
+    cursor: default;
 }
 
 /* 笔记编辑器标签栏 */
