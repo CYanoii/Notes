@@ -64,7 +64,7 @@ const versionHistoryList = ref([])
 
 // 检查笔记是否为发布态
 function isPublished(noteData) {
-  return noteData?.editStatus === 'published'
+  return noteData?.status !== 'trashed' && noteData?.editStatus === 'published'
 }
 
 // 检查笔记是否可编辑（编辑态且非回收站）
