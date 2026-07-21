@@ -34,6 +34,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 资源文件操作
   saveAsset: (noteId, fileName, fileData) => ipcRenderer.invoke('notes:saveAsset', noteId, fileName, fileData),
 
+  // 发布/版本管理
+  publishNote: (noteId, versionNote) => ipcRenderer.invoke('notes:publish', noteId, versionNote),
+  abandonEdits: (noteId) => ipcRenderer.invoke('notes:abandonEdits', noteId),
+  restoreToEditing: (noteId) => ipcRenderer.invoke('notes:restoreToEditing', noteId),
+  getVersionHistory: (noteId) => ipcRenderer.invoke('notes:getVersionHistory', noteId),
+  getVersion: (noteId, version) => ipcRenderer.invoke('notes:getVersion', noteId, version),
+  rollback: (noteId, targetVersion) => ipcRenderer.invoke('notes:rollback', noteId, targetVersion),
+
   // 标签操作
   getAllTags: () => ipcRenderer.invoke('tags:getAll'),
   createTag: (name, color) => ipcRenderer.invoke('tags:create', name, color),

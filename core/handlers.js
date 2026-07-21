@@ -152,6 +152,37 @@ async function setupIpcHandlers() {
     return true;
   });
 
+  // ===== 发布/版本管理 =====
+  // 发布笔记
+  ipcMain.handle('notes:publish', async (event, noteId, versionNote) => {
+    return await notesManager.publishNote(noteId, versionNote);
+  });
+
+  // 放弃编辑
+  ipcMain.handle('notes:abandonEdits', async (event, noteId) => {
+    return await notesManager.abandonEdits(noteId);
+  });
+
+  // 恢复编辑
+  ipcMain.handle('notes:restoreToEditing', async (event, noteId) => {
+    return await notesManager.restoreToEditing(noteId);
+  });
+
+  // 获取版本历史
+  ipcMain.handle('notes:getVersionHistory', async (event, noteId) => {
+    return await notesManager.getVersionHistory(noteId);
+  });
+
+  // 获取指定版本内容
+  ipcMain.handle('notes:getVersion', async (event, noteId, version) => {
+    return await notesManager.getVersion(noteId, version);
+  });
+
+  // 回滚到指定版本
+  ipcMain.handle('notes:rollback', async (event, noteId, targetVersion) => {
+    return await notesManager.rollbackToVersion(noteId, targetVersion);
+  });
+
   // 保存资源文件
   ipcMain.handle('notes:saveAsset', async (event, noteId, fileName, fileData) => {
     return await notesManager.saveAsset(noteId, fileName, fileData);

@@ -81,6 +81,12 @@ export const EventTypes = {
     }
   },
 
+  // 版本历史事件
+  VERSION: {
+    OPEN: 'version:open',      // 打开历史版本页面
+    ROLLBACK: 'version:rollback'  // 回滚到指定版本
+  },
+
   // 便签事件
   STICKY: {
     LOAD: 'sticky:load',

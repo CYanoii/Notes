@@ -4,6 +4,7 @@ import ConfirmModal from './types/ConfirmModal.vue'
 import TagSelectionModal from './types/TagSelectionModal.vue'
 import SettingsModal from './types/SettingsModal.vue'
 import PageTypeModal from './types/PageTypeModal.vue'
+import PublishModal from './types/PublishModal.vue'
 
 const props = defineProps({
   modal: { type: Object, required: true }
@@ -53,6 +54,12 @@ function handleOverlayClick(e) {
         :modal="modal"
         @close="(id) => emit('close', id)"
         @select="(id, type) => emit('select', id, type)"
+      />
+      <PublishModal
+        v-else-if="modal.type === 'publishOrDiscard'"
+        :modal="modal"
+        @close="(id) => emit('close', id)"
+        @confirm="(id, action, versionNote) => emit('confirm', id, action, versionNote)"
       />
     </div>
   </Teleport>

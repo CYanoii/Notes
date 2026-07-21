@@ -80,10 +80,17 @@ export function useNotePage() {
    */
   function updateEditorContent(noteId, newContent) {
     const editor = state.editors.get(noteId)
-    if (editor && editor.vditor) {
-      const currentValue = editor.vditor.getValue()
-      if (currentValue !== newContent) {
-        editor.vditor.setValue(newContent)
+    // 检查 vditor 是否存在且完全初始化（有 lute 对象）
+    if (editor && editor.vditor && editor.vditor.lute) {
+      try {
+        const currentValue = editor.vditor.getValue()
+        if (currentValue !== newContent) {
+          editor.vditor.setValue(newContent)
+        }
+      } catch (e) {
+        // Vditor 方法调用失败，尝试直接更新 content
+        console.warn('[useNotePage] Vditor update failed, updating content directly:', e)
+        editor.noteData.content = newContent
       }
     } else if (editor) {
       editor.noteData.content = newContent

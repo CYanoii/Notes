@@ -174,6 +174,105 @@ export class NoteService {
         await window.electronAPI.deletePermanently(noteId);
     }
 
+    // ==================== 发布/版本管理 ====================
+
+    /**
+     * 发布笔记 - 创建新版本快照
+     * @param {string|number} noteId 笔记ID
+     * @param {string} versionNote 版本说明（可选）
+     * @returns {Promise<Object>} 更新后的笔记元数据
+     */
+    async publishNote(noteId, versionNote = '') {
+        const result = await window.electronAPI.publishNote(noteId, versionNote);
+        // 更新内存缓存
+        if (this.openNotes.has(noteId)) {
+            const existingNote = this.openNotes.get(noteId);
+            this.openNotes.set(noteId, {
+                ...existingNote,
+                ...result,
+                content: existingNote.content
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 放弃编辑 - 丢弃当前修改，恢复到最新发布版本
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<Object>} 更新后的笔记元数据
+     */
+    async abandonEdits(noteId) {
+        const result = await window.electronAPI.abandonEdits(noteId);
+        // 更新内存缓存中的内容
+        if (this.openNotes.has(noteId)) {
+            const existingNote = this.openNotes.get(noteId);
+            this.openNotes.set(noteId, {
+                ...existingNote,
+                ...result,
+                content: existingNote.content
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 恢复编辑 - 进入编辑态，加载发布版内容作为起点
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<Object>} 更新后的笔记元数据
+     */
+    async restoreToEditing(noteId) {
+        const result = await window.electronAPI.restoreToEditing(noteId);
+        // 更新内存缓存中的内容
+        if (this.openNotes.has(noteId)) {
+            const existingNote = this.openNotes.get(noteId);
+            this.openNotes.set(noteId, {
+                ...existingNote,
+                ...result,
+                content: existingNote.content
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 获取版本历史列表
+     * @param {string|number} noteId 笔记ID
+     * @returns {Promise<Array>} 版本历史列表
+     */
+    async getVersionHistory(noteId) {
+        return await window.electronAPI.getVersionHistory(noteId);
+    }
+
+    /**
+     * 获取指定版本的内容
+     * @param {string|number} noteId 笔记ID
+     * @param {number} version 版本号
+     * @returns {Promise<Object>} 版本内容
+     */
+    async getVersion(noteId, version) {
+        return await window.electronAPI.getVersion(noteId, version);
+    }
+
+    /**
+     * 回滚到指定版本
+     * @param {string|number} noteId 笔记ID
+     * @param {number} targetVersion 目标版本号
+     * @returns {Promise<Object>} 更新后的笔记元数据
+     */
+    async rollback(noteId, targetVersion) {
+        const result = await window.electronAPI.rollback(noteId, targetVersion);
+        // 更新内存缓存
+        if (this.openNotes.has(noteId)) {
+            const existingNote = this.openNotes.get(noteId);
+            this.openNotes.set(noteId, {
+                ...existingNote,
+                ...result,
+                content: existingNote.content
+            });
+        }
+        return result;
+    }
+
     /**
      * 从笔记内容中解析所有引用（wiki links）
      * @param {string} content 笔记内容

@@ -17,6 +17,10 @@ function handleConfirm(id, result, color) {
   close(id, { value: result, color })
 }
 
+function handlePublishConfirm(id, action, versionNote) {
+  close(id, { action, versionNote })
+}
+
 function handleTagToggle(id, tagId) {
   toggleTagSelection(id, tagId)
 }
@@ -36,7 +40,7 @@ function handleSelect(id, type) {
     :key="modal.id"
     :modal="modal"
     @close="handleClose"
-    @confirm="handleConfirm"
+    @confirm="(id, result, color) => modal.type === 'publishOrDiscard' ? handlePublishConfirm(id, result, color) : handleConfirm(id, result, color)"
     @tagToggle="handleTagToggle"
     @updatePath="handleUpdatePath"
     @select="handleSelect"

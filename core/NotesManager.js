@@ -39,7 +39,11 @@ class NotesManager {
       updatedAt: new Date().toISOString(),
       tags: [],
       status: 'active',
-      pageType: pageType
+      pageType: pageType,
+      editStatus: 'editing',
+      version: 0,
+      versionNote: '',
+      publishedAt: null
     };
 
     await this.saveMetadata(noteId, metadata);
@@ -296,6 +300,338 @@ class NotesManager {
       await this.saveIndex(index);
     }
     return migrated;
+  }
+
+  // ==================== 版本管理方法 ====================
+
+  /**
+   * 获取笔记元数据（不含内容）
+   */
+  async getNoteMetadata(noteId) {
+    const metaFile = path.join(this.notesDir, noteId, 'metadata.json');
+    if (!await this.exists(metaFile)) {
+      return null;
+    }
+    return JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+  }
+
+  /**
+   * 复制资源文件夹到目标目录
+   */
+  async copyAssetsToDir(noteId, destDir) {
+    const assetsSrc = path.join(this.notesDir, noteId, 'assets');
+    if (!await this.exists(assetsSrc)) {
+      return;
+    }
+    await fs.mkdir(destDir, { recursive: true });
+    const files = await fs.readdir(assetsSrc);
+    for (const file of files) {
+      const srcFile = path.join(assetsSrc, file);
+      const destFile = path.join(destDir, file);
+      await fs.copyFile(srcFile, destFile);
+    }
+  }
+
+  /**
+   * 从版本目录复制资源到笔记的 assets 目录
+   */
+  async copyAssetsFromVersionDir(noteId, versionDir) {
+    const versionAssetsDir = path.join(versionDir, 'assets');
+    const assetsDest = path.join(this.notesDir, noteId, 'assets');
+    if (!await this.exists(versionAssetsDir)) {
+      return;
+    }
+    // 清空现有 assets
+    await fs.rm(assetsDest, { recursive: true, force: true });
+    await fs.mkdir(assetsDest, { recursive: true });
+    const files = await fs.readdir(versionAssetsDir);
+    for (const file of files) {
+      const srcFile = path.join(versionAssetsDir, file);
+      const destFile = path.join(assetsDest, file);
+      await fs.copyFile(srcFile, destFile);
+    }
+  }
+
+  /**
+   * 获取版本快照的元数据
+   */
+  async getVersionSnapshotMetadata(noteId, version) {
+    const versionDir = path.join(this.notesDir, noteId, 'versions', `v${version}`);
+    const metaFile = path.join(versionDir, 'metadata.json');
+    if (!await this.exists(metaFile)) {
+      return null;
+    }
+    return JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+  }
+
+  /**
+   * 发布笔记 - 创建新版本快照
+   */
+  async publishNote(noteId, versionNote = '') {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const noteIdDir = path.join(this.notesDir, noteId);
+    const content = await this.getNoteContent(noteId);
+    const assetsSrc = path.join(noteIdDir, 'assets');
+
+    // 递增版本号
+    const newVersion = (metadata.version || 0) + 1;
+
+    // 创建版本快照目录
+    const versionDir = path.join(noteIdDir, 'versions', `v${newVersion}`);
+    await fs.mkdir(path.join(versionDir, 'assets'), { recursive: true });
+
+    // 保存版本快照内容
+    await this.saveContentToPath(path.join(versionDir, 'note.md'), content);
+    await this.copyAssetsToDir(noteId, path.join(versionDir, 'assets'));
+
+    // 统计资源文件数量
+    let assetCount = 0;
+    if (await this.exists(assetsSrc)) {
+      const files = await fs.readdir(assetsSrc);
+      assetCount = files.length;
+    }
+
+    // 保存版本快照元数据（包含 title、excerpt）
+    const snapshotMetadata = {
+      version: newVersion,
+      versionNote,
+      publishedAt: new Date().toISOString(),
+      title: metadata.title || '',
+      excerpt: metadata.excerpt || '',
+      contentSize: content.length,
+      assetCount
+    };
+    await this.saveMetadataToPath(path.join(versionDir, 'metadata.json'), snapshotMetadata);
+
+    // 更新主元数据
+    const updatedMetadata = {
+      ...metadata,
+      editStatus: 'published',
+      publishedAt: new Date().toISOString(),
+      version: newVersion,
+      versionNote
+    };
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+
+    return updatedMetadata;
+  }
+
+  /**
+   * 放弃编辑 - 丢弃当前修改，恢复到最新发布版本
+   */
+  async abandonEdits(noteId) {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const currentVersion = metadata.version;
+    if (!currentVersion || currentVersion < 1) {
+      throw new Error('没有可用的历史版本');
+    }
+
+    // 获取最新版本快照
+    const versionDir = path.join(this.notesDir, noteId, 'versions', `v${currentVersion}`);
+    const snapshotMetadata = await this.getVersionSnapshotMetadata(noteId, currentVersion);
+    if (!snapshotMetadata) {
+      throw new Error(`版本快照不存在: v${currentVersion}`);
+    }
+
+    // 恢复到快照内容
+    const snapshotContent = await fs.readFile(path.join(versionDir, 'note.md'), 'utf-8');
+    await this.saveContent(noteId, snapshotContent);
+    await this.copyAssetsFromVersionDir(noteId, versionDir);
+
+    // 恢复 title 和 excerpt
+    const updatedMetadata = {
+      ...metadata,
+      title: snapshotMetadata.title || metadata.title,
+      excerpt: snapshotMetadata.excerpt || metadata.excerpt,
+      editStatus: 'published'  // 明确设置为 published
+    };
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+
+    // 返回包含 content 的完整数据
+    return { ...updatedMetadata, content: snapshotContent };
+  }
+
+  /**
+   * 恢复编辑 - 进入编辑态，加载发布版内容作为起点
+   */
+  async restoreToEditing(noteId) {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    if (metadata.editStatus !== 'published') {
+      throw new Error('笔记不在已发布状态');
+    }
+
+    const currentVersion = metadata.version;
+    if (!currentVersion || currentVersion < 1) {
+      throw new Error('没有可用的历史版本');
+    }
+
+    // 获取最新版本快照
+    const versionDir = path.join(this.notesDir, noteId, 'versions', `v${currentVersion}`);
+    const snapshotMetadata = await this.getVersionSnapshotMetadata(noteId, currentVersion);
+    if (!snapshotMetadata) {
+      throw new Error(`版本快照不存在: v${currentVersion}`);
+    }
+
+    // 加载快照内容到草稿区
+    const snapshotContent = await fs.readFile(path.join(versionDir, 'note.md'), 'utf-8');
+    await this.saveContent(noteId, snapshotContent);
+    await this.copyAssetsFromVersionDir(noteId, versionDir);
+
+    // 恢复 title 和 excerpt 到草稿
+    const updatedMetadata = {
+      ...metadata,
+      title: snapshotMetadata.title || metadata.title,
+      excerpt: snapshotMetadata.excerpt || metadata.excerpt,
+      editStatus: 'editing'
+    };
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+
+    return updatedMetadata;
+  }
+
+  /**
+   * 回滚到指定版本
+   */
+  async rollbackToVersion(noteId, targetVersion) {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const currentVersion = metadata.version;
+    if (!currentVersion || currentVersion < 1) {
+      throw new Error('没有可用的历史版本');
+    }
+
+    if (targetVersion < 1 || targetVersion > currentVersion) {
+      throw new Error(`无效的版本号: ${targetVersion}`);
+    }
+
+    // 删除比目标版本新的所有版本
+    for (let v = currentVersion; v > targetVersion; v--) {
+      const versionDir = path.join(this.notesDir, noteId, 'versions', `v${v}`);
+      if (await this.exists(versionDir)) {
+        await fs.rm(versionDir, { recursive: true, force: true });
+      }
+    }
+
+    // 获取目标版本快照
+    const versionDir = path.join(this.notesDir, noteId, 'versions', `v${targetVersion}`);
+    const snapshotMetadata = await this.getVersionSnapshotMetadata(noteId, targetVersion);
+    if (!snapshotMetadata) {
+      throw new Error(`版本快照不存在: v${targetVersion}`);
+    }
+
+    // 恢复到目标版本内容
+    const snapshotContent = await fs.readFile(path.join(versionDir, 'note.md'), 'utf-8');
+    await this.saveContent(noteId, snapshotContent);
+    await this.copyAssetsFromVersionDir(noteId, versionDir);
+
+    // 更新元数据
+    const updatedMetadata = {
+      ...metadata,
+      title: snapshotMetadata.title || metadata.title,
+      excerpt: snapshotMetadata.excerpt || metadata.excerpt,
+      version: targetVersion,
+      publishedAt: snapshotMetadata.publishedAt,
+      editStatus: 'published'
+    };
+    await this.saveMetadata(noteId, updatedMetadata);
+    await this.updateIndex(noteId, updatedMetadata);
+
+    return updatedMetadata;
+  }
+
+  /**
+   * 获取版本历史列表
+   */
+  async getVersionHistory(noteId) {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const versionsDir = path.join(this.notesDir, noteId, 'versions');
+    if (!await this.exists(versionsDir)) {
+      return [];
+    }
+
+    const entries = await fs.readdir(versionsDir);
+    const versions = [];
+
+    for (const entry of entries) {
+      if (entry.startsWith('v') && entry.length > 1) {
+        const versionNum = parseInt(entry.substring(1), 10);
+        if (!isNaN(versionNum)) {
+          const snapshotMeta = await this.getVersionSnapshotMetadata(noteId, versionNum);
+          if (snapshotMeta) {
+            versions.push(snapshotMeta);
+          }
+        }
+      }
+    }
+
+    // 按版本号降序排序
+    return versions.sort((a, b) => b.version - a.version);
+  }
+
+  /**
+   * 获取指定版本的内容
+   */
+  async getVersion(noteId, version) {
+    const metadata = await this.getNoteMetadata(noteId);
+    if (!metadata) {
+      throw new Error(`笔记不存在: ${noteId}`);
+    }
+
+    const versionDir = path.join(this.notesDir, noteId, 'versions', `v${version}`);
+    const noteFile = path.join(versionDir, 'note.md');
+    if (!await this.exists(noteFile)) {
+      return null;
+    }
+
+    const content = await fs.readFile(noteFile, 'utf-8');
+    const snapshotMetadata = await this.getVersionSnapshotMetadata(noteId, version);
+
+    // 返回版本内容及元数据
+    return {
+      version,
+      content,
+      title: snapshotMetadata?.title || '',
+      excerpt: snapshotMetadata?.excerpt || '',
+      versionNote: snapshotMetadata?.versionNote || '',
+      publishedAt: snapshotMetadata?.publishedAt || '',
+      assetCount: snapshotMetadata?.assetCount || 0
+    };
+  }
+
+  /**
+   * 保存内容到指定路径
+   */
+  async saveContentToPath(filePath, content) {
+    await fs.writeFile(filePath, content, 'utf-8');
+  }
+
+  /**
+   * 保存元数据到指定路径
+   */
+  async saveMetadataToPath(filePath, metadata) {
+    await fs.writeFile(filePath, JSON.stringify(metadata, null, 2), 'utf-8');
   }
 }
 

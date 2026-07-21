@@ -119,6 +119,39 @@ export function useModal() {
   }
 
   /**
+   * 显示发布/放弃编辑模态框
+   * @param {string} title 笔记标题
+   * @param {number} nextVersion 下一个版本号
+   * @param {boolean} hasHistory 是否有历史版本（决定"放弃编辑"是否可用）
+   * @returns {Promise<'publish'|'discard'|null>} 用户选择结果
+   */
+  function showPublishOrDiscard(title, nextVersion, hasHistory = false) {
+    return new Promise(resolve => {
+      const id = ++state.modalId
+      state.modals.push({
+        id,
+        type: 'publishOrDiscard',
+        title,
+        nextVersion,
+        hasHistory,
+        versionNote: '',
+        resolve,
+        show: true
+      })
+    })
+  }
+
+  /**
+   * 更新发布模态框的版本说明
+   */
+  function updatePublishVersionNote(id, versionNote) {
+    const modal = state.modals.find(m => m.id === id)
+    if (modal && modal.type === 'publishOrDiscard') {
+      modal.versionNote = versionNote
+    }
+  }
+
+  /**
    * 更新标签选择状态
    */
   function toggleTagSelection(id, tagId) {
@@ -151,6 +184,8 @@ export function useModal() {
     showTagSelection,
     showPageTypeSelection,
     showSettingsPopover,
+    showPublishOrDiscard,
+    updatePublishVersionNote,
     toggleTagSelection,
     updateSettingsPath,
     close

@@ -2,10 +2,12 @@
 import { computed, watch, nextTick, onMounted, reactive, ref } from 'vue'
 import { useNotePage } from './useNotePage.js'
 import { useWikiLink } from '../WikiLink/useWikiLink.js'
+import { useModal } from '../../Modal/useModal.js'
 import { EventTypes } from '../../../core/EventTypes.js'
 import { escapeHtml } from '../../../utils/helpers.js'
 import NoteSuggestionPopup from '../WikiLink/NoteSuggestionPopup.vue'
 import StickyPage from '../StickyPage/StickyPage.vue'
+import VersionHistoryPanel from './components/VersionHistoryPanel.vue'
 
 // 页面类型常量
 const NOTE_PAGE = 'note'
@@ -52,6 +54,175 @@ defineExpose({
 // Wiki Link 初始化
 const wikiLink = useWikiLink()
 const { notePicker } = wikiLink
+
+// Modal 初始化
+const { showPublishOrDiscard, confirm } = useModal()
+
+// 版本历史相关状态
+const showVersionHistory = ref(false)
+const versionHistoryList = ref([])
+
+// 检查笔记是否为发布态
+function isPublished(noteData) {
+  return noteData?.editStatus === 'published'
+}
+
+// 检查笔记是否可编辑（编辑态且非回收站）
+function isEditable(noteData) {
+  return noteData?.status !== 'trashed' && noteData?.editStatus !== 'published'
+}
+
+// 获取当前笔记的版本号
+function getCurrentVersion(noteData) {
+  return noteData?.version || 0
+}
+
+// 是否有历史版本
+function hasVersionHistory(noteData) {
+  return getCurrentVersion(noteData) > 0
+}
+
+// 点击"发布/放弃编辑"按钮
+async function handlePublishOrDiscard(noteId) {
+  const editor = state.editors.get(noteId)
+  if (!editor) return
+
+  const noteData = editor.noteData
+  const nextVersion = getCurrentVersion(noteData) + 1
+  const hasHistory = hasVersionHistory(noteData)
+
+  const result = await showPublishOrDiscard(noteData.title || '无标题笔记', nextVersion, hasHistory)
+
+  if (!result) return
+
+  if (result.action === 'publish') {
+    // 发布笔记
+    const versionNote = result.versionNote || ''
+    try {
+      const updated = await window.noteService.publishNote(noteId, versionNote)
+      // 直接修改属性以确保响应式更新
+      Object.assign(editor.noteData, updated)
+      if (window.toastApi) {
+        window.toastApi.show(`已发布版本 v${updated.version}`, 'success')
+      }
+    } catch (error) {
+      console.error('发布失败:', error)
+      if (window.toastApi) {
+        window.toastApi.show('发布失败: ' + error.message, 'error')
+      }
+    }
+  } else if (result.action === 'discard') {
+    // 放弃编辑
+    try {
+      const updated = await window.noteService.abandonEdits(noteId)
+      // 直接替换 noteData 以触发响应式更新
+      editor.noteData = { ...editor.noteData, ...updated }
+      updateEditorContent(noteId, updated.content)
+      if (window.toastApi) {
+        window.toastApi.show('已放弃编辑，恢复到最新发布版本', 'info')
+      }
+    } catch (error) {
+      console.error('放弃编辑失败:', error)
+      if (window.toastApi) {
+        window.toastApi.show('放弃编辑失败: ' + error.message, 'error')
+      }
+    }
+  }
+}
+
+// 点击"恢复编辑"按钮
+async function handleRestoreToEditing(noteId) {
+  const editor = state.editors.get(noteId)
+  if (!editor) return
+
+  try {
+    const updated = await window.noteService.restoreToEditing(noteId)
+    // 直接修改属性以确保响应式更新
+    Object.assign(editor.noteData, updated)
+    // 重新加载完整内容
+    const fullNote = await window.noteService.getNote(noteId)
+    if (fullNote) {
+      editor.noteData.content = fullNote.content
+      updateEditorContent(noteId, fullNote.content)
+    }
+    if (window.toastApi) {
+      window.toastApi.show('已恢复编辑模式', 'info')
+    }
+  } catch (error) {
+    console.error('恢复编辑失败:', error)
+    if (window.toastApi) {
+      window.toastApi.show('恢复编辑失败: ' + error.message, 'error')
+    }
+  }
+}
+
+// 点击历史版本按钮
+async function handleShowVersionHistory(noteId) {
+  const editor = state.editors.get(noteId)
+  if (!editor) return
+
+  try {
+    const history = await window.noteService.getVersionHistory(noteId)
+    versionHistoryList.value = history
+    showVersionHistory.value = true
+  } catch (error) {
+    console.error('获取版本历史失败:', error)
+    if (window.toastApi) {
+      window.toastApi.show('获取版本历史失败', 'error')
+    }
+  }
+}
+
+// 关闭历史版本面板
+function handleCloseVersionHistory() {
+  showVersionHistory.value = false
+}
+
+// 预览历史版本 - 打开独立只读页面
+function handlePreviewVersion(version) {
+  // 关闭历史面板
+  showVersionHistory.value = false
+  // 通过事件总线打开历史版本页面
+  if (window.eventBus) {
+    window.eventBus.emit(EventTypes.VERSION.OPEN, state.activeNoteId, version.version)
+  }
+}
+
+// 回滚到指定版本
+async function handleRestoreVersion(version) {
+  const noteId = state.activeNoteId
+  if (!noteId) return
+
+  // 二次确认
+  const confirmed = await confirm(`确定要回滚到 v${version.version} 吗？此操作将丢弃当前所有未发布内容及此版本之后的所有历史发布记录，不可撤销。`)
+
+  if (!confirmed) return
+
+  try {
+    const updated = await window.noteService.rollback(noteId, version.version)
+    // 关闭历史面板
+    showVersionHistory.value = false
+    // 更新编辑器数据
+    const editor = state.editors.get(noteId)
+    if (editor) {
+      editor.noteData = { ...editor.noteData, ...updated }
+      Object.assign(editor.noteData, updated)
+      const fullNote = await window.noteService.getNote(noteId)
+      if (fullNote) {
+        editor.noteData.content = fullNote.content
+        updateEditorContent(noteId, fullNote.content)
+      }
+    }
+    if (window.toastApi) {
+      window.toastApi.show(`已回滚到 v${version.version}`, 'success')
+    }
+  } catch (error) {
+    console.error('回滚失败:', error)
+    if (window.toastApi) {
+      window.toastApi.show('回滚失败: ' + error.message, 'error')
+    }
+  }
+}
 
 // 创建当前笔记的 Vditor 适配器
 function createVditorAdapterForCurrentNote() {
@@ -210,8 +381,8 @@ function getCurrentTheme() {
 
 // 初始化 Vditor
 async function initVditor(noteId, container, noteData) {
-  if (noteData.status === 'trashed') {
-    // 只读模式：渲染 Markdown HTML
+  if (noteData.status === 'trashed' || noteData.editStatus === 'published') {
+    // 只读模式：渲染 Markdown HTML（回收站或发布态）
     const readonlyEl = document.createElement('div')
     readonlyEl.className = 'vditor-readonly'
     // 获取所有笔记元数据用于 wiki link 标题查找
@@ -608,6 +779,45 @@ watch(
   }
 )
 
+// 监听当前激活笔记的 editStatus 变化，重新初始化编辑器
+watch(
+  () => {
+    const editor = state.editors.get(state.activeNoteId)
+    return editor?.noteData?.editStatus
+  },
+  async (newStatus, oldStatus) => {
+    if (newStatus === oldStatus) return
+    await nextTick()
+    const noteId = state.activeNoteId
+    if (!noteId) return
+
+    const editor = state.editors.get(noteId)
+    if (!editor) return
+
+    // 销毁旧的 Vditor 实例
+    if (editor.vditor) {
+      editor.vditor.destroy()
+      editor.vditor = null
+      setVditor(noteId, null)
+    }
+
+    // 清空容器
+    const container = document.getElementById(`vditor-${noteId}`)
+    if (container) {
+      container.innerHTML = ''
+    }
+
+    // 重新初始化编辑器
+    await nextTick()
+    if (container) {
+      const vditor = await initVditor(noteId, container, editor.noteData)
+      if (vditor) {
+        setVditor(noteId, vditor)
+      }
+    }
+  }
+)
+
 // 组件挂载时初始化已存在的编辑器
 onMounted(() => {
   initializeExistingEditors()
@@ -625,8 +835,8 @@ onMounted(() => {
       class="note-editor"
       :class="{
         active: activeNoteId === editor.id,
-        'read-only': editor.noteData?.status === 'trashed',
-        'editor-focused': isFocused && activeNoteId === editor.id
+        'read-only': editor.noteData?.status === 'trashed' || editor.noteData?.editStatus === 'published',
+        'editor-focused': isFocused && activeNoteId === editor.id && editor.noteData?.editStatus !== 'published'
       }"
     >
       <!-- 便签页 -->
@@ -735,6 +945,49 @@ onMounted(() => {
     @update:selectedIndex="(idx) => notePicker.selectedIndex = idx"
     @select="(noteId) => wikiLink.handleNotePickerSelect(createVditorAdapterForCurrentNote(), noteId)"
     @close="wikiLink.closeNotePicker"
+  />
+
+  <!-- 功能按钮组（圆形图标，仅图标） -->
+  <div class="action-buttons-group">
+    <!-- 发布态：恢复编辑按钮 -->
+    <div
+      v-if="activeNoteId && isPublished(state.editors.get(activeNoteId)?.noteData)"
+      class="action-btn restore-editing-btn"
+      @click="handleRestoreToEditing(activeNoteId)"
+      title="恢复编辑"
+    >
+      <i class="fas fa-edit"></i>
+    </div>
+
+    <!-- 编辑态：发布按钮 -->
+    <div
+      v-if="activeNoteId && isEditable(state.editors.get(activeNoteId)?.noteData)"
+      class="action-btn publish-btn"
+      @click="handlePublishOrDiscard(activeNoteId)"
+      title="发布"
+    >
+      <i class="fas fa-upload"></i>
+    </div>
+
+    <!-- 历史版本按钮 -->
+    <div
+      v-if="activeNoteId && hasVersionHistory(state.editors.get(activeNoteId)?.noteData)"
+      class="action-btn version-history-btn"
+      @click="handleShowVersionHistory(activeNoteId)"
+      title="版本历史"
+    >
+      <i class="fas fa-history"></i>
+    </div>
+  </div>
+
+  <!-- 历史版本面板 -->
+  <VersionHistoryPanel
+    v-if="showVersionHistory && activeNoteId"
+    :versions="versionHistoryList"
+    :currentVersion="getCurrentVersion(state.editors.get(activeNoteId)?.noteData)"
+    @close="handleCloseVersionHistory"
+    @preview="handlePreviewVersion"
+    @restore="handleRestoreVersion"
   />
 </template>
 
@@ -962,6 +1215,44 @@ onMounted(() => {
 
 .btn-add-reference:active {
     transform: scale(0.98);
+}
+
+/* 功能按钮组 */
+.action-buttons-group {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+}
+
+.action-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--modal-bg);
+    color: var(--modal-text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.restore-editing-btn:hover,
+.publish-btn:hover,
+.version-history-btn:hover {
+    background: var(--accent);
+    color: white;
 }
 
 /* 只读编辑器样式 */

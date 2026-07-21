@@ -136,6 +136,7 @@ export class App {
     exposeToGlobal() {
         window.app = this;
         window.eventBus = this.eventBus;
+        window.noteService = this.noteService;
         window.stickyController = this.stickyController;
     }
 

@@ -75,6 +75,10 @@ export class NoteController {
         this.eventBus.on(EventTypes.TRASH.RESTORE, (noteId) => this.handleRestoreNote(noteId));
         this.eventBus.on(EventTypes.TRASH.DELETE_PERMANENT, (noteId) => this.handlePermanentDelete(noteId));
 
+        // 版本历史事件
+        this.eventBus.on(EventTypes.VERSION.OPEN, (noteId, version) => this.openVersionPage(noteId, version));
+        this.eventBus.on(EventTypes.VERSION.ROLLBACK, (noteId, version) => this.handleRollback(noteId, version));
+
         // 页面标签更新事件（统一处理笔记和便签的标签更新）
         this.eventBus.on(EventTypes.PAGE.UPDATE.TAG, async (noteId) => {
             await this.pageTagCoordinator.updatePageTag(noteId, this.getNoteById(noteId));
@@ -722,6 +726,93 @@ export class NoteController {
         } catch (error) {
             console.error('永久删除失败:', error);
             this.uiManager.toast_show('永久删除失败', 'error');
+        }
+    }
+
+    /**
+     * 打开历史版本页面
+     * @param {string|number} noteId 笔记ID
+     * @param {number} version 版本号
+     */
+    async openVersionPage(noteId, version) {
+        try {
+            // 获取版本内容
+            const versionData = await this.noteService.getVersion(noteId, version);
+            if (!versionData) {
+                this.uiManager.toast_show('无法加载版本内容', 'error');
+                return;
+            }
+
+            // 创建版本页面数据（使用特殊ID标识这是历史版本）
+            const versionPageId = `version-${noteId}-v${version}`;
+            const versionNoteData = {
+                id: versionPageId,
+                title: versionData.title || '无标题',
+                content: versionData.content,
+                excerpt: versionData.excerpt || '',
+                status: 'trashed',  // 使用 trashed 状态来标识只读
+                pageType: 'note',
+                // 版本相关信息（用于页面显示）
+                versionInfo: {
+                    noteId,
+                    version: versionData.version,
+                    versionNote: versionData.versionNote,
+                    publishedAt: versionData.publishedAt,
+                    isVersionPage: true
+                }
+            };
+
+            // 添加到应用
+            this.noteService.addOpenNote(versionPageId, versionNoteData);
+            this.uiManager.tabBar_createNoteTab({
+                id: versionPageId,
+                title: `v${version} - ${versionData.title || '无标题'}`,
+                pageType: 'note'
+            });
+            this.uiManager.editor_createNoteEditor(versionNoteData);
+            this.switchToNote(versionPageId);
+        } catch (error) {
+            console.error('打开历史版本失败:', error);
+            this.uiManager.toast_show('打开历史版本失败', 'error');
+        }
+    }
+
+    /**
+     * 回滚到指定版本
+     * @param {string|number} noteId 笔记ID
+     * @param {number} version 版本号
+     */
+    async handleRollback(noteId, version) {
+        try {
+            const confirmed = await this.uiManager.showConfirm(
+                `确定要回滚到 v${version} 吗？此操作将丢弃当前所有未发布内容及此版本之后的所有历史发布记录，不可撤销。`
+            );
+            if (!confirmed) return;
+
+            const updated = await this.noteService.rollback(noteId, version);
+            this.uiManager.toast_show(`已回滚到 v${version}`, 'success');
+
+            // 关闭所有版本页面
+            const openNotes = this.noteService.getAllOpenNotes();
+            for (const [id, note] of openNotes) {
+                if (id.startsWith(`version-${noteId}-v`)) {
+                    this.closeNote(id);
+                }
+            }
+
+            // 触发页面刷新（如果当前笔记是目标笔记）
+            if (this.noteService.getOpenNoteById(noteId)) {
+                const fullNote = await this.noteService.getNote(noteId);
+                if (fullNote) {
+                    const openNote = this.noteService.getOpenNoteById(noteId);
+                    if (openNote) {
+                        Object.assign(openNote, fullNote);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('回滚失败:', error);
+            this.uiManager.toast_show('回滚失败: ' + error.message, 'error');
         }
     }
 
