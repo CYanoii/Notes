@@ -97,6 +97,16 @@ function formatNoteDate(date) {
           <span>{{ formatNoteDate(note.updatedAt) }}</span>
           <span><i class="fas fa-calendar-alt"></i> 最后修改</span>
         </div>
+        <div v-if="expandedNoteId === note.id" class="note-meta-expand">
+          <div class="note-meta-row">
+            <span>{{ note.publishedAt ? formatNoteDate(note.publishedAt) : '未发布' }}</span>
+            <span><i class="fas fa-upload"></i> 最后发布</span>
+          </div>
+          <div class="note-meta-row">
+            <span>{{ formatNoteDate(note.createdAt) }}</span>
+            <span><i class="fas fa-plus-circle"></i> 创建时间</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -195,6 +205,22 @@ function formatNoteDate(date) {
     font-size: 12px;
     color: var(--note-card-meta-color);
     flex-shrink: 0;
+}
+
+.note-meta-expand {
+    margin-top: 4px;
+}
+
+.note-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--note-card-meta-color);
+    margin-bottom: 4px;
+}
+
+.note-meta-row:last-child {
+    margin-bottom: 0;
 }
 
 /* ---------- 悬停时展开 ---------- */
