@@ -282,10 +282,11 @@ function getTagsDisplay(noteId) {
 
   const noteTags = Array.isArray(editor.noteData?.tags) ? editor.noteData.tags : []
   const isTrashed = editor.noteData?.status === 'trashed'
+  const isPublished = editor.noteData?.editStatus === 'published'
   const hasTags = noteTags.length > 0
 
   return {
-    showAddBtn: !isTrashed && !hasTags,
+    showAddBtn: !isTrashed && !isPublished && !hasTags,
     tags: noteTags.map(tagId => {
       const tag = editor.allTags?.find(t => t.id === tagId)
       return tag ? { id: tagId, name: tag.name, color: tag.color } : null
@@ -300,10 +301,11 @@ function getReferencesDisplay(noteId) {
 
   const noteRefs = editor.references || []
   const isTrashed = editor.noteData?.status === 'trashed'
+  const isPublished = editor.noteData?.editStatus === 'published'
   const hasRefs = noteRefs.length > 0
 
   return {
-    showAddBtn: !isTrashed && !hasRefs,
+    showAddBtn: !isTrashed && !isPublished && !hasRefs,
     references: noteRefs
   }
 }
@@ -382,17 +384,104 @@ function getCurrentTheme() {
 // 初始化 Vditor
 async function initVditor(noteId, container, noteData) {
   if (noteData.status === 'trashed' || noteData.editStatus === 'published') {
-    // 只读模式：渲染 Markdown HTML（回收站或发布态）
-    const readonlyEl = document.createElement('div')
-    readonlyEl.className = 'vditor-readonly'
-    // 获取所有笔记元数据用于 wiki link 标题查找
-    const allNotes = await window.electronAPI.getAllNotes()
-    const noteMetadata = new Map(allNotes.map(n => [n.id, { title: n.title }]))
-    readonlyEl.innerHTML = wikiLink.renderMarkdown(noteData.content || '', noteMetadata)
-    container.appendChild(readonlyEl)
-    // 笔记间跳转：wiki link 点击处理（事件代理到 container）
-    container.addEventListener('click', handleWikiLinkClick)
-    return null
+    // 只读模式：创建编辑器后点击预览按钮
+    const vditor = new Vditor(container, {
+      placeholder: '...',
+      value: noteData.content || '',
+      cache: {
+        enable: false
+      },
+      theme: getCurrentTheme(),
+      toolbar: [
+        { name: 'emoji', tipPosition: 'se' },
+        { name: 'headings', tipPosition: 'se' },
+        { name: 'bold', tipPosition: 'se', hotkey: '⌘B' },
+        { name: 'italic', tipPosition: 'se', hotkey: '⌘I' },
+        { name: 'strike', tipPosition: 'se' },
+        '|',
+        { name: 'line', tipPosition: 's' },
+        { name: 'quote', tipPosition: 's', hotkey: '⇧⌘Q' },
+        { name: 'ordered-list', tipPosition: 's', hotkey: '⇧⌘{' },
+        { name: 'list', tipPosition: 's', hotkey: '⇧⌘}' },
+        { name: 'check', tipPosition: 's', hotkey: '⇧⌘J' },
+        { name: 'outdent', tipPosition: 's', hotkey: '⌘[' },
+        { name: 'indent', tipPosition: 's', hotkey: '⌘]' },
+        { name: 'code', tipPosition: 's', hotkey: '⇧⌘K' },
+        { name: 'inline-code', tipPosition: 's', hotkey: '⇧⌘~' },
+        { name: 'insert-after', tipPosition: 's' },
+        { name: 'insert-before', tipPosition: 's' },
+        '|',
+        { name: 'undo', tipPosition: 's', hotkey: '⌘Z' },
+        { name: 'redo', tipPosition: 's', hotkey: '⌘Y' },
+        '|',
+        { name: 'upload', tipPosition: 's' },
+        { name: 'link', tipPosition: 's', hotkey: '⌘K' },
+        { name: 'table', tipPosition: 's', hotkey: '⌘T' },
+        '|',
+        { name: 'preview', tipPosition: 'sw' },
+        { name: 'fullscreen', tipPosition: 'sw' },
+        {
+          hotkey: '⇧⌘R',
+          name: 'recovery',
+          tipPosition: 'sw',
+          tip: '恢复顶部栏',
+          className: 'recover',
+          icon: '<svg t="1717420000000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><path d="M128 160 L896 160" stroke="#666666" stroke-width="96" stroke-linecap="round" fill="none" /><path d="M512 300 L512 896 M320 700 L512 896 L704 700" stroke="#666666" stroke-width="96" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>',
+          click() {
+            setFocused(false)
+            const editorEl = document.getElementById(`note-${noteId}`)
+            if (editorEl) {
+              editorEl.classList.remove('editor-focused')
+            }
+          }
+        }
+      ],
+      preview: {
+        maxWidth: 1200,
+        actions: []
+      },
+      after: () => {
+        // 隐藏工具栏，只保留全屏和恢复顶部栏按钮
+        const toolbar = container.querySelector('.vditor-toolbar')
+        if (toolbar) {
+          // 隐藏所有按钮
+          toolbar.querySelectorAll('button').forEach((btn) => {
+            const type = btn.getAttribute('data-type')
+            if (type === 'fullscreen' || type === 'recovery') {
+              return // 保留这两个按钮
+            }
+            btn.style.display = 'none'
+          })
+          // 点击预览按钮
+          const previewBtn = toolbar.querySelector('button[data-type="preview"]')
+          if (previewBtn) {
+            previewBtn.click()
+            previewBtn.style.display = 'none'
+          }
+          // 隐藏分隔线
+          toolbar.querySelectorAll('.vditor-toolbar__divider').forEach((sep) => {
+            sep.style.display = 'none'
+          })
+          // 隐藏上传按钮（图标按钮）
+          toolbar.querySelectorAll('[data-type="upload"], [data-type="link"], [data-type="table"]').forEach((el) => {
+            el.style.display = 'none'
+          })
+        }
+        // 点击内容区域时隐藏顶部栏
+        container.addEventListener('click', (e) => {
+          if (e.target.closest('.vditor-content')) {
+            setFocused(true)
+            const editorEl = document.getElementById(`note-${noteId}`)
+            if (editorEl) {
+              editorEl.classList.add('editor-focused')
+            }
+          }
+        })
+        // 应用编辑器样式
+        applyEditorStyleToVditor(container)
+      }
+    })
+    return vditor
   }
 
   const vditor = new Vditor(container, {
@@ -703,15 +792,15 @@ function applyEditorStyleToVditor(container) {
     }
 
     styleEl.textContent = `
-      .vditor-reset {
+      .vditor-reset, .vditor-readonly, .vditor-preview {
         ${config.fontFamily ? `font-family: ${config.fontFamily} !important;` : ''}
         ${config.fontSize ? `font-size: ${config.fontSize}px !important;` : ''}
         ${config.lineHeight ? `line-height: ${config.lineHeight} !important;` : ''}
       }
-      .vditor-reset p {
+      .vditor-reset p, .vditor-readonly p, .vditor-preview p {
         ${config.paragraphSpacing ? `margin-bottom: ${config.paragraphSpacing}px !important;` : ''}
       }
-      .vditor-reset > p:last-child {
+      .vditor-reset > p:last-child, .vditor-readonly > p:last-child, .vditor-preview > p:last-child {
         margin-bottom: 0 !important;
       }
     `
@@ -853,7 +942,7 @@ onMounted(() => {
           class="note-title-input"
           v-model="editor.noteData.title"
           placeholder="输入标题..."
-          :disabled="editor.noteData?.status === 'trashed'"
+          :disabled="editor.noteData?.status === 'trashed' || editor.noteData?.editStatus === 'published'"
           @input="handleTitleInput(editor.id, $event)"
           @blur="handleTitleBlur(editor.id, $event)"
         >
@@ -865,7 +954,7 @@ onMounted(() => {
           v-model="editor.noteData.excerpt"
           placeholder="输入摘要（最多50字）..."
           maxlength="50"
-          :disabled="editor.noteData?.status === 'trashed'"
+          :disabled="editor.noteData?.status === 'trashed' || editor.noteData?.editStatus === 'published'"
           @input="handleExcerptInput(editor.id, $event)"
           @blur="handleExcerptBlur(editor.id, $event)"
         >
@@ -1324,11 +1413,12 @@ onMounted(() => {
 :deep(.vditor-readonly) {
     flex: 1;
     padding: 10px 35px;
-    background: var(--editor-readonly-bg);
+    background: var(--editor-bg);
     border-radius: 8px;
     overflow-y: auto;
     height: calc(100vh - 220px);
     line-height: 1.7;
+    color: var(--text-primary);
 }
 
 :deep(.vditor-readonly h1),
