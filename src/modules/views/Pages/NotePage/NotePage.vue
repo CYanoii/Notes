@@ -212,6 +212,15 @@ async function handleRestoreVersion(version) {
   const noteId = state.activeNoteId
   if (!noteId) return
 
+  // 回收站中的笔记不能回滚
+  const editor = state.editors.get(noteId)
+  if (editor?.noteData?.status === 'trashed') {
+    if (window.toastApi) {
+      window.toastApi.show('回收站中的笔记不能回滚版本', 'warning')
+    }
+    return
+  }
+
   // 二次确认
   const confirmed = await confirm(`确定要回滚到 v${version.version} 吗？此操作将丢弃当前所有未发布内容及此版本之后的所有历史发布记录，不可撤销。`)
 
