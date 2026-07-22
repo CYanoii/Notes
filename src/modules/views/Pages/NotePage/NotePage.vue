@@ -100,8 +100,22 @@ async function handlePublishOrDiscard(noteId) {
     const versionNote = result.versionNote || ''
     try {
       const updated = await window.noteService.publishNote(noteId, versionNote)
-      // 直接修改属性以确保响应式更新
-      Object.assign(editor.noteData, updated)
+      // 获取完整笔记数据
+      const fullNote = await window.noteService.getNote(noteId)
+      // 更新所有数据
+      Object.assign(editor.noteData, updated, { content: fullNote.content })
+      // 强制触发 editStatus 变化，重新初始化编辑器
+      const container = document.getElementById(`vditor-${noteId}`)
+      if (container && editor.vditor) {
+        editor.vditor.destroy()
+        editor.vditor = null
+        container.innerHTML = ''
+        await nextTick()
+        const vditor = await initVditor(noteId, container, editor.noteData)
+        if (vditor) {
+          setVditor(noteId, vditor)
+        }
+      }
       if (window.toastApi) {
         window.toastApi.show(`已发布版本 v${updated.version}`, 'success')
       }
@@ -202,15 +216,23 @@ async function handleRestoreVersion(version) {
     const updated = await window.noteService.rollback(noteId, version.version)
     // 关闭历史面板
     showVersionHistory.value = false
+    // 获取完整笔记数据
+    const fullNote = await window.noteService.getNote(noteId)
     // 更新编辑器数据
     const editor = state.editors.get(noteId)
     if (editor) {
-      editor.noteData = { ...editor.noteData, ...updated }
-      Object.assign(editor.noteData, updated)
-      const fullNote = await window.noteService.getNote(noteId)
-      if (fullNote) {
-        editor.noteData.content = fullNote.content
-        updateEditorContent(noteId, fullNote.content)
+      Object.assign(editor.noteData, updated, { content: fullNote.content })
+      // 强制触发 editStatus 变化，重新初始化编辑器
+      const container = document.getElementById(`vditor-${noteId}`)
+      if (container && editor.vditor) {
+        editor.vditor.destroy()
+        editor.vditor = null
+        container.innerHTML = ''
+        await nextTick()
+        const vditor = await initVditor(noteId, container, editor.noteData)
+        if (vditor) {
+          setVditor(noteId, vditor)
+        }
       }
     }
     if (window.toastApi) {
@@ -873,7 +895,8 @@ watch(
     return editor?.noteData?.editStatus
   },
   async (newStatus, oldStatus) => {
-    if (newStatus === oldStatus) return
+    // 只有当状态真正变化时才重载（比如 editing -> published 或反之）
+    if (newStatus === oldStatus || newStatus === undefined || oldStatus === undefined) return
     await nextTick()
     const noteId = state.activeNoteId
     if (!noteId) return
