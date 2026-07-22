@@ -18,6 +18,11 @@ function isStickyPage(noteData) {
   return noteData?.pageType === STICKY_PAGE
 }
 
+// 检查是否为笔记页
+function isNotePage(noteData) {
+  return !isStickyPage(noteData)
+}
+
 const {
   state,
   activeNoteId,
@@ -1061,7 +1066,7 @@ onMounted(() => {
   <div class="action-buttons-group">
     <!-- 发布态：恢复编辑按钮 -->
     <div
-      v-if="activeNoteId && isPublished(state.editors.get(activeNoteId)?.noteData)"
+      v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData) && isPublished(state.editors.get(activeNoteId)?.noteData)"
       class="action-btn restore-editing-btn"
       @click="handleRestoreToEditing(activeNoteId)"
       title="恢复编辑"
@@ -1071,7 +1076,7 @@ onMounted(() => {
 
     <!-- 编辑态：发布按钮 -->
     <div
-      v-if="activeNoteId && isEditable(state.editors.get(activeNoteId)?.noteData)"
+      v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData) && isEditable(state.editors.get(activeNoteId)?.noteData)"
       class="action-btn publish-btn"
       @click="handlePublishOrDiscard(activeNoteId)"
       title="发布"
@@ -1081,7 +1086,7 @@ onMounted(() => {
 
     <!-- 历史版本按钮 -->
     <div
-      v-if="activeNoteId && hasVersionHistory(state.editors.get(activeNoteId)?.noteData)"
+      v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData) && hasVersionHistory(state.editors.get(activeNoteId)?.noteData)"
       class="action-btn version-history-btn"
       @click="handleShowVersionHistory(activeNoteId)"
       title="版本历史"
