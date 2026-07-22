@@ -282,11 +282,10 @@ function getTagsDisplay(noteId) {
 
   const noteTags = Array.isArray(editor.noteData?.tags) ? editor.noteData.tags : []
   const isTrashed = editor.noteData?.status === 'trashed'
-  const isPublished = editor.noteData?.editStatus === 'published'
   const hasTags = noteTags.length > 0
 
   return {
-    showAddBtn: !isTrashed && !isPublished && !hasTags,
+    showAddBtn: !isTrashed && !hasTags,
     tags: noteTags.map(tagId => {
       const tag = editor.allTags?.find(t => t.id === tagId)
       return tag ? { id: tagId, name: tag.name, color: tag.color } : null
@@ -301,11 +300,10 @@ function getReferencesDisplay(noteId) {
 
   const noteRefs = editor.references || []
   const isTrashed = editor.noteData?.status === 'trashed'
-  const isPublished = editor.noteData?.editStatus === 'published'
   const hasRefs = noteRefs.length > 0
 
   return {
-    showAddBtn: !isTrashed && !isPublished && !hasRefs,
+    showAddBtn: !isTrashed && !hasRefs,
     references: noteRefs
   }
 }
@@ -977,7 +975,7 @@ onMounted(() => {
             :key="tag.id"
             class="note-tag-item"
             :data-tag-id="tag.id"
-            @click="handleTagClick(editor.id)"
+            @click="editor.noteData?.status !== 'trashed' && handleTagClick(editor.id)"
           >
             <span
               class="note-tag-color"
@@ -1006,7 +1004,7 @@ onMounted(() => {
             :key="ref.id"
             class="reference-item"
             :class="{ 'missing': ref.missing }"
-            @click="handleReferenceClick(ref.id, editor.id)"
+            @click="editor.noteData?.status !== 'trashed' && handleReferenceClick(ref.id, editor.id)"
           >
             <i class="fas fa-link reference-icon"></i>
             <span class="reference-title">{{ ref.alias || ref.title }}</span>
