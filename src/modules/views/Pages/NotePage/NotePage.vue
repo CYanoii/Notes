@@ -84,7 +84,8 @@ function getCurrentVersion(noteData) {
 
 // 是否有历史版本
 function hasVersionHistory(noteData) {
-  return getCurrentVersion(noteData) > 0
+  // 有已发布版本或有编辑中的内容
+  return getCurrentVersion(noteData) > 0 || noteData?.editStatus === 'editing'
 }
 
 // 点击"发布/放弃编辑"按钮
@@ -94,7 +95,8 @@ async function handlePublishOrDiscard(noteId) {
 
   const noteData = editor.noteData
   const nextVersion = getCurrentVersion(noteData) + 1
-  const hasHistory = hasVersionHistory(noteData)
+  // hasHistory 表示是否有可回滚的发布版本
+  const hasHistory = getCurrentVersion(noteData) > 0
 
   const result = await showPublishOrDiscard(noteData.title || '无标题笔记', nextVersion, hasHistory)
 
@@ -1109,6 +1111,7 @@ onMounted(() => {
     v-if="showVersionHistory && activeNoteId"
     :versions="versionHistoryList"
     :currentVersion="getCurrentVersion(state.editors.get(activeNoteId)?.noteData)"
+    :isEditing="isEditable(state.editors.get(activeNoteId)?.noteData)"
     @close="handleCloseVersionHistory"
     @preview="handlePreviewVersion"
     @restore="handleRestoreVersion"

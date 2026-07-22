@@ -9,6 +9,10 @@ const props = defineProps({
   currentVersion: {
     type: Number,
     default: 0
+  },
+  isEditing: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -66,22 +70,37 @@ function handleRestore(version) {
     </div>
 
     <div class="panel-body">
-      <div v-if="versions.length === 0" class="empty-state">
+      <div v-if="versions.length === 0 && !isEditing" class="empty-state">
         <i class="fas fa-inbox"></i>
         <p>暂无历史版本</p>
       </div>
 
       <div v-else class="version-list">
+        <!-- 编辑态时显示当前编辑版本（未发布） -->
+        <div
+          v-if="isEditing"
+          class="version-item current editing-version"
+        >
+          <div class="version-info">
+            <div class="version-header">
+              <span class="version-badge">v{{ currentVersion + 1 }}</span>
+              <span class="current-tag">未发布</span>
+            </div>
+            <div class="version-time">
+              编辑中...
+            </div>
+          </div>
+        </div>
         <div
           v-for="version in versions"
           :key="version.version"
           class="version-item"
-          :class="{ current: version.version === currentVersion }"
+          :class="{ current: !isEditing && version.version === currentVersion }"
         >
           <div class="version-info">
             <div class="version-header">
               <span class="version-badge">v{{ version.version }}</span>
-              <span v-if="version.version === currentVersion" class="current-tag">当前版本</span>
+              <span v-if="!isEditing && version.version === currentVersion" class="current-tag">当前版本</span>
             </div>
             <div class="version-time" :title="formatDateTime(version.publishedAt)">
               {{ formatRelativeTime(version.publishedAt) }}
@@ -99,7 +118,6 @@ function handleRestore(version) {
               <i class="fas fa-eye"></i>
             </button>
             <button
-              v-if="version.version !== currentVersion"
               class="action-btn restore-btn"
               @click="handleRestore(version)"
               title="回滚到此版本"
@@ -207,6 +225,14 @@ function handleRestore(version) {
 
 .version-item:hover {
   background: var(--tag-filter-item-hover-bg);
+}
+
+.version-item.editing-version {
+  border: 1px solid var(--accent);
+}
+
+.version-item.editing-version .current-tag {
+  color: var(--accent);
 }
 
 .version-item.current {

@@ -522,14 +522,6 @@ class NotesManager {
       throw new Error(`无效的版本号: ${targetVersion}`);
     }
 
-    // 删除比目标版本新的所有版本
-    for (let v = currentVersion; v > targetVersion; v--) {
-      const versionDir = path.join(this.notesDir, noteId, 'versions', `v${v}`);
-      if (await this.exists(versionDir)) {
-        await fs.rm(versionDir, { recursive: true, force: true });
-      }
-    }
-
     // 获取目标版本快照
     const versionDir = path.join(this.notesDir, noteId, 'versions', `v${targetVersion}`);
     const snapshotMetadata = await this.getVersionSnapshotMetadata(noteId, targetVersion);
@@ -543,16 +535,25 @@ class NotesManager {
     await this.copyAssetsFromVersionDir(noteId, versionDir);
 
     // 更新元数据
+    // 回滚到 vX 意味着回滚到 v(X-1) 的编辑态，但使用 vX 的内容
     const updatedMetadata = {
       ...metadata,
       title: snapshotMetadata.title || metadata.title,
       excerpt: snapshotMetadata.excerpt || metadata.excerpt,
-      version: targetVersion,
+      version: targetVersion - 1,
       publishedAt: snapshotMetadata.publishedAt,
-      editStatus: 'published'
+      editStatus: 'editing'
     };
     await this.saveMetadata(noteId, updatedMetadata);
     await this.updateIndex(noteId, updatedMetadata);
+
+    // 删除目标版本及之后的所有版本
+    for (let v = targetVersion; v <= currentVersion; v++) {
+      const versionDirToDelete = path.join(this.notesDir, noteId, 'versions', `v${v}`);
+      if (await this.exists(versionDirToDelete)) {
+        await fs.rm(versionDirToDelete, { recursive: true, force: true });
+      }
+    }
 
     return updatedMetadata;
   }
