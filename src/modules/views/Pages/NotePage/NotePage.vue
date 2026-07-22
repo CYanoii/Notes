@@ -1419,6 +1419,33 @@ onMounted(() => {
     color: var(--text-primary);
 }
 
+:deep(.vditor-preview) {
+    padding: 10px 35px;
+    overflow-y: auto;
+}
+
+:deep(.vditor-preview .vditor-reset) {
+    padding: 0;
+}
+
+:deep(.vditor-preview::-webkit-scrollbar) {
+    width: 8px;
+    height: 8px;
+    display: block !important;
+}
+
+:deep(.vditor-preview::-webkit-scrollbar-track) {
+    background: var(--editor-bg);
+}
+
+:deep(.vditor-preview::-webkit-scrollbar-thumb) {
+    background: var(--scrollbar-thumb);
+}
+
+:deep(.vditor-preview::-webkit-scrollbar-thumb:hover) {
+    background: var(--scrollbar-thumb-hover);
+}
+
 :deep(.vditor-readonly h1),
 :deep(.vditor-readonly h2),
 :deep(.vditor-readonly h3),
