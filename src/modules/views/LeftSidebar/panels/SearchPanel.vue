@@ -261,8 +261,8 @@ defineExpose({
 }
 
 .search-result-card.active {
-  border-color: var(--accent);
-  background: var(--sidebar-card-hover-bg);
+  background: var(--tag-filter-selected-bg);
+  border-color: var(--tag-filter-selected-border);
 }
 
 .search-result-title {
