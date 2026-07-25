@@ -78,6 +78,7 @@ export class NoteController {
         // 版本历史事件
         this.eventBus.on(EventTypes.VERSION.OPEN, (noteId, version) => this.openVersionPage(noteId, version));
         this.eventBus.on(EventTypes.VERSION.ROLLBACK, (noteId, version) => this.handleRollback(noteId, version));
+        this.eventBus.on(EventTypes.VERSION.CHANGED, (noteId) => this.refreshVersionHistory(noteId));
 
         // 页面标签更新事件（统一处理笔记和便签的标签更新）
         this.eventBus.on(EventTypes.PAGE.UPDATE.TAG, async (noteId) => {
@@ -372,6 +373,40 @@ export class NoteController {
     }
 
     /**
+     * 刷新版本历史面板
+     * @param {string} noteId 笔记ID
+     */
+    async refreshVersionHistory(noteId) {
+        try {
+            const note = this.noteService.getOpenNoteById(noteId)
+            if (!note) return
+            const versions = await this.noteService.getVersionHistory(noteId)
+            this.uiManager.leftSidebar_renderPanelContent('versions', {
+                noteId: noteId,
+                versions: versions || [],
+                currentVersion: note.version || 0,
+                isEditing: note.editStatus === 'editing',
+                isTrashed: note.status === 'trashed'
+            })
+        } catch (error) {
+            console.error('刷新版本历史失败:', error)
+        }
+    }
+
+    /**
+     * 清空版本历史面板（切到首页时调用）
+     */
+    clearVersionHistory() {
+        this.uiManager.leftSidebar_renderPanelContent('versions', {
+            noteId: null,
+            versions: [],
+            currentVersion: 0,
+            isEditing: false,
+            isTrashed: false
+        })
+    }
+
+    /**
      * 处理标签筛选状态变化
      * @param {string} tagId 标签ID
      * @param {string} newState 新状态
@@ -469,6 +504,13 @@ export class NoteController {
         if (this.uiManager.leftSidebar_getActivePanelId() === 'outline') {
             this.refreshOutline(noteId);
         }
+        // 笔记切换时拉取版本历史（侧边栏面板始终可见，需提前准备好数据）
+        // 若切换到历史版本预览页，仍显示原笔记的版本列表
+        const switchedNote = this.noteService.getOpenNoteById(noteId);
+        const versionHistoryNoteId = switchedNote?.versionInfo?.isVersionPage
+            ? switchedNote.versionInfo.noteId
+            : noteId;
+        this.refreshVersionHistory(versionHistoryNoteId);
     }
 
     /**
@@ -484,6 +526,8 @@ export class NoteController {
 
         // 清空大纲数据
         this.uiManager.leftSidebar_renderPanelContent('outline', { headings: [], content: '' });
+        // 清空版本历史面板
+        this.clearVersionHistory();
     }
 
     /**
@@ -808,8 +852,19 @@ export class NoteController {
                     if (openNote) {
                         Object.assign(openNote, fullNote);
                     }
+                    // 同步更新 NotePage 中 editor 的 noteData，触发 editStatus 响应式变化
+                    this.uiManager.editor_updateNoteData(noteId, {
+                        editStatus: fullNote.editStatus,
+                        version: fullNote.version,
+                        publishedAt: fullNote.publishedAt,
+                        title: fullNote.title,
+                        excerpt: fullNote.excerpt,
+                        content: fullNote.content
+                    });
                 }
             }
+            // 回滚后重新拉取版本历史面板
+            this.refreshVersionHistory(noteId);
         } catch (error) {
             console.error('回滚失败:', error);
             this.uiManager.toast_show('回滚失败: ' + error.message, 'error');

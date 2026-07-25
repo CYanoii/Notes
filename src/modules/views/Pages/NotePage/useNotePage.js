@@ -124,6 +124,18 @@ export function useNotePage() {
   }
 
   /**
+   * 更新笔记数据（用于回滚等场景整体替换元数据）
+   * @param {string|number} noteId - 笔记ID
+   * @param {Object} updates - 要合并的字段
+   */
+  function updateNoteData(noteId, updates) {
+    const editor = state.editors.get(noteId)
+    if (editor && editor.noteData) {
+      Object.assign(editor.noteData, updates)
+    }
+  }
+
+  /**
    * 设置 Vditor 实例
    * @param {string|number} noteId 笔记ID
    * @param {Object} vditor Vditor 实例
@@ -222,6 +234,7 @@ export function useNotePage() {
     updateEditorContent,
     updateNoteTags,
     updateNoteReferences,
+    updateNoteData,
     setVditor,
     getVditor,
     scrollToPosition,

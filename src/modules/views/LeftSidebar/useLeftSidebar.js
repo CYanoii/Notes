@@ -29,6 +29,7 @@ const panelData = reactive({
   archive: { years: [] },
   recent: { notes: [] },
   outline: { headings: [], content: '' },
+  versions: { versions: [], currentVersion: 0, isEditing: false, isTrashed: false, noteId: null },
   trash: { notes: [] }
 })
 

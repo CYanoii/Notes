@@ -301,6 +301,10 @@ export class UIManager {
         this.editor.updateEditorContent(noteId, newContent);
     }
 
+    editor_updateNoteData(noteId, updates) {
+        this.editor.updateNoteData(noteId, updates);
+    }
+
     editor_updateNoteReferences(noteId, references) {
         this.editor.updateNoteReferences(noteId, references);
     }

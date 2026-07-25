@@ -84,7 +84,8 @@ export const EventTypes = {
   // 版本历史事件
   VERSION: {
     OPEN: 'version:open',      // 打开历史版本页面
-    ROLLBACK: 'version:rollback'  // 回滚到指定版本
+    ROLLBACK: 'version:rollback',  // 回滚到指定版本
+    CHANGED: 'version:changed' // 版本列表发生变化（发布/回滚/放弃编辑/恢复编辑后）
   },
 
   // 便签事件

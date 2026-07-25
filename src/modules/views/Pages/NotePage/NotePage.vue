@@ -7,7 +7,6 @@ import { EventTypes } from '../../../core/EventTypes.js'
 import { escapeHtml } from '../../../utils/helpers.js'
 import NoteSuggestionPopup from '../WikiLink/NoteSuggestionPopup.vue'
 import StickyPage from '../StickyPage/StickyPage.vue'
-import VersionHistoryPanel from './components/VersionHistoryPanel.vue'
 
 // 页面类型常量
 const NOTE_PAGE = 'note'
@@ -61,11 +60,7 @@ const wikiLink = useWikiLink()
 const { notePicker } = wikiLink
 
 // Modal 初始化
-const { showPublishOrDiscard, confirm } = useModal()
-
-// 版本历史相关状态
-const showVersionHistory = ref(false)
-const versionHistoryList = ref([])
+const { showPublishOrDiscard } = useModal()
 
 // 检查笔记是否为发布态
 function isPublished(noteData) {
@@ -80,12 +75,6 @@ function isEditable(noteData) {
 // 获取当前笔记的版本号
 function getCurrentVersion(noteData) {
   return noteData?.version || 0
-}
-
-// 是否有历史版本
-function hasVersionHistory(noteData) {
-  // 有已发布版本或有编辑中的内容
-  return getCurrentVersion(noteData) > 0 || noteData?.editStatus === 'editing'
 }
 
 // 点击"发布/放弃编辑"按钮
@@ -126,6 +115,10 @@ async function handlePublishOrDiscard(noteId) {
       if (window.toastApi) {
         window.toastApi.show(`已发布版本 v${updated.version}`, 'success')
       }
+      // 通知侧边栏版本面板刷新
+      if (window.eventBus) {
+        window.eventBus.emit(EventTypes.VERSION.CHANGED, noteId)
+      }
     } catch (error) {
       console.error('发布失败:', error)
       if (window.toastApi) {
@@ -141,6 +134,10 @@ async function handlePublishOrDiscard(noteId) {
       updateEditorContent(noteId, updated.content)
       if (window.toastApi) {
         window.toastApi.show('已放弃编辑，恢复到最新发布版本', 'info')
+      }
+      // 通知侧边栏版本面板刷新
+      if (window.eventBus) {
+        window.eventBus.emit(EventTypes.VERSION.CHANGED, noteId)
       }
     } catch (error) {
       console.error('放弃编辑失败:', error)
@@ -169,95 +166,14 @@ async function handleRestoreToEditing(noteId) {
     if (window.toastApi) {
       window.toastApi.show('已恢复编辑模式', 'info')
     }
+    // 通知侧边栏版本面板刷新
+    if (window.eventBus) {
+      window.eventBus.emit(EventTypes.VERSION.CHANGED, noteId)
+    }
   } catch (error) {
     console.error('恢复编辑失败:', error)
     if (window.toastApi) {
       window.toastApi.show('恢复编辑失败: ' + error.message, 'error')
-    }
-  }
-}
-
-// 点击历史版本按钮
-async function handleShowVersionHistory(noteId) {
-  const editor = state.editors.get(noteId)
-  if (!editor) return
-
-  try {
-    const history = await window.noteService.getVersionHistory(noteId)
-    versionHistoryList.value = history
-    showVersionHistory.value = true
-  } catch (error) {
-    console.error('获取版本历史失败:', error)
-    if (window.toastApi) {
-      window.toastApi.show('获取版本历史失败', 'error')
-    }
-  }
-}
-
-// 关闭历史版本面板
-function handleCloseVersionHistory() {
-  showVersionHistory.value = false
-}
-
-// 预览历史版本 - 打开独立只读页面
-function handlePreviewVersion(version) {
-  // 关闭历史面板
-  showVersionHistory.value = false
-  // 通过事件总线打开历史版本页面
-  if (window.eventBus) {
-    window.eventBus.emit(EventTypes.VERSION.OPEN, state.activeNoteId, version.version)
-  }
-}
-
-// 回滚到指定版本
-async function handleRestoreVersion(version) {
-  const noteId = state.activeNoteId
-  if (!noteId) return
-
-  // 回收站中的笔记不能回滚
-  const editor = state.editors.get(noteId)
-  if (editor?.noteData?.status === 'trashed') {
-    if (window.toastApi) {
-      window.toastApi.show('回收站中的笔记不能回滚版本', 'warning')
-    }
-    return
-  }
-
-  // 二次确认
-  const confirmed = await confirm(`确定要回滚到 v${version.version} 吗？此操作将丢弃当前所有未发布内容及此版本之后的所有历史发布记录，不可撤销。`)
-
-  if (!confirmed) return
-
-  try {
-    const updated = await window.noteService.rollback(noteId, version.version)
-    // 关闭历史面板
-    showVersionHistory.value = false
-    // 获取完整笔记数据
-    const fullNote = await window.noteService.getNote(noteId)
-    // 更新编辑器数据
-    const editor = state.editors.get(noteId)
-    if (editor) {
-      Object.assign(editor.noteData, updated, { content: fullNote.content })
-      // 强制触发 editStatus 变化，重新初始化编辑器
-      const container = document.getElementById(`vditor-${noteId}`)
-      if (container && editor.vditor) {
-        editor.vditor.destroy()
-        editor.vditor = null
-        container.innerHTML = ''
-        await nextTick()
-        const vditor = await initVditor(noteId, container, editor.noteData)
-        if (vditor) {
-          setVditor(noteId, vditor)
-        }
-      }
-    }
-    if (window.toastApi) {
-      window.toastApi.show(`已回滚到 v${version.version}`, 'success')
-    }
-  } catch (error) {
-    console.error('回滚失败:', error)
-    if (window.toastApi) {
-      window.toastApi.show('回滚失败: ' + error.message, 'error')
     }
   }
 }
@@ -1184,28 +1100,7 @@ onMounted(() => {
     >
       <i class="fas fa-upload"></i>
     </div>
-
-    <!-- 历史版本按钮 -->
-    <div
-      v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData) && hasVersionHistory(state.editors.get(activeNoteId)?.noteData)"
-      class="action-btn version-history-btn"
-      @click="handleShowVersionHistory(activeNoteId)"
-      title="版本历史"
-    >
-      <i class="fas fa-history"></i>
-    </div>
   </div>
-
-  <!-- 历史版本面板 -->
-  <VersionHistoryPanel
-    v-if="showVersionHistory && activeNoteId"
-    :versions="versionHistoryList"
-    :currentVersion="getCurrentVersion(state.editors.get(activeNoteId)?.noteData)"
-    :isEditing="isEditable(state.editors.get(activeNoteId)?.noteData)"
-    @close="handleCloseVersionHistory"
-    @preview="handlePreviewVersion"
-    @restore="handleRestoreVersion"
-  />
 </template>
 
 <style scoped>
@@ -1466,8 +1361,7 @@ onMounted(() => {
 }
 
 .restore-editing-btn:hover,
-.publish-btn:hover,
-.version-history-btn:hover {
+.publish-btn:hover {
     background: var(--accent);
     color: white;
 }

@@ -46,6 +46,13 @@ const DEFAULT_PANELS = {
     component: () => import('./panels/OutlinePanel.vue'),
     defaultVisible: true
   },
+  versions: {
+    id: 'versions',
+    label: '版本历史',
+    icon: 'fas fa-code-branch',
+    component: () => import('./panels/VersionsPanel.vue'),
+    defaultVisible: true
+  },
   trash: {
     id: 'trash',
     label: '回收站',
