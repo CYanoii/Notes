@@ -513,6 +513,84 @@ async function initVditor(noteId, container, noteData) {
             }
           }
         })
+        // 浏览模式：将 [[id|title]] 文本转换为 wiki-link span
+        // Vditor 预览使用 markdown-it 不识别 wiki 语法，需手动替换
+        const WIKI_RE = /\[\[([^\]]+)\]\]/g
+        const isSkipParent = (el) => {
+          if (!el) return true
+          if (el.classList && el.classList.contains('wiki-link')) return true
+          const tag = el.tagName
+          return tag === 'CODE' || tag === 'PRE' || tag === 'A'
+        }
+        const createWikiLinkSpan = (fullText) => {
+          const span = document.createElement('span')
+          span.className = 'wiki-link'
+          span.textContent = fullText
+          const m = fullText.match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/)
+          if (m) span.dataset.noteId = m[1]
+          return span
+        }
+        const transformTextNode = (textNode) => {
+          const text = textNode.textContent
+          if (!WIKI_RE.test(text)) return
+          WIKI_RE.lastIndex = 0
+          const fragment = document.createDocumentFragment()
+          let lastIndex = 0
+          let match
+          while ((match = WIKI_RE.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+              fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)))
+            }
+            fragment.appendChild(createWikiLinkSpan(match[0]))
+            lastIndex = WIKI_RE.lastIndex
+          }
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)))
+          }
+          textNode.parentNode.replaceChild(fragment, textNode)
+        }
+        const walk = (root) => {
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+              return isSkipParent(node.parentElement) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+            }
+          })
+          const nodes = []
+          let n
+          while ((n = walker.nextNode())) nodes.push(n)
+          nodes.forEach(transformTextNode)
+        }
+        const setupPreviewWikiLinks = () => {
+          const previewContent = container.querySelector('.vditor-preview')
+          if (!previewContent) return false
+          // 避免重复绑定
+          if (previewContent.dataset.wikiLinkReady === '1') return true
+          previewContent.dataset.wikiLinkReady = '1'
+          walk(previewContent)
+          // 监听预览内容变化（主题/样式更新会重新渲染）
+          const previewObserver = new MutationObserver(() => walk(previewContent))
+          previewObserver.observe(previewContent, { childList: true, subtree: true, characterData: true })
+          // 浏览模式下 Ctrl/Cmd+单击 wiki-link 跳转到目标笔记（与编辑态保持一致）
+          previewContent.addEventListener('click', (e) => {
+            const link = e.target.closest('.wiki-link')
+            if (!link) return
+            if (!(e.ctrlKey || e.metaKey)) return
+            e.preventDefault()
+            e.stopPropagation()
+            const noteId = link.dataset.noteId
+            if (noteId && window.eventBus) {
+              window.eventBus.emit(EventTypes.NOTE.OPEN, { id: noteId })
+            }
+          })
+          return true
+        }
+        // 优先同步尝试；Vditor 预览若异步渲染则通过观察器等待
+        if (!setupPreviewWikiLinks()) {
+          const readyObserver = new MutationObserver(() => {
+            if (setupPreviewWikiLinks()) readyObserver.disconnect()
+          })
+          readyObserver.observe(container, { childList: true, subtree: true })
+        }
         // 应用编辑器样式
         applyEditorStyleToVditor(container)
       }
@@ -644,8 +722,10 @@ async function initVditor(noteId, container, noteData) {
       })
 
       // 监听光标移动（鼠标点击、方向键等），检测是否在 [[...]] 内部
+      // 注意：仅在 IR（编辑区）触发；浏览模式（preview）不应弹出选择器
       container.addEventListener('click', (e) => {
         if (e.ctrlKey || e.metaKey) return  // Ctrl/Cmd+点击由导航处理
+        if (!e.target.closest('.vditor-ir')) return
         wikiLink.checkCursorForWikiLink(() => noteId)
       })
       container.addEventListener('keyup', (e) => {
@@ -1601,6 +1681,20 @@ onMounted(() => {
 }
 
 :deep(.vditor-ir .wiki-link:hover) {
+    opacity: 0.8;
+    border-bottom-style: solid;
+}
+
+/* Preview 模式下的 wiki link（浏览态由 Markdown 渲染后手动转换为 span） */
+:deep(.vditor-preview .wiki-link) {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent);
+    transition: opacity 0.2s;
+}
+
+:deep(.vditor-preview .wiki-link:hover) {
     opacity: 0.8;
     border-bottom-style: solid;
 }
