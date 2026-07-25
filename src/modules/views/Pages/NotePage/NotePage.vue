@@ -271,6 +271,16 @@ function createVditorAdapterForCurrentNote() {
   return wikiLink.createVditorAdapter(vditor)
 }
 
+// 恢复顶部栏：移除 editor-focused 以重新显示标题/摘要/标签栏
+function handleRecovery(noteId) {
+  if (!noteId) return
+  setFocused(false)
+  const editorEl = document.getElementById(`note-${noteId}`)
+  if (editorEl) {
+    editorEl.classList.remove('editor-focused')
+  }
+}
+
 // 标题变化处理
 function handleTitleInput(noteId, event) {
   const newTitle = event.target.value
@@ -419,6 +429,23 @@ function getCurrentTheme() {
 
 // 初始化 Vditor
 async function initVditor(noteId, container, noteData) {
+  // 工具：隐藏工具栏末尾项（浏览/全屏/恢复顶部栏 + 末位分隔线）
+  // - autoClickPreview: true 时先点击预览按钮以切换至预览模式（仅发布态需要）
+  function hideToolbarEndItems(toolbar, { autoClickPreview = false } = {}) {
+    if (!toolbar) return
+    const previewBtn = toolbar.querySelector('button[data-type="preview"]')
+    if (previewBtn && autoClickPreview) previewBtn.click()
+    ;['preview', 'fullscreen', 'recovery'].forEach((type) => {
+      const btn = toolbar.querySelector(`button[data-type="${type}"]`)
+      if (btn) btn.style.display = 'none'
+    })
+    // 隐藏末位分隔线（preview 之前的那一道）
+    const dividers = toolbar.querySelectorAll('.vditor-toolbar__divider')
+    if (dividers.length > 0) {
+      dividers[dividers.length - 1].style.display = 'none'
+    }
+  }
+
   if (noteData.status === 'trashed' || noteData.editStatus === 'published') {
     // 只读模式：创建编辑器后点击预览按钮
     const vditor = new Vditor(container, {
@@ -477,31 +504,13 @@ async function initVditor(noteId, container, noteData) {
         actions: []
       },
       after: () => {
-        // 隐藏工具栏，只保留全屏和恢复顶部栏按钮
+        // 隐藏整个工具栏
+        // 发布态需要先点击预览按钮以切换至预览模式
         const toolbar = container.querySelector('.vditor-toolbar')
         if (toolbar) {
-          // 隐藏所有按钮
-          toolbar.querySelectorAll('button').forEach((btn) => {
-            const type = btn.getAttribute('data-type')
-            if (type === 'fullscreen' || type === 'recovery') {
-              return // 保留这两个按钮
-            }
-            btn.style.display = 'none'
-          })
-          // 点击预览按钮
           const previewBtn = toolbar.querySelector('button[data-type="preview"]')
-          if (previewBtn) {
-            previewBtn.click()
-            previewBtn.style.display = 'none'
-          }
-          // 隐藏分隔线
-          toolbar.querySelectorAll('.vditor-toolbar__divider').forEach((sep) => {
-            sep.style.display = 'none'
-          })
-          // 隐藏上传按钮（图标按钮）
-          toolbar.querySelectorAll('[data-type="upload"], [data-type="link"], [data-type="table"]').forEach((el) => {
-            el.style.display = 'none'
-          })
+          if (previewBtn) previewBtn.click()
+          toolbar.style.display = 'none'
         }
         // 点击内容区域时隐藏顶部栏
         container.addEventListener('click', (e) => {
@@ -687,6 +696,8 @@ async function initVditor(noteId, container, noteData) {
     after: () => {
       // 应用编辑器样式
       applyEditorStyleToVditor(container)
+      // 隐藏工具栏末尾的浏览/全屏/恢复顶部栏按钮 + 末位分隔线
+      hideToolbarEndItems(container.querySelector('.vditor-toolbar'))
 
       // 点击 Vditor 编辑区域时隐藏顶部栏
       container.addEventListener('click', (e) => {
@@ -710,17 +721,6 @@ async function initVditor(noteId, container, noteData) {
           }
         })
       }
-      // 监听键盘快捷键 ⇧⌘R 恢复顶部栏
-      container.addEventListener('keydown', (e) => {
-        if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.key === 'r') {
-          setFocused(false)
-          const editorEl = document.getElementById(`note-${noteId}`)
-          if (editorEl) {
-            editorEl.classList.remove('editor-focused')
-          }
-        }
-      })
-
       // 监听光标移动（鼠标点击、方向键等），检测是否在 [[...]] 内部
       // 注意：仅在 IR（编辑区）触发；浏览模式（preview）不应弹出选择器
       container.addEventListener('click', (e) => {
@@ -1155,6 +1155,16 @@ onMounted(() => {
 
   <!-- 功能按钮组（圆形图标，仅图标） -->
   <div class="action-buttons-group">
+    <!-- 恢复顶部栏：清除 editor-focused，恢复标题/摘要/标签栏可见 -->
+    <div
+      v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData)"
+      class="action-btn recovery-btn"
+      @click="handleRecovery(activeNoteId)"
+      title="恢复顶部栏"
+    >
+      <i class="fas fa-arrow-down"></i>
+    </div>
+
     <!-- 发布态：恢复编辑按钮 -->
     <div
       v-if="activeNoteId && isNotePage(state.editors.get(activeNoteId)?.noteData) && isPublished(state.editors.get(activeNoteId)?.noteData)"
