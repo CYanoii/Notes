@@ -38,7 +38,8 @@
 .panel-content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  /* overflow 由 index.css 全局规则控制：
+     默认 overflow: hidden，:hover 时 overflow-y: scroll */
 }
 
 .panel-empty {
